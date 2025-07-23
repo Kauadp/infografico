@@ -3,17 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>Dashboard de Vendas - Exagerado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css"> 
+=======
+    <title>Infográfico de Desempenho de Vendas - Junho 2024</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../css/style.css"> 
+    
+>>>>>>> e387abed08cdb5ede6adf27382e327b1d987e7e1
 </head>
 <body class="text-gray-800">
 
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-12">
+<<<<<<< HEAD
             <h1 class="text-4xl md:text-5xl font-bold text-[var(--color-dark-blue)] mb-4">Dashboard de Performance em Vendas <br class="md:hidden"> <span class="text-[var(--color-primary-green)]">Exagerado</span></h1>
             <p class="text-lg text-gray-600 max-w-3xl mx-auto">Navegue pelas análises de desempenho de vendas ao longo do tempo.</p>
         </header>
@@ -32,5 +45,498 @@
         </footer>
     </div>
 
+=======
+            <h1 class="text-4xl md:text-5xl font-bold text-[var(--color-dark-blue)] mb-2">Diagnóstico de Performance em Vendas - Junho 2024</h1>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">Uma análise visual dos funis de Outbound e Inbound, revelando gargalos críticos e oportunidades de crescimento.</p>
+            <a href="../index.html" class="text-[var(--color-dark-blue)] hover:underline mt-4 inline-block">&larr; Voltar ao Dashboard Principal</a>
+        </header>
+
+        <main>
+            <section id="kpi-overview" class="mb-16">
+                <h2 class="text-3xl font-bold text-center mb-8 text-[var(--color-dark-blue)]">O Desempenho Outbound em Números</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="kpi-card border-l-4 border-[var(--color-accent-orange)]">
+                        <p class="kpi-value text-[var(--color-accent-orange)]">5,8%</p>
+                        <p class="kpi-label">Ligações para Conversas Relevantes</p>
+                        <p class="text-sm text-gray-500 mt-2">Gargalo principal. A equipe está abaixo da média de mercado (8-15%).</p>
+                    </div>
+                    <div class="kpi-card border-l-4 border-[var(--color-accent-teal)]">
+                        <p class="kpi-value text-[var(--color-accent-teal)]">12,0%</p>
+                        <p class="kpi-label">Conversas Relevantes para Agendamentos</p>
+                         <p class="text-sm text-gray-500 mt-2">Ponto forte. Acima do benchmark de 9,25%, demonstrando alta eficácia.</p>
+                    </div>
+                    <div class="kpi-card border-l-4 border-[var(--color-accent-yellow)]">
+                        <p class="kpi-value text-[var(--color-accent-yellow)]">0,7%</p>
+                        <p class="kpi-label">Taxa de Conversão Geral (Ligações para Agendamentos)</p>
+                        <p class="text-sm text-gray-500 mt-2">Resultado impactado pelo gargalo inicial, bem abaixo da média de 2-5%.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="outbound-benchmark" class="mb-16 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-3xl font-bold text-center mb-2 text-[var(--color-dark-blue)]">Análise Comparativa do Funil Outbound</h2>
+                <p class="text-center text-gray-600 mb-8">Comparando as taxas de conversão da equipe com os benchmarks da indústria B2B.</p>
+                <div class="chart-container">
+                    <canvas id="outboundBenchmarkChart"></canvas>
+                </div>
+            </section>
+            
+            <section id="team-performance" class="mb-16 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-3xl font-bold text-center mb-2 text-[var(--color-dark-blue)]">Perfis de Performance Individual</h2>
+                <p class="text-center text-gray-600 mb-8">Comparativo das habilidades de conversão dos principais membros da equipe.</p>
+                <div class="chart-container">
+                    <canvas id="teamRadarChart"></canvas>
+                </div>
+            </section>
+
+            <section id="inbound-funnel" class="mb-16">
+                <h2 class="text-3xl font-bold text-center mb-8 text-[var(--color-dark-blue)]">O Funil Inbound: Um Gargalo Crítico</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <p class="text-center text-gray-600 mb-4">A jornada de 248 leads gerados pela V4 revela uma falha massiva na qualificação.</p>
+                        <div class="chart-container" style="height: 300px; max-height: 350px;">
+                            <canvas id="inboundFunnelChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-4">
+                        <div class="kpi-card">
+                             <p class="kpi-value text-[var(--color-accent-orange)]">0</p>
+                            <p class="kpi-label">Leads Qualificados (SQLs)</p>
+                            <p class="text-sm text-gray-500 mt-2">Uma taxa de conversão de MQL para SQL de 0% contra uma média de 28-46%.</p>
+                        </div>
+                         <div class="kpi-card">
+                             <p class="kpi-value text-[var(--color-accent-yellow)]">20%</p>
+                            <p class="kpi-label">Taxa de No-Show</p>
+                            <p class="text-sm text-gray-500 mt-2">1 de 5 reuniões agendadas não aconteceu.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="loss-reasons" class="mb-16 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-3xl font-bold text-center mb-2 text-[var(--color-dark-blue)]">Diagnóstico de Perdas: Por que os Leads Desaparecem?</h2>
+                <p class="text-center text-gray-600 mb-8">As principais razões para a perda de leads nas etapas iniciais e sua conexão direta com a alta taxa de no-shows.</p>
+                <div class="chart-container h-[500px] max-h-[550px]">
+                    <canvas id="lossReasonsChart"></canvas>
+                </div>
+            </section>
+
+            <section id="goal-analysis" class="mb-16">
+                <h2 class="text-3xl font-bold text-center mb-8 text-[var(--color-dark-blue)]">Metas vs. Realidade: Uma Análise Probabilística (Junho)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div class="kpi-card">
+                        <p class="kpi-value text-[var(--color-accent-orange)]">~0,04%</p>
+                        <p class="kpi-label">Chance de Bater a Meta de Ligações Relevantes</p>
+                        <p class="text-sm text-gray-500 mt-2">A meta diária de 24 ligações relevantes é estatisticamente inviável para a média atual.</p>
+                    </div>
+                    <div class="kpi-card">
+                        <p class="kpi-value text-[var(--color-accent-teal)]">~16,3%</p>
+                        <p class="kpi-label">Chance de Bater a Meta de Agendamentos (Média Estimada)</p>
+                        <p class="text-sm text-gray-500 mt-2">A meta de resultado é alcançável, mas o aumento das ligações relevantes não garante um ganho proporcional.</p>
+                    </div>
+                </div>
+                 <p class="text-center text-gray-600 mt-8 max-w-2xl mx-auto">A análise sugere que a meta de atividade (ligações relevantes) é desnecessariamente alta e, de forma contraintuitiva, o aumento drástico dessas ligações não impulsiona proporcionalmente a meta de resultado (agendamentos). É preciso reavaliar as metas para focar em qualidade.</p>
+            </section>
+
+            <section id="simulation-insights" class="mb-16 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-3xl font-bold text-center mb-2 text-[var(--color-dark-blue)]">Simulação de Cenários: O Impacto de Quadruplicar Ligações Relevantes</h2>
+                <p class="text-center text-gray-600 mb-8">Ajustando a média diária de ligações relevantes de 5 para 20, observamos uma transformação drástica nas probabilidades de sucesso.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-semibold text-center mb-4 text-[var(--color-dark-blue)]">Distribuição de Ligações Relevantes</h3>
+                        <div class="chart-container">
+                            <canvas id="relevantCallsSimulationChart"></canvas>
+                        </div>
+                        <p class="text-sm text-gray-600 text-center mt-4">A simulação (azul claro) se alinha bem aos dados reais (vermelho), validando o modelo. Ao quadruplicar a média, a distribuição se desloca significativamente para a direita, indicando um aumento substancial na frequência de altos volumes de ligações relevantes.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-center mb-4 text-[var(--color-dark-blue)]">Probabilidade de Atingir a Meta Individual</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white rounded-lg shadow-md">
+                                <thead class="bg-[#E2E8F0] text-gray-700">
+                                    <tr>
+                                        <th class="py-2 px-4 text-left">Responsável</th>
+                                        <th class="py-2 px-4 text-left">Probabilidade Simulada (%)</th>
+                                        <th class="py-2 px-4 text-left">Probabilidade Simulada (Média Quadruplicada) (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="py-2 px-4 border-b border-gray-200">Priscila Prado</td><td class="py-2 px-4 border-b border-gray-200">0.0%</td><td class="py-2 px-4 border-b border-gray-200">7.4%</td></tr>
+                                    <tr><td class="py-2 px-4 border-b border-gray-200">Bruna Azevedo</td><td class="py-2 px-4 border-b border-gray-200">0.0%</td><td class="py-2 px-4 border-b border-gray-200">0.4%</td></tr>
+                                    <tr><td class="py-2 px-4 border-b border-gray-200">Gustavo Dias</td><td class="py-2 px-4 border-b border-gray-200">N/A</td><td class="py-2 px-4 border-b border-gray-200">N/A</td></tr>
+                                    <tr><td class="py-2 px-4 border-b border-gray-200">Stela</td><td class="py-2 px-4 border-b border-gray-200">N/A</td><td class="py-2 px-4 border-b border-gray-200">N/A</td></tr>
+                                    <tr><td class="py-2 px-4 border-b border-gray-200">Emilin</td><td class="py-2 px-4 border-b border-gray-200">N/A</td><td class="py-2 px-4 border-b border-gray-200">N/A</td></tr>
+                                    <tr><td class="py-2 px-4 border-b border-gray-200">Maria Luisa</td><td class="py-2 px-4 border-b border-gray-200">N/A</td><td class="py-2 px-4 border-b border-gray-200">N/A</td></tr>
+                                    <tr><td class="py-2 px-4 border-b border-gray-200">Kelly</td><td class="py-2 px-4 border-b border-gray-200">N/A</td><td class="py-2 px-4 border-b border-gray-200">N/A</td></tr>
+                                    <tr><td class="py-2 px-4 border-b border-gray-200">Matheus</td><td class="py-2 px-4 border-b border-gray-200">N/A</td><td class="py-2 px-4 border-b border-gray-200">N/A</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-sm text-gray-600 text-center mt-4">Aumentar a média de ligações relevantes melhora drasticamente a probabilidade individual de atingir a meta, transformando metas inatingíveis em objetivos realistas para a maioria da equipe.</p>
+                    </div>
+                </div>
+                <div class="mt-8 bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-xl font-semibold text-[var(--color-dark-blue)] mb-2">Impacto nos Agendamentos:</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-2">
+                        <li><span class="font-semibold">Média Estimada de Ligações Relevantes:</span> Probabilidade P(Agendamentos >= 2) = <span class="text-[var(--color-accent-orange)] font-bold">16.3%</span></li>
+                        <li><span class="font-semibold">Média de Ligações Relevantes Quadruplicada:</span> Probabilidade P(Agendamentos >= 2) = <span class="text-[var(--color-accent-teal)] font-bold">8.22%</span></li>
+                    </ul>
+                    <p class="text-sm text-gray-600 mt-4">De forma contraintuitiva, quadruplicar a média de ligações relevantes *diminui* a probabilidade de atingir a meta de agendamentos. Isso reforça que o foco deve ser na *qualidade* e qualificação das interações, e não apenas no volume bruto de ligações relevantes.</p>
+                </div>
+            </section>
+
+            <section id="recommendations" class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-3xl font-bold text-center mb-4 text-[var(--color-dark-blue)]">Recomendações e Próximos Passos</h2>
+                <div class="space-y-6 text-gray-700">
+                    <div>
+                        <h3 class="text-xl font-semibold text-[var(--color-accent-orange)] mb-2">1. Reavaliar Metas de Atividade (Ligações Relevantes):</h3>
+                        <p>A meta atual de 24 ligações relevantes diárias é estatisticamente inviável (P($X \\ge 24$) = 0,04%). A análise probabilística corrobora a intuição de que esta meta é irreal e desmotivadora. Sugere-se ajustar essa meta para um valor mais realista, como 5-7 ligações relevantes diárias, que já permite uma boa probabilidade de atingir a meta de agendamentos (16.3%). A simulação mostra que quadruplicar a média de ligações relevantes para 20 aumentaria a probabilidade de atingir 24 ligações para 26.78%, um objetivo ainda ambicioso, mas muito mais plausível. No entanto, é crucial notar que essa elevação no volume não se traduz em um aumento proporcional nos agendamentos, e pode até mesmo diminuir a probabilidade de atingir a meta de agendamentos (caindo para 8.22% com a média quadruplicada).</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-[var(--color-accent-teal)] mb-2">2. Foco na Qualificação de Leads Outbound:</h3>
+                        <p>A baixa taxa de 'Ligações / Relevantes' (5,8%) é o principal gargalo. Investir em treinamento para BDRs em técnicas de qualificação, roteiros de chamada mais eficazes e segmentação de leads mais precisa pode melhorar essa métrica. A alta taxa de 'Relevantes / Agendamentos' (12,0%) indica que, uma vez que a conversa relevante é iniciada, a equipe é muito eficaz. O foco deve ser em aumentar o volume de conversas qualificadas.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-[var(--color-accent-yellow)] mb-2">3. Otimização do Funil Inbound (V4/QueroExpor):</h3>
+                        <p>A taxa de conversão de MQL para SQL de 0% e a taxa de no-show de 20% são alarmantes. É crucial revisar o processo de qualificação de leads vindos da V4. Isso pode incluir:
+                            <ul class="list-disc list-inside ml-4 mt-2">
+                                <li><strong>Alinhamento com V4:</strong> Garantir que os leads gerados pela V4 estejam alinhados com o Perfil de Cliente Ideal (ICP) da empresa.</li>
+                                <li><strong>Critérios de Qualificação:</strong> Reforçar os critérios de qualificação para MQLs e SQLs, talvez com um formulário mais detalhado ou uma primeira etapa de qualificação mais rigorosa.</li>
+                                <li><strong>Processo de Agendamento/Confirmação:</strong> Implementar um processo robusto de confirmação de agendamentos para reduzir no-shows, incluindo lembretes automatizados e contato proativo.</li>
+                            </ul>
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-[var(--color-dark-blue)] mb-2">4. Combate às Razões de Perda (Dados Incorretos e Fora de Perfil):</h3>
+                        <p>As principais razões de perda ('Empresa fora de perfil' e 'Dados incorretos/correlatos') nas etapas de Prospect e Leads são diretamente correlacionadas com a alta taxa de no-shows no funil inbound. Leads mal qualificados ou com dados incorretos são mais propensos a não comparecerem às reuniões. Ações incluem:
+                            <ul class="list-disc list-inside ml-4 mt-2">
+                                <li><strong>Enriquecimento de Dados:</strong> Melhorar o processo de enriquecimento de dados de prospectos para garantir informações precisas antes do contato.</li>
+                                <li><strong>Definição do ICP:</strong> Reforçar a definição do Perfil de Cliente Ideal (ICP) para que a prospecção e a geração de leads sejam mais direcionadas.</li>
+                                <li><strong>Feedback Contínuo:</strong> Estabelecer um ciclo de feedback entre as equipes de prospecção, BDRs e closers para ajustar rapidamente as estratégias de qualificação.</li>
+                            </ul>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="final-conclusions" class="bg-white rounded-lg shadow-md p-6 mt-16">
+                <h2 class="text-3xl font-bold text-center mb-4 text-[var(--color-dark-blue)]">Conclusões Gerais e Caminho para o Sucesso</h2>
+                <div class="space-y-6 text-gray-700">
+                    <div>
+                        <h3 class="text-xl font-semibold text-[var(--color-accent-orange)] mb-2">Gargalo Principal: Qualidade da Prospecção e Leads Inbound</h3>
+                        <p>A baixa taxa de "Ligações para Relevantes" (5,8%) e o funil Inbound (0% SQLs da V4) indicam que os BDRs estão perdendo tempo com leads fora de perfil ou com dados incorretos. Isso não só afeta a eficiência, mas também a moral da equipe ao lidar com contatos de baixo potencial.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-[var(--color-accent-teal)] mb-2">Nossa Força: Eficácia em Agendamentos Qualificados</h3>
+                        <p>A alta taxa de "Relevantes para Agendamentos" (12,0%) comprova que, com leads qualificados, a equipe converte muito bem. Este é um diferencial competitivo que deve ser alavancado, garantindo que os BDRs recebam leads com maior potencial de conversão.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-[var(--color-accent-yellow)] mb-2">A Solução: Qualidade na Base do Funil</h3>
+                        <p>A análise probabilística mostra que, mesmo aumentando drasticamente o volume de ligações relevantes, o ganho em agendamentos não é proporcional. O foco deve ser em desentupir o funil de prospecção, eliminando leads não qualificados e com dados incorretos, e revisar urgentemente a parceria com a V4. Isso permitirá que a equipe de BDRs concentre seus esforços em oportunidades reais, revelando seu verdadeiro desempenho e otimizando os resultados finais de agendamento e, consequentemente, de vendas.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-16 text-gray-500 text-sm">
+            <p>&copy; 2024 Análise de Performance de Vendas. Todos os direitos reservados.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Palette: Energetic & Playful
+        // Colors: #F47721 (Orange), #00BFB2 (Teal), #FDBB2D (Yellow), #004D7A (Dark Blue), #E2E8F0 (Light Gray)
+
+        // Function to wrap long labels for Chart.js
+        function wrapLabel(label) {
+            if (typeof label !== 'string' || label.length <= 16) {
+                return label;
+            }
+            const words = label.split(' ');
+            let lines = [];
+            let currentLine = '';
+            words.forEach(word => {
+                if ((currentLine + word).length > 16 && currentLine !== '') {
+                    lines.push(currentLine.trim());
+                    currentLine = word + ' ';
+                } else {
+                    currentLine += word + ' ';
+                }
+            });
+            if (currentLine !== '') {
+                lines.push(currentLine.trim());
+            }
+            return lines;
+        }
+
+        // Chart.js Tooltip Configuration
+        const chartTooltipConfig = {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels[item.dataIndex];
+                            if (Array.isArray(label)) {
+                                return label.join(' ');
+                            } else {
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // Outbound Benchmark Chart
+        const outboundBenchmarkCtx = document.getElementById('outboundBenchmarkChart').getContext('2d');
+        new Chart(outboundBenchmarkCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Ligações / Relevantes', 'Relevantes / Agendamentos', 'Ligações / Agendamentos'],
+                datasets: [
+                    {
+                        label: 'Sua Empresa (B2B)',
+                        data: [5.8, 12.0, 0.7],
+                        backgroundColor: '#F47721',
+                        borderRadius: 5
+                    },
+                    {
+                        label: 'Benchmark de Mercado (B2B)',
+                        data: [11.5, 9.25, 3.5], // Averages of ranges (8-15, 7-12, 2-5)
+                        backgroundColor: '#004D7A',
+                        borderRadius: 5
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Taxa de Conversão (%)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                ...chartTooltipConfig
+            }
+        });
+
+        // Team Radar Chart
+        const teamRadarCtx = document.getElementById('teamRadarChart').getContext('2d');
+        new Chart(teamRadarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Ligações / Relevantes', 'Relevantes / Agendamentos', 'Ligações / Agendamentos'],
+                datasets: [
+                    {
+                        label: 'Bruna Azevedo',
+                        data: [4.6, 26.8, 1.2],
+                        backgroundColor: 'rgba(244, 119, 33, 0.4)',
+                        borderColor: '#F47721',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#F47721'
+                    },
+                    {
+                        label: 'Emilin',
+                        data: [8.4, 4.7, 0.4],
+                        backgroundColor: 'rgba(0, 77, 122, 0.4)',
+                        borderColor: '#004D7A',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#004D7A'
+                    },
+                     {
+                        label: 'Stela',
+                        data: [6.5, 12.5, 0.8],
+                        backgroundColor: 'rgba(0, 191, 178, 0.4)',
+                        borderColor: '#00BFB2',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#00BFB2'
+                    },
+                    {
+                        label: 'Priscila Prado',
+                        data: [17.0, 14.3, 2.4],
+                        backgroundColor: 'rgba(253, 187, 45, 0.4)',
+                        borderColor: '#FDBB2D',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#FDBB2D'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 30,
+                        pointLabels: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                ...chartTooltipConfig
+            }
+        });
+
+        // Inbound Funnel Chart (Donut)
+        const inboundFunnelCtx = document.getElementById('inboundFunnelChart').getContext('2d');
+        new Chart(inboundFunnelCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['MQLs (248)', 'SQLs (0)', 'Reunião Agendada (5)', 'No-Show (1)', 'Reunião Realizada (1)'],
+                datasets: [{
+                    data: [248 - 5, 0, 5, 1, 1],
+                    backgroundColor: ['#004D7A', '#F47721', '#FDBB2D', '#E2E8F0', '#00BFB2'],
+                    borderColor: '#FFFFFF',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 20,
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    ...chartTooltipConfig.plugins
+                }
+            }
+        });
+
+        // Loss Reasons Chart (Bar Chart)
+        const lossReasonsCtx = document.getElementById('lossReasonsChart').getContext('2d');
+        new Chart(lossReasonsCtx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    wrapLabel('Empresa fora de perfil (Prospect)'),
+                    wrapLabel('Dados incorretos/correlatos (Leads)'),
+                    wrapLabel('ESTOQUE (Oportunidade)'),
+                    wrapLabel('INVESTIMENTO (Oportunidade)'),
+                    wrapLabel('INTERESSE (Oportunidade)'),
+                    wrapLabel('DISPONIBILIDADE (Oportunidade)'),
+                    wrapLabel('Cliente já é cliente (Leads)'),
+                    wrapLabel('B2C (Leads)'),
+                    wrapLabel('Falta informação de contato (Leads)'),
+                    wrapLabel('No-Show (Oportunidade)'),
+                    wrapLabel('Outros (Prospect)'),
+                    wrapLabel('Outros (Leads)'),
+                    wrapLabel('Outros (Oportunidade)')
+                ],
+                datasets: [
+                    {
+                        label: 'Número de Perdas',
+                        data: [430, 60, 17, 12, 10, 7, 30, 20, 20, 1, 25, 30, 7],
+                        backgroundColor: [
+                            '#F47721', '#00BFB2', '#FDBB2D', '#004D7A', '#F47721', '#00BFB2', '#FDBB2D', '#004D7A', '#F47721', '#E2E8F0', '#00BFB2', '#FDBB2D', '#004D7A'
+                        ],
+                        borderRadius: 5
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Contagem de Perdas'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                ...chartTooltipConfig
+            }
+        });
+
+        // Relevant Calls Simulation Chart (Line/Area Chart for density)
+        const relevantCallsSimulationCtx = document.getElementById('relevantCallsSimulationChart').getContext('2d');
+        new Chart(relevantCallsSimulationCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 50}, (_, i) => i), // Adjusted to 50 based on new graph
+                datasets: [
+                    {
+                        label: 'Distribuição Real',
+                        data: [
+                            0.07, 0.11, 0.12, 0.11, 0.09, 0.07, 0.05, 0.035, 0.025, 0.015,
+                            0.01, 0.007, 0.005, 0.003, 0.002, 0.001, 0.0005, 0.0002, 0.0001, 0.00005,
+                            0.00002, 0.00001, 0.000005, 0.000002, 0.000001, 0,0,0,0,0,0,0,0,0,0, // Taper off earlier
+                            0,0,0,0,0,0,0,0,0,0,
+                            0,0,0,0,0
+                        ].slice(0,50), // Ensure data matches labels length
+                        backgroundColor: 'rgba(244, 119, 33, 0.4)',
+                        borderColor: '#F47721',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Distribuição Simulada Quadruplicada',
+                        data: [
+                            0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.055,
+                            0.06, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.11, 0.10, 0.09,
+                            0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.015, 0.01, 0.005,
+                            0.002, 0.001, 0.0005, 0.0002, 0.0001, 0.00005, 0.00002, 0.00001, 0.000005, 0.000002,
+                            0.000001, 0,0,0,0,0,0,0,0,0
+                        ].slice(0,50), // Adjusted data based on new graph, tapering off around 40-50
+                        backgroundColor: 'rgba(0, 191, 178, 0.4)',
+                        borderColor: '#00BFB2',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Valores'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Densidade'
+                        },
+                        beginAtZero: true
+                    }
+                },
+                ...chartTooltipConfig
+            }
+        });
+    </script>
+>>>>>>> e387abed08cdb5ede6adf27382e327b1d987e7e1
 </body>
 </html>

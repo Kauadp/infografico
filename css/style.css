@@ -1,0 +1,100 @@
+/* Variáveis CSS para as cores da marca */
+:root {
+    --color-primary-green: #61BB46; /* Verde vibrante do Exagerado */
+    --color-secondary-purple: #5C3E8A; /* Roxo da seção "Marcas Fodas" */
+    --color-dark-blue: #004D7A; /* Azul escuro original dos títulos do infográfico */
+    --color-accent-orange: #F47721; /* Laranja de destaque */
+    --color-accent-teal: #00BFB2; /* Azul esverdeado original - mantido para gráficos se necessário */
+    --color-accent-yellow: #FDBB2D; /* Amarelo de destaque */
+    --color-light-gray-bg: #f0f4f8; /* Fundo geral */
+    --color-white: #FFFFFF;
+    --color-text-dark: #4A5568; /* Cor de texto mais escura */
+    --color-light-hover: #E2E8F0; /* Cor de hover para navegação */
+    --color-light-grey-arrow: #CBD5E0; /* Cor para setas ou elementos muito sutis */
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--color-light-gray-bg);
+    color: var(--color-text-dark);
+}
+
+/* Estilos gerais para títulos */
+h1, h2, h3 {
+    color: var(--color-dark-blue); /* Padrão para títulos, pode ser sobrescrito por Tailwind ou outras classes */
+}
+
+/* Estilos de container de gráficos */
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 350px;
+    max-height: 400px;
+}
+@media (min-width: 768px) {
+    .chart-container {
+        height: 400px;
+    }
+}
+
+/* Estilos de KPI Card */
+.kpi-card {
+    background-color: var(--color-white);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+.kpi-value {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.kpi-label {
+    font-size: 1rem;
+    color: var(--color-text-dark);
+    margin-top: 0.5rem;
+}
+.flow-arrow {
+    font-size: 2rem;
+    color: var(--color-light-grey-arrow);
+    align-self: center;
+}
+
+/* Cores específicas para os valores dos KPI cards no infográfico - usando as variáveis da marca */
+.kpi-card .text-[#F47721] { color: var(--color-accent-orange); } /* Cor laranja para valor */
+.kpi-card .text-[#00BFB2] { color: var(--color-accent-teal); } /* Cor teal para valor */
+.kpi-card .text-[#FDBB2D] { color: var(--color-accent-yellow); } /* Cor amarela para valor */
+
+
+/* Estilos para o menu de navegação no index.html */
+.nav-item {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    text-decoration: none;
+    font-weight: 600;
+    color: var(--color-text-dark); /* Cor padrão do texto do item do menu */
+}
+.nav-item:hover {
+    background-color: var(--color-light-hover);
+    color: var(--color-dark-blue);
+}
+.nav-item.active {
+    background-color: var(--color-primary-green); /* Verde vibrante para o item ativo */
+    color: var(--color-white);
+}
+
+/* Estilos para títulos de seções específicas que podem usar o roxo, se desejar aplicar */
+/* Adicione a classe 'section-title-purple' ao <h2> no HTML onde quiser essa cor */
+.section-title-purple {
+    color: var(--color-secondary-purple);
+}

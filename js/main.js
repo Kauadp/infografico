@@ -278,3 +278,52 @@ function createMonthlyAppointmentsChart(elementId, labels, data) {
         }
     });
 }
+// Adicione este código no final do seu arquivo js/main.js
+
+// --- script.js ---
+
+// --- script.js ---
+
+const API_URL = "http://127.0.0.1:25260"; 
+const formPrevisao = document.getElementById("form-previsao-negocios");
+const resultadoDiv = document.getElementById("resultadoNegocios");
+
+formPrevisao.addEventListener("submit", async function(event) {
+    event.preventDefault(); // ESTA É A LINHA QUE FALTAVA!
+
+    const dados = {
+        pipeline: document.getElementById("pipeline").value,
+        ticket: parseFloat(document.getElementById("ticket").value),
+        lojas: parseFloat(document.getElementById("lojas").value),
+        funcionarios: parseFloat(document.getElementById("funcionarios").value),
+        segmento: document.getElementById("segmento").value
+    };
+
+    resultadoDiv.textContent = 'Previsão em andamento...';
+    resultadoDiv.className = 'text-center mt-6 text-xl font-bold text-blue-500';
+
+    try {
+        const response = await fetch(`${API_URL}/prever_andamento`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(dados),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro no servidor');
+        }
+        
+        const data = await response.json();
+        
+        resultadoDiv.textContent = data.previsao;
+        resultadoDiv.className = 'text-center mt-6 text-xl font-bold text-green-600';
+
+    } catch (error) {
+        console.error('Erro ao chamar a API:', error);
+        resultadoDiv.textContent = 'Erro: ' + error.message;
+        resultadoDiv.className = 'text-center mt-6 text-xl font-bold text-red-600';
+    }
+});

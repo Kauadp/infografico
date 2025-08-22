@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Desempenho de Vendas - API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --color-dark-blue: #004D7A;
+            --color-accent-orange: #F47721;
+            --color-accent-teal: #00BFB2;
+            --color-accent-yellow: #FDBB2D;
+            --color-light-gray: #E2E8F0;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .kpi-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        
+        .kpi-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--color-dark-blue);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover {
+            background: #003a5d;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: var(--color-accent-teal);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            background: #009688;
+            transform: translateY(-1px);
+        }
+        
+        .btn-warning {
+            background: var(--color-accent-orange);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .btn-warning:hover {
+            background: #e6680a;
+            transform: translateY(-1px);
+        }
+        
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--color-dark-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .agendamento-item {
+            background: #f8fafc;
+            border: 1px solid var(--color-light-gray);
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-light-gray);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: var(--color-light-gray);
+            color: #374151;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        tr:hover {
+            background: #f8fafc;
+        }
+        
+        .metric-positive {
+            color: var(--color-accent-teal);
+            font-weight: 600;
+        }
+        
+        .metric-negative {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        .metric-warning {
+            color: var(--color-accent-orange);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-[var(--color-dark-blue)] mb-2">Dashboard de Desempenho de Vendas</h1>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">Configure os agendamentos da equipe e visualize o desempenho diário e semanal em tempo real.</p>
+        </header>
+
+        <main>
+            <!-- Seção de Entrada de Dados -->
+            <section id="input-section" class="mb-16 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-3xl font-bold text-center mb-8 text-[var(--color-dark-blue)]">Configuração de Agendamentos</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Formulário de Entrada -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 text-[var(--color-dark-blue)]">Adicionar Agendamento</h3>
+                        <form id="agendamentoForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Responsável:</label>
+                                <select id="responsavel" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Selecione o responsável</option>
+                                    <option value="Emilin">Emilin</option>
+                                    <option value="Stela">Stela</option>
+                                    <option value="Bruna Azevedo">Bruna Azevedo</option>
+                                    <option value="Gabriela Moreira">Gabriela Moreira</option>
+                                    <option value="Matheus">Matheus</option>
+                                    <option value="Kelly">Kelly</option>
+                                    <option value="Priscila Prado">Priscila Prado</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nome da Empresa:</label>
+                                <input type="text" id="empresa" placeholder="Digite o nome da empresa" 
+                                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Data da Reunião:</label>
+                                <input type="date" id="dataReuniao" 
+                                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <button type="submit" class="btn-primary w-full">Adicionar Agendamento</button>
+                        </form>
+                        
+                        <!-- Configuração da API -->
+                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <h4 class="text-lg font-semibold mb-3 text-[var(--color-dark-blue)]">Configuração da API</h4>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">URL Base da API:</label>
+                                <input type="url" id="apiUrl" placeholder="http://localhost:8000" value="http://localhost:8000"
+                                       class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de Agendamentos -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-[var(--color-dark-blue)]">Lista de Agendamentos</h3>
+                            <button onclick="limparAgendamentos()" class="btn-warning">Limpar Todos</button>
+                        </div>
+                        <div id="listaAgendamentos" class="space-y-2 max-h-80 overflow-y-auto">
+                            <p class="text-gray-500 text-center py-8">Nenhum agendamento adicionado ainda.</p>
+                        </div>
+                        
+                        <!-- Resumo por Responsável -->
+                        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                            <h4 class="text-lg font-semibold mb-3 text-[var(--color-dark-blue)]">Resumo por Responsável</h4>
+                            <div id="resumoResponsaveis" class="text-sm space-y-1">
+                                <p class="text-gray-500">Nenhum agendamento para resumir.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botões de Ação -->
+                <div class="mt-8 text-center">
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <button onclick="buscarDesempenhoDiario()" class="btn-primary flex items-center gap-2" id="btnDiario">
+                            <span>Buscar Desempenho Diário</span>
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <span>Carregando...</span>
+                            </div>
+                        </button>
+                        
+                        <button onclick="buscarDesempenhoSemanal()" class="btn-secondary flex items-center gap-2" id="btnSemanal">
+                            <span>Buscar Desempenho Semanal</span>
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <span>Carregando...</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção de Resultados -->
+            <section id="results-section" class="mb-16 bg-white rounded-lg shadow-md p-6" style="display: none;">
+                <h2 class="text-3xl font-bold text-center mb-8 text-[var(--color-dark-blue)]" id="resultsTitle">Resultados do Desempenho</h2>
+                
+                <!-- KPIs Principais -->
+                <div id="kpis-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- KPIs serão inseridos aqui dinamicamente -->
+                </div>
+                
+                <!-- Tabela de Resultados -->
+                <div class="table-container">
+                    <table id="resultsTable">
+                        <thead>
+                            <tr id="tableHeader">
+                                <!-- Cabeçalhos serão inseridos dinamicamente -->
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Dados serão inseridos dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
+             
+                <!-- Gráficos -->
+                <div id="charts-container" class="mt-12 space-y-8" style="display:none;">
+                    <div>
+                        <h3 class="text-2xl font-bold text-[var(--color-dark-blue)] mb-4">Desempenho Diário</h3>
+                        <canvas id="graficoDiario"></canvas>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-[var(--color-dark-blue)] mb-4">Agendamentos Semanais</h3>
+                        <canvas id="graficoSemanal"></canvas>
+                    </div>
+                </div>
+
+                <!-- Informações Adicionais -->
+                <div id="additionalInfo" class="mt-8 p-4 bg-gray-50 rounded-lg">
+                    <!-- Informações adicionais serão inseridas aqui -->
+                </div>
+            </section>
+                
+            <!-- Seção de Erros -->
+            <section id="error-section" class="mb-16 bg-red-50 border border-red-200 rounded-lg p-6" style="display: none;">
+                <h3 class="text-xl font-semibold text-red-800 mb-4">Erro na Requisição</h3>
+                <div id="errorMessage" class="text-red-700"></div>
+                <div class="mt-4">
+                    <h4 class="font-semibold text-red-800 mb-2">Possíveis soluções:</h4>
+                    <ul class="list-disc list-inside text-red-700 space-y-1">
+                        <li>Verifique se a URL da API está correta</li>
+                        <li>Certifique-se de que a API está rodando</li>
+                        <li>Verifique se há agendamentos configurados</li>
+                        <li>Consulte o console do navegador para mais detalhes</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-16 text-gray-500 text-sm">
+            <p>&copy; 2025 Dashboard de Desempenho de Vendas. Desenvolvido para integração com API Plumber.</p>
+            <div class="mt-4">
+            <a href="../index.html" class="btn-secondary">⬅ Voltar à Página Inicial</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let agendamentos = [];
+        
+        // Configurar data padrão para hoje
+        document.getElementById('dataReuniao').valueAsDate = new Date();
+        
+        // Submissão do formulário
+        document.getElementById('agendamentoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const responsavel = document.getElementById('responsavel').value;
+            const empresa = document.getElementById('empresa').value;
+            const dataReuniao = document.getElementById('dataReuniao').value;
+            
+            if (!responsavel || !empresa || !dataReuniao) {
+                alert('Por favor, preencha todos os campos!');
+                return;
+            }
+            
+            // Adicionar à lista
+            agendamentos.push({
+                responsavel,
+                empresa,
+                dataReuniao
+            });
+            
+            // Limpar formulário
+            document.getElementById('empresa').value = '';
+            
+            // Atualizar interface
+            atualizarListaAgendamentos();
+            atualizarResumoResponsaveis();
+        });
+        
+        function atualizarListaAgendamentos() {
+            const container = document.getElementById('listaAgendamentos');
+            
+            if (agendamentos.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Nenhum agendamento adicionado ainda.</p>';
+                return;
+            }
+            
+            container.innerHTML = agendamentos.map((agendamento, index) => `
+                <div class="agendamento-item">
+                    <div>
+                        <div class="font-semibold text-gray-900">${agendamento.empresa}</div>
+                        <div class="text-sm text-gray-600">${agendamento.responsavel} • ${new Date(agendamento.dataReuniao + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                    </div>
+                    <button onclick="removerAgendamento(${index})" class="text-red-500 hover:text-red-700 font-bold text-xl">×</button>
+                </div>
+            `).join('');
+        }
+        
+        function atualizarResumoResponsaveis() {
+            const resumo = {};
+            
+            agendamentos.forEach(agendamento => {
+                resumo[agendamento.responsavel] = (resumo[agendamento.responsavel] || 0) + 1;
+            });
+            
+            const container = document.getElementById('resumoResponsaveis');
+            
+            if (Object.keys(resumo).length === 0) {
+                container.innerHTML = '<p class="text-gray-500">Nenhum agendamento para resumir.</p>';
+                return;
+            }
+            
+            container.innerHTML = Object.entries(resumo)
+                .map(([responsavel, count]) => 
+                    `<div class="flex justify-between"><span>${responsavel}:</span><span class="font-semibold">${count} agendamento(s)</span></div>`
+                ).join('');
+        }
+        
+        function removerAgendamento(index) {
+            agendamentos.splice(index, 1);
+            atualizarListaAgendamentos();
+            atualizarResumoResponsaveis();
+        }
+        
+        function limparAgendamentos() {
+            if (agendamentos.length > 0 && confirm('Tem certeza que deseja limpar todos os agendamentos?')) {
+                agendamentos = [];
+                atualizarListaAgendamentos();
+                atualizarResumoResponsaveis();
+            }
+        }
+        
+        function prepararDadosParaAPI() {
+            const dadosAPI = {};
+            
+            agendamentos.forEach(agendamento => {
+                dadosAPI[agendamento.responsavel] = (dadosAPI[agendamento.responsavel] || 0) + 1;
+            });
+            
+            return dadosAPI;
+        }
+        
+        async function buscarDesempenhoDiario() {
+            await fazerRequisicaoAPI('/desempenho-diario', 'btnDiario', 'Desempenho Diário');
+        }
+        
+        async function buscarDesempenhoSemanal() {
+            await fazerRequisicaoAPI('/desempenho-semanal', 'btnSemanal', 'Desempenho Semanal');
+        }
+        
+        async function fazerRequisicaoAPI(endpoint, buttonId, titulo) {
+            const btn = document.getElementById(buttonId);
+            const loading = btn.querySelector('.loading');
+            const span = btn.querySelector('span');
+            
+            if (agendamentos.length === 0) {
+                alert('Por favor, adicione pelo menos um agendamento antes de buscar os dados!');
+                return;
+            }
+            
+            // Mostrar loading
+            span.style.display = 'none';
+            loading.style.display = 'flex';
+            btn.disabled = true;
+            
+            // Esconder seções
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('error-section').style.display = 'none';
+            
+            try {
+                const apiUrl = document.getElementById('apiUrl').value;
+                const dadosAPI = prepararDadosParaAPI();
+                
+                console.log('Enviando dados para API:', dadosAPI);
+                
+                const response = await fetch(`${apiUrl}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dadosAPI)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Resposta da API:', data);
+                
+                if (data.erro) {
+                    throw new Error(data.erro);
+                }
+                
+                exibirResultados(data, titulo);
+                
+            } catch (error) {
+                console.error('Erro na requisição:', error);
+                exibirErro(error.message);
+            } finally {
+                // Esconder loading
+                span.style.display = 'inline';
+                loading.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+        
+        function exibirResultados(data, titulo) {
+            document.getElementById('resultsTitle').textContent = `Resultados do ${titulo}`;
+            
+            // Verificar se data é um array
+            const dados = Array.isArray(data) ? data : [data];
+            
+            if (dados.length === 0) {
+                exibirErro('Nenhum dado retornado pela API');
+                return;
+            }
+            
+            // Criar KPIs
+            criarKPIs(dados);
+            
+            // Criar tabela
+            criarTabela(dados);
+
+            // Criar gráficos
+            renderizarGraficos(dados, titulo);
+            
+            // Mostrar seção de resultados
+            document.getElementById('results-section').style.display = 'block';
+            
+            // Scroll para resultados
+            document.getElementById('results-section').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+        
+        function criarKPIs(dados) {
+            const container = document.getElementById('kpis-container');
+            
+            // Calcular totais
+            const totalAgendamentos = dados.reduce((sum, item) => sum + (item.agendamento || 0), 0);
+            const totalLigacoes = dados.reduce((sum, item) => sum + (item.ligacoes_totais || 0), 0);
+            const totalRelevantes = dados.reduce((sum, item) => sum + (item.ligacoes_relevantes || 0), 0);
+            
+            const taxaRelevancia = totalLigacoes > 0 ? ((totalRelevantes / totalLigacoes) * 100).toFixed(1) : 0;
+            const taxaConversao = totalRelevantes > 0 ? ((totalAgendamentos / totalRelevantes) * 100).toFixed(1) : 0;
+            
+            container.innerHTML = `
+                <div class="kpi-card border-l-4 border-[var(--color-accent-orange)]">
+                    <p class="kpi-value text-[var(--color-accent-orange)]">${totalAgendamentos}</p>
+                    <p class="kpi-label">Total de Agendamentos</p>
+                    <p class="text-sm text-gray-500 mt-2">Soma de todos os agendamentos da equipe</p>
+                </div>
+                <div class="kpi-card border-l-4 border-[var(--color-accent-teal)]">
+                    <p class="kpi-value text-[var(--color-accent-teal)]">${totalLigacoes}</p>
+                    <p class="kpi-label">Total de Ligações</p>
+                    <p class="text-sm text-gray-500 mt-2">${totalRelevantes} ligações relevantes (${taxaRelevancia}%)</p>
+                </div>
+                <div class="kpi-card border-l-4 border-[var(--color-accent-yellow)]">
+                    <p class="kpi-value text-[var(--color-accent-yellow)]">${taxaConversao}%</p>
+                    <p class="kpi-label">Taxa de Conversão</p>
+                    <p class="text-sm text-gray-500 mt-2">Ligações relevantes para agendamentos</p>
+                </div>
+            `;
+        }
+        
+        function criarTabela(dados) {
+            const tableHeader = document.getElementById('tableHeader');
+            const tableBody = document.getElementById('tableBody');
+            
+            if (dados.length === 0) return;
+            
+            // Obter colunas do primeiro item
+            const colunas = Object.keys(dados[0]);
+            
+            // Criar cabeçalho
+            tableHeader.innerHTML = colunas.map(coluna => 
+                `<th>${formatarNomeColuna(coluna)}</th>`
+            ).join('');
+            
+            // Criar linhas
+            tableBody.innerHTML = dados.map(item => 
+                `<tr>
+                    ${colunas.map(coluna => 
+                        `<td>${formatarValorColuna(coluna, item[coluna])}</td>`
+                    ).join('')}
+                </tr>`
+            ).join('');
+        }
+        
+        function formatarNomeColuna(nome) {
+            const mapeamento = {
+                'responsavel': 'Responsável',
+                'ligacoes_totais': 'Ligações Totais',
+                'ligacoes_relevantes': 'Ligações Relevantes',
+                'agendamento': 'Agendamentos',
+                'meta_ligacoes': 'Meta Ligações',
+                'meta_ligacoes_relevantes': 'Meta Ligações Relevantes',
+                'meta_agendamento': 'Meta Agendamentos',
+                'atingimento_ligacoes': 'Atingimento Ligações',
+                'atingimento_ligacoes_relevantes': 'Atingimento Ligações Relevantes',
+                'atingimento_agendamento': 'Atingimento Agendamentos',
+                'ligacao_x_ligacao_relevante': 'Taxa Ligação → Relevante',
+                'ligacao_relevante_x_agendamento': 'Taxa Relevante → Agendamento',
+                'ligacao_x_agendamento': 'Taxa Ligação → Agendamento',
+                'data': 'Data'
+            };
+            
+            return mapeamento[nome] || nome;
+        }
+        
+        function formatarValorColuna(coluna, valor) {
+            if (valor === null || valor === undefined) {
+                return '-';
+            }
+            
+            // Formatação de percentuais (atingimentos e taxas)
+            if (coluna.includes('atingimento') || coluna.includes('_x_')) {
+                const percentual = (valor * 100).toFixed(1);
+                let classe = '';
+                
+                if (coluna.includes('atingimento')) {
+                    if (valor >= 1) classe = 'metric-positive';
+                    else if (valor >= 0.7) classe = 'metric-warning';
+                    else classe = 'metric-negative';
+                }
+                
+                return `<span class="${classe}">${percentual}%</span>`;
+            }
+            
+            // Formatação de data
+            if (coluna === 'data') {
+                return new Date(valor).toLocaleDateString('pt-BR');
+            }
+            
+            // Números inteiros
+            if (typeof valor === 'number' && valor % 1 === 0) {
+                return valor.toLocaleString('pt-BR');
+            }
+            
+            // Números decimais
+            if (typeof valor === 'number') {
+                return valor.toFixed(2);
+            }
+            
+            return valor;
+        }
+        
+        function exibirErro(mensagem) {
+            document.getElementById('errorMessage').textContent = mensagem;
+            document.getElementById('error-section').style.display = 'block';
+            document.getElementById('error-section').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+    </script>
+    <script>
+    // Note: Esta função DEVE ser inserida após a função `exibirResultados`
+    // para que a variável `dados` seja reconhecida corretamente.
+
+    function renderizarGraficos(dados, titulo) {
+        // Exibe a área de gráficos
+        document.getElementById("charts-container").style.display = "block";
+
+        // Destruir gráficos existentes para evitar duplicação
+        const canvasDiario = document.getElementById('graficoDiario');
+        const canvasSemanal = document.getElementById('graficoSemanal');
+        
+        if (canvasDiario.chart) canvasDiario.chart.destroy();
+        if (canvasSemanal.chart) canvasSemanal.chart.destroy();
+
+        // Obter dados para os gráficos
+        const labels = dados.map(item => item.responsavel);
+        const agendamentosData = dados.map(item => item.agendamento);
+        const ligacoesRelevantesData = dados.map(item => item.ligacoes_relevantes);
+        
+        // 🔹 Gráfico de Barras: Comparativo por Responsável
+        const ctxComparativo = document.getElementById("graficoDiario").getContext("2d");
+        canvasDiario.chart = new Chart(ctxComparativo, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Agendamentos",
+                        data: agendamentosData,
+                        backgroundColor: "rgba(253, 187, 45, 0.8)",
+                        borderColor: "rgba(253, 187, 45, 1)",
+                        borderWidth: 1
+                    },
+                    {
+                        label: "Ligações Relevantes",
+                        data: ligacoesRelevantesData,
+                        backgroundColor: "rgba(0, 191, 178, 0.8)",
+                        borderColor: "rgba(0, 191, 178, 1)",
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `Comparativo de Desempenho - ${titulo}`
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 🔹 Gráfico de Linha: Taxa de Conversão
+        const ctxConversao = document.getElementById("graficoSemanal").getContext("2d");
+        canvasSemanal.chart = new Chart(ctxConversao, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Taxa de Conversão (Agendamentos / Ligações Relevantes)",
+                        data: dados.map(item => item.ligacao_relevante_x_agendamento * 100),
+                        fill: false,
+                        borderColor: "rgb(0, 77, 122)",
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `Taxa de Conversão por Responsável - ${titulo}`
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

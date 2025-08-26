@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="shortcut icon" href="../imagens/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -177,6 +178,41 @@
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
+    <script>
+  // O token do usuário logado
+  const token = localStorage.getItem("token");
+
+  // Se não houver token, redireciona imediatamente
+  if (!token) {
+    window.location.href = "../login.html";
+  }
+
+  // Função para verificar se o token é válido
+  async function checkAuth() {
+    try {
+      const response = await fetch("https://api-login-zmcb.onrender.com/dados-protegidos", {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      
+      // Se a resposta não for OK (por exemplo, 401), redireciona
+      if (!response.ok) {
+        throw new Error("Token inválido ou expirado.");
+      }
+      
+      console.log("Token válido. O usuário pode continuar.");
+      // Aqui você poderia carregar dados ou exibir o conteúdo
+      // document.body.style.display = 'block'; // Se o body estiver hidden inicialmente
+    } catch (error) {
+      console.error("Erro de autenticação:", error);
+      localStorage.removeItem("token"); // Limpa o token inválido
+      window.location.href = "../login.html"; // Redireciona para o login
+    }
+  }
+  
+  // Executa a verificação
+  checkAuth();
+</script>
 
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-12">

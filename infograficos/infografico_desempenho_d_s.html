@@ -743,7 +743,15 @@
                     throw new Error(data.erro);
                 }
                 
-                exibirResultados(data, titulo);
+                // Extrair os dados do novo formato da API
+                const dadosParaExibir = data.dados || data;
+                
+                // Verificar se há dados válidos
+                if (!dadosParaExibir || (Array.isArray(dadosParaExibir) && dadosParaExibir.length === 0)) {
+                    throw new Error('Nenhum dado retornado pela API');
+                }
+                
+                exibirResultados(dadosParaExibir, titulo);
                 
             } catch (error) {
                 console.error('Erro na requisição:', error);

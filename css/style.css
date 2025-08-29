@@ -6,7 +6,7 @@
     --color-accent-orange: #F47721; /* Laranja de destaque */
     --color-accent-teal: #00BFB2; /* Azul esverdeado original - mantido para gráficos se necessário */
     --color-accent-yellow: #FDBB2D; /* Amarelo de destaque */
-    --color-light-gray-bg: #f0f4f8; /* Fundo geral */
+    --color-light-gray-bg: #FDF9F3; /* Fundo geral */
     --color-white: #FFFFFF;
     --color-text-dark: #4A5568; /* Cor de texto mais escura */
     --color-light-hover: #E2E8F0; /* Cor de hover para navegação */
@@ -144,4 +144,3 @@ tr:nth-child(even) {
 tr:hover {
   background-color: #fff3e0;
 }
-

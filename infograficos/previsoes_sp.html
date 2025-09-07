@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Previsão de Tendências de Marcas</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Paleta de cores do e-commerce */
+        :root {
+            --color-primary-green: #57da1c;
+            --color-secondary-purple: #E54E88;
+            --color-dark-blue: #222222;
+            --color-accent-orange: #f95b3c;
+            --color-accent-teal: #00BFB2;
+            --color-accent-yellow: #FDBB2D;
+            --color-light-gray-bg: #F0F0F0;
+            --color-white: #FFFFFF;
+            --color-text-dark: #4A5568;
+            --color-light-hover: #EFEFEF;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif; 
+            background-color: var(--color-light-gray-bg); 
+            color: var(--color-text-dark);
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, var(--color-secondary-purple), var(--color-accent-orange));
+            color: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(229, 78, 136, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        .main-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .kpi-card {
+            background-color: var(--color-white); 
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+            border-left: 6px solid var(--color-secondary-purple);
+        }
+        .kpi-card:hover { 
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        }
+        .kpi-value {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--color-accent-orange);
+            margin-bottom: 0.5rem;
+        }
+        .kpi-label {
+            font-weight: 700;
+            color: var(--color-text-dark);
+            font-size: 1.2rem;
+        }
+        
+        .brand-card {
+            background-color: var(--color-white); 
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: left; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease; 
+            border-left: 6px solid var(--color-secondary-purple);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .brand-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-secondary-purple), var(--color-accent-orange), var(--color-accent-teal));
+        }
+
+        .brand-card:hover { 
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            border-left-color: var(--color-accent-orange);
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--color-dark-blue);
+            margin-bottom: 1rem;
+        }
+
+        .risk-pill {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--color-white);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .risk-grave { 
+            background: linear-gradient(135deg, #e63946, #d62828);
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4);
+        }
+        .risk-atencao { 
+            background: linear-gradient(135deg, var(--color-accent-orange), #e6680a);
+            box-shadow: 0 4px 15px rgba(249, 91, 60, 0.4);
+        }
+        .risk-leve { 
+            background: linear-gradient(135deg, var(--color-primary-green), #4ade80);
+            box-shadow: 0 4px 15px rgba(87, 218, 28, 0.4);
+        }
+        .risk-nenhum { 
+            background: linear-gradient(135deg, var(--color-accent-teal), #06b6d4);
+            box-shadow: 0 4px 15px rgba(0, 191, 178, 0.4);
+        }
+
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .metric-item {
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--color-text-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--color-dark-blue);
+        }
+
+        .metric-value.positive {
+            color: var(--color-primary-green);
+        }
+
+        .metric-value.negative {
+            color: var(--color-accent-orange);
+        }
+
+        .commission-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--color-light-gray-bg);
+        }
+
+        .commission-label {
+            font-size: 0.875rem;
+            color: var(--color-text-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .commission-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--color-secondary-purple);
+        }
+
+        .container {
+            max-width: 1400px;
+        }
+
+        .grid-responsive {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .analytics-section {
+            margin-bottom: 3rem;
+        }
+
+        .chart-container {
+            background-color: var(--color-white);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-left: 6px solid var(--color-secondary-purple);
+            height: 400px;
+            position: relative;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-dark-blue);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .chart-canvas {
+            height: 300px !important;
+            width: 100% !important;
+            position: relative;
+        }
+
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            background-color: var(--color-white);
+            padding: 1.5rem;
+            border-left: 6px solid var(--color-secondary-purple);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: var(--color-secondary-purple);
+            color: var(--color-white);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: var(--color-white);
+        }
+        
+        tr:hover {
+            background: #f8fafc;
+        }
+        
+        .metric-positive {
+            color: var(--color-primary-green);
+            font-weight: 600;
+        }
+        
+        .metric-negative {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        @media (max-width: 640px) {
+            .main-header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .metric-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .risk-pill {
+                position: static;
+                display: inline-block;
+                margin-bottom: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-responsive {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+  // O token do usuário logado
+  const token = localStorage.getItem("token");
+
+  // Se não houver token, redireciona imediatamente
+  if (!token) {
+    window.location.href = "../login.html";
+  }
+
+  // Função para verificar se o token é válido
+  async function checkAuth() {
+    try {
+      const response = await fetch("https://api-login-zmcb.onrender.com/dados-protegidos", {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      
+      // Se a resposta não for OK (por exemplo, 401), redireciona
+      if (!response.ok) {
+        throw new Error("Token inválido ou expirado.");
+      }
+      
+      console.log("Token válido. O usuário pode continuar.");
+      // Aqui você poderia carregar dados ou exibir o conteúdo
+      // document.body.style.display = 'block'; // Se o body estiver hidden inicialmente
+    } catch (error) {
+      console.error("Erro de autenticação:", error);
+      localStorage.removeItem("token"); // Limpa o token inválido
+      window.location.href = "../login.html"; // Redireciona para o login
+    }
+  }
+  
+  // Executa a verificação
+  checkAuth();
+</script>
+
+    <div class="container mx-auto p-4 sm:p-8">
+        <header class="main-header">
+            <h1>Dashboard de Previsão de Tendências de Marcas</h1>
+            <div class="mt-4">
+            <a href="../index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
+        </div>
+        </header>
+
+        <!-- Seção de KPIs e Gráficos Analíticos -->
+        <section class="analytics-section mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="total-empresas">0</div>
+                    <div class="kpi-label">Total de Empresas</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="empresas-risco-grave">0</div>
+                    <div class="kpi-label">Risco Grave</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="falta-demanda">0</div>
+                    <div class="kpi-label">Falta Demanda</div>
+                </div>
+            </div>
+
+            <!-- Tabela de Resumo por Risco -->
+            <div class="table-container">
+                <h3 class="chart-title mb-4">Resumo Detalhado por Categoria</h3>
+                <table id="summaryTable">
+                    <thead>
+                        <tr>
+                            <th>Nível de Risco</th>
+                            <th>Quantidade</th>
+                            <th>Diferença Média</th>
+                            <th>Gap Médio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dados preenchidos via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <main id="cards-container" class="grid-responsive">
+            <!-- Cards serão gerados dinamicamente pelo JavaScript -->
+        </main>
+    </div>
+
+    <script>
+        const data = [
+            {"Empresa":"Acostamento","Diferença":720000,"Potencial":720000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado"},
+            {"Empresa":"Ana Gonçalves Tricot","Diferença":1499654,"Potencial":1500000,"Gap":99.9769,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
+            {"Empresa":"Approve","Diferença":2000280,"Potencial":3500000,"Gap":57.1509,"Risco":"Atenção","Falta":"Demanda","Comissão":"15%"},
+            {"Empresa":"Aramis","Diferença":-3545375,"Potencial":1200000,"Gap":295.448,"Risco":"Grave","Falta":"Oferta","Comissão":"Consignado"},
+            {"Empresa":"Arezzo","Diferença":1200682,"Potencial":1666000,"Gap":72.0697,"Risco":"Atenção","Falta":"Demanda","Comissão":"8,5%"},
+            {"Empresa":"Bella Curves","Diferença":300000,"Potencial":300000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"Não"},
+            {"Empresa":"Blunt","Diferença":240213.9,"Potencial":400000,"Gap":60,"Risco":"Atenção","Falta":"Demanda","Comissão":"8%"},
+            {"Empresa":"Casas Bahia","Diferença":766620,"Potencial":1000000,"Gap":76.662,"Risco":"Atenção","Falta":"Demanda","Comissão":"Não"},
+            {"Empresa":"Chilli Beans","Diferença":1408300,"Potencial":1408300,"Gap":69.6416,"Risco":"Atenção","Falta":"Demanda","Comissão":"10%"},
+            {"Empresa":"Consciência Jeans","Diferença":572056,"Potencial":1257400,"Gap":45.4952,"Risco":"Leve","Falta":"Demanda","Comissão":"10%"},
+            {"Empresa":"Di Santini","Diferença":799029.7,"Potencial":800000,"Gap":99.8787,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
+            {"Empresa":"Gigio Geek","Diferença":900000,"Potencial":900000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
+            {"Empresa":"Highstil","Diferença":2749155,"Potencial":4000000,"Gap":68.7289,"Risco":"Atenção","Falta":"Demanda","Comissão":"8%"},
+            {"Empresa":"Jequitibá Móveis","Diferença":8500000,"Potencial":8500000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
+            {"Empresa":"Laguna","Diferença":3412025,"Potencial":5500000,"Gap":62.0368,"Risco":"Atenção","Falta":"Demanda","Comissão":"10%"},
+            {"Empresa":"M.Officer","Diferença":1050000,"Potencial":1050000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
+            {"Empresa":"Malwee","Diferença":1190720,"Potencial":1440000,"Gap":82.6889,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado"},
+            {"Empresa":"Nicoboco","Diferença":467059.1,"Potencial":500000,"Gap":93.4118,"Risco":"Grave","Falta":"Demanda","Comissão":"8%"},
+            {"Empresa":"NXO","Diferença":300000,"Potencial":300000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"Não"},
+            {"Empresa":"Privalia","Diferença":4481111,"Potencial":4800000,"Gap":93.3565,"Risco":"Grave","Falta":"Demanda","Comissão":"7,5%"},
+            {"Empresa":"Rojemac","Diferença":1198131,"Potencial":1500000,"Gap":79.8754,"Risco":"Atenção","Falta":"Demanda","Comissão":"Consignado"},
+            {"Empresa":"Tapetes São Carlos","Diferença":7599581,"Potencial":8000000,"Gap":94.9948,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado"},
+            {"Empresa":"Triton","Diferença":2486702,"Potencial":2500000,"Gap":99.4681,"Risco":"Grave","Falta":"Demanda","Comissão":"20%"},
+            {"Empresa":"Tupode","Diferença":-595012.7,"Potencial":500000,"Gap":119.0025,"Risco":"Nenhum","Falta":"Oferta","Comissão":"10%"},
+            {"Empresa":"Vans","Diferença":1603044,"Potencial":2509000,"Gap":63.8918,"Risco":"Atenção","Falta":"Demanda","Comissão":"8,5%"},
+            {"Empresa":"Zoe Sports","Diferença":300000,"Potencial":300000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
+            {"Empresa":"Zune","Diferença":999181.8,"Potencial":1000000,"Gap":99.9182,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"}
+        ];
+        
+        const formatCurrency = (value) => {
+            const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+            return formattedValue.replace('R$', 'R$ ');
+        };
+
+        const createCard = (item) => {
+            const riskClass = `risk-${item.Risco.toLowerCase().replace(/ã/g, 'a').replace('ç', 'c')}`;
+            const diffClass = item.Diferença < 0 ? 'positive' : 'negative';
+
+            return `
+                <div class="brand-card">
+                    <div class="brand-name">${item.Empresa}</div>
+                    <div class="risk-pill ${riskClass}">${item.Risco}</div>
+
+                    <div class="metric-row">
+                        <div class="metric-item">
+                            <div class="metric-label">Diferença</div>
+                            <div class="metric-value ${diffClass}">${formatCurrency(item.Diferença)}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Potencial</div>
+                            <div class="metric-value">${formatCurrency(item.Potencial)}</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-row">
+                        <div class="metric-item">
+                            <div class="metric-label">Gap</div>
+                            <div class="metric-value">${item.Gap.toFixed(1)}%</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Falta</div>
+                            <div class="metric-value">${item.Falta}</div>
+                        </div>
+                    </div>
+
+                    <div class="commission-section">
+                        <div class="commission-label">Comissão</div>
+                        <div class="commission-value">${item.Comissão}</div>
+                    </div>
+                </div>
+            `;
+        };
+
+        const updateKPIs = () => {
+            const totalEmpresas = data.length;
+            const empresasRiscoGrave = data.filter(item => item.Risco === 'Grave').length;
+            const empresasFaltaDemanda = data.filter(item => item.Falta === 'Demanda').length;
+
+            document.getElementById('total-empresas').textContent = totalEmpresas;
+            document.getElementById('empresas-risco-grave').textContent = empresasRiscoGrave;
+            document.getElementById('falta-demanda').textContent = empresasFaltaDemanda;
+        };
+
+        const createRiskChart = () => {
+            const riskCounts = data.reduce((acc, item) => {
+                acc[item.Risco] = (acc[item.Risco] || 0) + 1;
+                return acc;
+            }, {});
+
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(riskCounts),
+                    datasets: [{
+                        data: Object.values(riskCounts),
+                        backgroundColor: [
+                            '#e63946', // Grave
+                            '#f95b3c', // Atenção
+                            '#57da1c', // Leve
+                            '#00BFB2'  // Nenhum
+                        ],
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    family: 'Nunito',
+                                    weight: '600'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        const createDemandChart = () => {
+            const demandCounts = data.reduce((acc, item) => {
+                acc[item.Falta] = (acc[item.Falta] || 0) + 1;
+                return acc;
+            }, {});
+
+            const ctx = document.getElementById('demandChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(demandCounts),
+                    datasets: [{
+                        data: Object.values(demandCounts),
+                        backgroundColor: [
+                            '#E54E88', // Demanda
+                            '#FDBB2D'  // Oferta
+                        ],
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    family: 'Nunito',
+                                    weight: '600'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        const createSummaryTable = () => {
+            const riskGroups = data.reduce((acc, item) => {
+                if (!acc[item.Risco]) {
+                    acc[item.Risco] = [];
+                }
+                acc[item.Risco].push(item);
+                return acc;
+            }, {});
+
+            const tbody = document.querySelector('#summaryTable tbody');
+            
+            Object.keys(riskGroups).forEach(risk => {
+                const group = riskGroups[risk];
+                const count = group.length;
+                const avgDiferenca = group.reduce((sum, item) => sum + item.Diferença, 0) / count;
+                const avgGap = group.reduce((sum, item) => sum + item.Gap, 0) / count;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${risk}</strong></td>
+                    <td>${count}</td>
+                    <td class="${avgDiferenca < 0 ? 'metric-positive' : 'metric-negative'}">${formatCurrency(avgDiferenca)}</td>
+                    <td>${avgGap.toFixed(1)}%</td>
+                `;
+                tbody.appendChild(row);
+            });
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('cards-container');
+            data.forEach(item => {
+                container.innerHTML += createCard(item);
+            });
+
+            updateKPIs();
+            
+            // Aguardar um pequeno delay para garantir que os elementos canvas estejam renderizados
+            setTimeout(() => {
+                createRiskChart();
+                createDemandChart();
+            }, 100);
+            
+            createSummaryTable();
+        });
+    </script>
+
+</body>
+</html>

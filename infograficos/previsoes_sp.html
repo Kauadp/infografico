@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Previsão de Tendências de Marcas</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -33,10 +32,17 @@
             --color-light-hover: #EFEFEF;
         }
         
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: 'Nunito', sans-serif; 
             background-color: var(--color-light-gray-bg); 
             color: var(--color-text-dark);
+            line-height: 1.6;
         }
 
         .main-header {
@@ -55,6 +61,98 @@
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
+        .btn-warning {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: var(--color-white);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+        }
+
+        .filters-section {
+            background-color: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-left: 6px solid var(--color-secondary-purple);
+            margin-bottom: 2rem;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-label {
+            font-weight: 700;
+            color: var(--color-dark-blue);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .filter-input, .filter-select {
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+            background-color: var(--color-white);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: var(--color-secondary-purple);
+            box-shadow: 0 0 0 3px rgba(229, 78, 136, 0.1);
+        }
+
+        .filter-button {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--color-secondary-purple), var(--color-accent-orange));
+            color: var(--color-white);
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .filter-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(229, 78, 136, 0.3);
+        }
+
+        .clear-filters {
+            background: linear-gradient(135deg, #6b7280, #9ca3af);
+            color: var(--color-white);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .clear-filters:hover {
+            transform: translateY(-2px);
+        }
+
         .kpi-card {
             background-color: var(--color-white); 
             border-radius: 1rem;
@@ -64,16 +162,19 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease; 
             border-left: 6px solid var(--color-secondary-purple);
         }
+
         .kpi-card:hover { 
             transform: translateY(-8px);
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
         }
+
         .kpi-value {
             font-size: 2.8rem;
             font-weight: 800;
             color: var(--color-accent-orange);
             margin-bottom: 0.5rem;
         }
+
         .kpi-label {
             font-weight: 700;
             color: var(--color-text-dark);
@@ -132,14 +233,22 @@
             background: linear-gradient(135deg, #e63946, #d62828);
             box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4);
         }
+
         .risk-atencao { 
             background: linear-gradient(135deg, var(--color-accent-orange), #e6680a);
             box-shadow: 0 4px 15px rgba(249, 91, 60, 0.4);
         }
+
         .risk-leve { 
             background: linear-gradient(135deg, var(--color-primary-green), #4ade80);
             box-shadow: 0 4px 15px rgba(87, 218, 28, 0.4);
         }
+
+        .risk-otimo { 
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
         .risk-nenhum { 
             background: linear-gradient(135deg, var(--color-accent-teal), #06b6d4);
             box-shadow: 0 4px 15px rgba(0, 191, 178, 0.4);
@@ -184,6 +293,16 @@
             margin-top: 1.5rem;
             padding-top: 1.5rem;
             border-top: 2px solid var(--color-light-gray-bg);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .commission-item {
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
         }
 
         .commission-label {
@@ -194,13 +313,21 @@
         }
 
         .commission-value {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 800;
             color: var(--color-secondary-purple);
         }
 
+        .minimum-value {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--color-accent-teal);
+        }
+
         .container {
             max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
         }
 
         .grid-responsive {
@@ -213,30 +340,6 @@
             margin-bottom: 3rem;
         }
 
-        .chart-container {
-            background-color: var(--color-white);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            border-left: 6px solid var(--color-secondary-purple);
-            height: 400px;
-            position: relative;
-        }
-
-        .chart-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--color-dark-blue);
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        .chart-canvas {
-            height: 300px !important;
-            width: 100% !important;
-            position: relative;
-        }
-
         .table-container {
             max-height: 600px;
             overflow-y: auto;
@@ -245,6 +348,14 @@
             background-color: var(--color-white);
             padding: 1.5rem;
             border-left: 6px solid var(--color-secondary-purple);
+        }
+        
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-dark-blue);
+            margin-bottom: 1rem;
+            text-align: center;
         }
         
         table {
@@ -283,6 +394,62 @@
             font-weight: 600;
         }
 
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: var(--color-text-dark);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Grid utilities */
+        .grid {
+            display: grid;
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+
+        .md\:grid-cols-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .gap-6 {
+            gap: 1.5rem;
+        }
+
+        .mb-8 {
+            margin-bottom: 2rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+
+        .text-xl {
+            font-size: 1.25rem;
+            line-height: 1.75rem;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .text-gray-800 {
+            color: #1f2937;
+        }
+
+        @media (min-width: 768px) {
+            .md\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
         @media (max-width: 640px) {
             .main-header h1 {
                 font-size: 1.75rem;
@@ -292,10 +459,18 @@
                 grid-template-columns: 1fr;
             }
             
+            .commission-section {
+                grid-template-columns: 1fr;
+            }
+            
             .risk-pill {
                 position: static;
                 display: inline-block;
                 margin-bottom: 1rem;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -308,52 +483,110 @@
 </head>
 <body>
     <script>
-  // O token do usuário logado
-  const token = localStorage.getItem("token");
+      // O token do usuário logado
+      const token = localStorage.getItem("token");
 
-  // Se não houver token, redireciona imediatamente
-  if (!token) {
-    window.location.href = "../login.html";
-  }
+      // Se não houver token, redireciona imediatamente
+      if (!token) {
+        window.location.href = "../login.html";
+      }
 
-  // Função para verificar se o token é válido
-  async function checkAuth() {
-    try {
-      const response = await fetch("https://api-login-zmcb.onrender.com/dados-protegidos", {
-        method: "GET",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      
-      // Se a resposta não for OK (por exemplo, 401), redireciona
-      if (!response.ok) {
-        throw new Error("Token inválido ou expirado.");
+      // Função para verificar se o token é válido
+      async function checkAuth() {
+        try {
+          const response = await fetch("https://api-login-zmcb.onrender.com/dados-protegidos", {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          
+          // Se a resposta não for OK (por exemplo, 401), redireciona
+          if (!response.ok) {
+            throw new Error("Token inválido ou expirado.");
+          }
+          
+          console.log("Token válido. O usuário pode continuar.");
+        } catch (error) {
+          console.error("Erro de autenticação:", error);
+          localStorage.removeItem("token"); // Limpa o token inválido
+          window.location.href = "../login.html"; // Redireciona para o login
+        }
       }
       
-      console.log("Token válido. O usuário pode continuar.");
-      // Aqui você poderia carregar dados ou exibir o conteúdo
-      // document.body.style.display = 'block'; // Se o body estiver hidden inicialmente
-    } catch (error) {
-      console.error("Erro de autenticação:", error);
-      localStorage.removeItem("token"); // Limpa o token inválido
-      window.location.href = "../login.html"; // Redireciona para o login
-    }
-  }
-  
-  // Executa a verificação
-  checkAuth();
-</script>
+      // Executa a verificação
+      checkAuth();
+    </script>
 
-    <div class="container mx-auto p-4 sm:p-8">
+    <div class="container">
         <header class="main-header">
             <h1>Dashboard de Previsão de Tendências de Marcas</h1>
             <div class="mt-4">
-            <a href="../index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
-        </div>
+                <a href="../index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
+            </div>
         </header>
+
+        <!-- Seção de Filtros -->
+        <section class="filters-section">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">Filtros</h2>
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Gap Mínimo (%)</label>
+                    <input type="number" id="filter-gap-min" class="filter-input" placeholder="Ex: 50">
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Gap Máximo (%)</label>
+                    <input type="number" id="filter-gap-max" class="filter-input" placeholder="Ex: 100">
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <select id="filter-status" class="filter-select">
+                        <option value="">Todos</option>
+                        <option value="Grave">Grave</option>
+                        <option value="Atenção">Atenção</option>
+                        <option value="Leve">Leve</option>
+                        <option value="Ótimo">Ótimo</option>
+                        <option value="Nenhum">Nenhum</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Falta</label>
+                    <select id="filter-falta" class="filter-select">
+                        <option value="">Todos</option>
+                        <option value="Demanda">Demanda</option>
+                        <option value="Oferta">Oferta</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Receita Mínima (R$)</label>
+                    <input type="number" id="filter-minimo" class="filter-input" placeholder="Ex: 10000">
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Comissão</label>
+                    <select id="filter-comissao" class="filter-select">
+                        <option value="">Todos</option>
+                        <option value="Consignado">Consignado</option>
+                        <option value="Não">Não</option>
+                        <option value="percentual">Com Percentual</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <button id="apply-filters" class="filter-button">Aplicar Filtros</button>
+                </div>
+
+                <div class="filter-group">
+                    <button id="clear-filters" class="clear-filters">Limpar Filtros</button>
+                </div>
+            </div>
+        </section>
 
         <!-- Seção de KPIs e Gráficos Analíticos -->
         <section class="analytics-section mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="kpi-card">
                     <div class="kpi-value" id="total-empresas">0</div>
                     <div class="kpi-label">Total de Empresas</div>
@@ -366,6 +599,10 @@
                     <div class="kpi-value" id="falta-demanda">0</div>
                     <div class="kpi-label">Falta Demanda</div>
                 </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="receita-total">0</div>
+                    <div class="kpi-label">Receita Prevista Total</div>
+                </div>
             </div>
 
             <!-- Tabela de Resumo por Risco -->
@@ -376,8 +613,9 @@
                         <tr>
                             <th>Nível de Risco</th>
                             <th>Quantidade</th>
-                            <th>Diferença Média</th>
+                            <th>Receita Prevista Média</th>
                             <th>Gap Médio</th>
+                            <th>Mínimo Garantido Médio</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -390,47 +628,65 @@
         <main id="cards-container" class="grid-responsive">
             <!-- Cards serão gerados dinamicamente pelo JavaScript -->
         </main>
+
+        <div id="no-results" class="no-results" style="display: none;">
+            <p>Nenhuma empresa encontrada com os filtros aplicados.</p>
+        </div>
     </div>
 
     <script>
-        const data = [
-            {"Empresa":"Acostamento","Diferença":720000,"Potencial":720000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado"},
-            {"Empresa":"Ana Gonçalves Tricot","Diferença":1499654,"Potencial":1500000,"Gap":99.9769,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
-            {"Empresa":"Approve","Diferença":2000280,"Potencial":3500000,"Gap":57.1509,"Risco":"Atenção","Falta":"Demanda","Comissão":"15%"},
-            {"Empresa":"Aramis","Diferença":-3545375,"Potencial":1200000,"Gap":295.448,"Risco":"Grave","Falta":"Oferta","Comissão":"Consignado"},
-            {"Empresa":"Arezzo","Diferença":1200682,"Potencial":1666000,"Gap":72.0697,"Risco":"Atenção","Falta":"Demanda","Comissão":"8,5%"},
-            {"Empresa":"Bella Curves","Diferença":300000,"Potencial":300000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"Não"},
-            {"Empresa":"Blunt","Diferença":240213.9,"Potencial":400000,"Gap":60,"Risco":"Atenção","Falta":"Demanda","Comissão":"8%"},
-            {"Empresa":"Casas Bahia","Diferença":766620,"Potencial":1000000,"Gap":76.662,"Risco":"Atenção","Falta":"Demanda","Comissão":"Não"},
-            {"Empresa":"Chilli Beans","Diferença":1408300,"Potencial":1408300,"Gap":69.6416,"Risco":"Atenção","Falta":"Demanda","Comissão":"10%"},
-            {"Empresa":"Consciência Jeans","Diferença":572056,"Potencial":1257400,"Gap":45.4952,"Risco":"Leve","Falta":"Demanda","Comissão":"10%"},
-            {"Empresa":"Di Santini","Diferença":799029.7,"Potencial":800000,"Gap":99.8787,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
-            {"Empresa":"Gigio Geek","Diferença":900000,"Potencial":900000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
-            {"Empresa":"Highstil","Diferença":2749155,"Potencial":4000000,"Gap":68.7289,"Risco":"Atenção","Falta":"Demanda","Comissão":"8%"},
-            {"Empresa":"Jequitibá Móveis","Diferença":8500000,"Potencial":8500000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
-            {"Empresa":"Laguna","Diferença":3412025,"Potencial":5500000,"Gap":62.0368,"Risco":"Atenção","Falta":"Demanda","Comissão":"10%"},
-            {"Empresa":"M.Officer","Diferença":1050000,"Potencial":1050000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
-            {"Empresa":"Malwee","Diferença":1190720,"Potencial":1440000,"Gap":82.6889,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado"},
-            {"Empresa":"Nicoboco","Diferença":467059.1,"Potencial":500000,"Gap":93.4118,"Risco":"Grave","Falta":"Demanda","Comissão":"8%"},
-            {"Empresa":"NXO","Diferença":300000,"Potencial":300000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"Não"},
-            {"Empresa":"Privalia","Diferença":4481111,"Potencial":4800000,"Gap":93.3565,"Risco":"Grave","Falta":"Demanda","Comissão":"7,5%"},
-            {"Empresa":"Rojemac","Diferença":1198131,"Potencial":1500000,"Gap":79.8754,"Risco":"Atenção","Falta":"Demanda","Comissão":"Consignado"},
-            {"Empresa":"Tapetes São Carlos","Diferença":7599581,"Potencial":8000000,"Gap":94.9948,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado"},
-            {"Empresa":"Triton","Diferença":2486702,"Potencial":2500000,"Gap":99.4681,"Risco":"Grave","Falta":"Demanda","Comissão":"20%"},
-            {"Empresa":"Tupode","Diferença":-595012.7,"Potencial":500000,"Gap":119.0025,"Risco":"Nenhum","Falta":"Oferta","Comissão":"10%"},
-            {"Empresa":"Vans","Diferença":1603044,"Potencial":2509000,"Gap":63.8918,"Risco":"Atenção","Falta":"Demanda","Comissão":"8,5%"},
-            {"Empresa":"Zoe Sports","Diferença":300000,"Potencial":300000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"},
-            {"Empresa":"Zune","Diferença":999181.8,"Potencial":1000000,"Gap":99.9182,"Risco":"Grave","Falta":"Demanda","Comissão":"10%"}
+        const originalData = [
+            {"Empresa":"Acostamento","Diferença":720000,"Potencial":720000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado","receita_prevista":0,"minimo":15000},
+            {"Empresa":"Ana Gonçalves Tricot","Diferença":1499654,"Potencial":1500000,"Gap":99.9769,"Risco":"Grave","Falta":"Demanda","Comissão":"10%","receita_prevista":346,"minimo":30000},
+            {"Empresa":"Approve","Diferença":2000280,"Potencial":3500000,"Gap":57.1509,"Risco":"Atenção","Falta":"Demanda","Comissão":"15%","receita_prevista":1499720,"minimo":30000},
+            {"Empresa":"Aramis","Diferença":-3545375,"Potencial":1200000,"Gap":-295.448,"Risco":"Ótimo","Falta":"Oferta","Comissão":"Consignado","receita_prevista":4745375,"minimo":0},
+            {"Empresa":"Arezzo","Diferença":1200682,"Potencial":1666000,"Gap":72.0697,"Risco":"Atenção","Falta":"Demanda","Comissão":"8,5%","receita_prevista":465318,"minimo":0},
+            {"Empresa":"Bella Curves","Diferença":300000,"Potencial":300000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"Não","receita_prevista":0,"minimo":25000},
+            {"Empresa":"Blunt","Diferença":240213.9,"Potencial":400000,"Gap":60,"Risco":"Atenção","Falta":"Demanda","Comissão":"8%","receita_prevista":159786.1,"minimo":0},
+            {"Empresa":"Casas Bahia","Diferença":766620,"Potencial":1000000,"Gap":76.662,"Risco":"Atenção","Falta":"Demanda","Comissão":"Não","receita_prevista":233380,"minimo":30000},
+            {"Empresa":"Chilli Beans","Diferença":1408300,"Potencial":1408300,"Gap":69.6416,"Risco":"Atenção","Falta":"Demanda","Comissão":"10%","receita_prevista":0,"minimo":0},
+            {"Empresa":"Consciência Jeans","Diferença":572056,"Potencial":1257400,"Gap":45.4952,"Risco":"Leve","Falta":"Demanda","Comissão":"10%","receita_prevista":685344,"minimo":30000},
+            {"Empresa":"Di Santini","Diferença":799029.7,"Potencial":800000,"Gap":99.8787,"Risco":"Grave","Falta":"Demanda","Comissão":"10%","receita_prevista":970.3,"minimo":0},
+            {"Empresa":"Gigio Geek","Diferença":900000,"Potencial":900000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%","receita_prevista":0,"minimo":2000},
+            {"Empresa":"Highstil","Diferença":2749155,"Potencial":4000000,"Gap":68.7289,"Risco":"Atenção","Falta":"Demanda","Comissão":"8%","receita_prevista":1250845,"minimo":30000},
+            {"Empresa":"Jequitibá Móveis","Diferença":8500000,"Potencial":8500000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%","receita_prevista":0,"minimo":30000},
+            {"Empresa":"Laguna","Diferença":3412025,"Potencial":5500000,"Gap":62.0368,"Risco":"Atenção","Falta":"Demanda","Comissão":"10%","receita_prevista":2087975,"minimo":0},
+            {"Empresa":"M.Officer","Diferença":1050000,"Potencial":1050000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%","receita_prevista":0,"minimo":0},
+            {"Empresa":"Malwee","Diferença":1190720,"Potencial":1440000,"Gap":82.6889,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado","receita_prevista":249280,"minimo":0},
+            {"Empresa":"Nicoboco","Diferença":467059.1,"Potencial":500000,"Gap":93.4118,"Risco":"Grave","Falta":"Demanda","Comissão":"8%","receita_prevista":32940.9,"minimo":0},
+            {"Empresa":"NXO","Diferença":300000,"Potencial":300000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"Não","receita_prevista":0,"minimo":48320},
+            {"Empresa":"Privalia","Diferença":4481111,"Potencial":4800000,"Gap":93.3565,"Risco":"Grave","Falta":"Demanda","Comissão":"7,5%","receita_prevista":318889,"minimo":0},
+            {"Empresa":"Rojemac","Diferença":1198131,"Potencial":1500000,"Gap":79.8754,"Risco":"Atenção","Falta":"Demanda","Comissão":"Consignado","receita_prevista":301869,"minimo":0},
+            {"Empresa":"Tapetes São Carlos","Diferença":7599581,"Potencial":8000000,"Gap":94.9948,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado","receita_prevista":400419,"minimo":0},
+            {"Empresa":"Triton","Diferença":2486702,"Potencial":2500000,"Gap":99.4681,"Risco":"Grave","Falta":"Demanda","Comissão":"20%","receita_prevista":13298,"minimo":0},
+            {"Empresa":"Tupode","Diferença":-595012.7,"Potencial":500000,"Gap":-119.0025,"Risco":"Nenhum","Falta":"Oferta","Comissão":"10%","receita_prevista":1095012.7,"minimo":2000},
+            {"Empresa":"Vans","Diferença":1603044,"Potencial":2509000,"Gap":63.8918,"Risco":"Atenção","Falta":"Demanda","Comissão":"8,5%","receita_prevista":905956,"minimo":0},
+            {"Empresa":"Zoe Sports","Diferença":300000,"Potencial":300000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%","receita_prevista":0,"minimo":0},
+            {"Empresa":"Rock e Soda","Diferença":2302282,"Potencial":2400000,"Gap":95.9284,"Risco":"Grave","Falta":"Demanda","Comissão":"10%","receita_prevista":97717.53,"minimo":7500},
+            {"Empresa":"Disparate","Diferença":2400000,"Potencial":2400000,"Gap":100,"Risco":"Grave","Falta":"Demanda","Comissão":"10%","receita_prevista":0,"minimo":7500},
+            {"Empresa":"Grand Cru","Diferença":418563.5,"Potencial":1500000,"Gap":27.9042,"Risco":"Leve","Falta":"Demanda","Comissão":"10%","receita_prevista":1081436,"minimo":0},
+            {"Empresa":"Evino","Diferença":508314.2,"Potencial":750000,"Gap":67.7752,"Risco":"Atenção","Falta":"Demanda","Comissão":"10%","receita_prevista":241685.7,"minimo":0},
+            {"Empresa":"Nike","Diferença":3895309,"Potencial":5600000,"Gap":69.5591,"Risco":"Atenção","Falta":"Demanda","Comissão":"Consignado","receita_prevista":1704691,"minimo":0},
+            {"Empresa":"Adidas","Diferença":3290998,"Potencial":5600000,"Gap":58.7678,"Risco":"Atenção","Falta":"Demanda","Comissão":"Consignado","receita_prevista":2309002,"minimo":0},
+            {"Empresa":"Lacoste","Diferença":5472991,"Potencial":6400000,"Gap":85.5155,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado","receita_prevista":927009.3,"minimo":0},
+            {"Empresa":"Oakley","Diferença":8493903,"Potencial":9600000,"Gap":88.4782,"Risco":"Grave","Falta":"Demanda","Comissão":"Consignado","receita_prevista":1106097,"minimo":0}
         ];
         
+        let filteredData = [...originalData];
+        
         const formatCurrency = (value) => {
-            const formattedValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+            const formattedValue = new Intl.NumberFormat('pt-BR', { 
+                style: 'currency', 
+                currency: 'BRL',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(Math.abs(value));
             return formattedValue.replace('R$', 'R$ ');
         };
 
         const createCard = (item) => {
-            const riskClass = `risk-${item.Risco.toLowerCase().replace(/ã/g, 'a').replace('ç', 'c')}`;
-            const diffClass = item.Diferença < 0 ? 'positive' : 'negative';
+            const riskClass = `risk-${item.Risco.toLowerCase().replace(/ã/g, 'a').replace('ç', 'c').replace('ó', 'o')}`;
+            const previsaoClass = item.receita_prevista > 1000000 ? 'positive' : item.receita_prevista > 0 ? '' : 'negative';
 
             return `
                 <div class="brand-card">
@@ -439,8 +695,8 @@
 
                     <div class="metric-row">
                         <div class="metric-item">
-                            <div class="metric-label">Diferença</div>
-                            <div class="metric-value ${diffClass}">${formatCurrency(item.Diferença)}</div>
+                            <div class="metric-label">Previsão de Vendas</div>
+                            <div class="metric-value ${previsaoClass}">${formatCurrency(item.receita_prevista)}</div>
                         </div>
                         <div class="metric-item">
                             <div class="metric-label">Potencial</div>
@@ -460,107 +716,91 @@
                     </div>
 
                     <div class="commission-section">
-                        <div class="commission-label">Comissão</div>
-                        <div class="commission-value">${item.Comissão}</div>
+                        <div class="commission-item">
+                            <div class="commission-label">Comissão</div>
+                            <div class="commission-value">${item.Comissão}</div>
+                        </div>
+                        <div class="commission-item">
+                            <div class="commission-label">Mínimo Garantido</div>
+                            <div class="minimum-value">${formatCurrency(item.minimo)}</div>
+                        </div>
                     </div>
                 </div>
             `;
         };
 
+        const applyFilters = () => {
+            const gapMin = parseFloat(document.getElementById('filter-gap-min').value) || -Infinity;
+            const gapMax = parseFloat(document.getElementById('filter-gap-max').value) || Infinity;
+            const status = document.getElementById('filter-status').value;
+            const falta = document.getElementById('filter-falta').value;
+            const minimo = parseFloat(document.getElementById('filter-minimo').value) || 0;
+            const comissao = document.getElementById('filter-comissao').value;
+
+            filteredData = originalData.filter(item => {
+                const matchGap = item.Gap >= gapMin && item.Gap <= gapMax;
+                const matchStatus = status === '' || item.Risco === status;
+                const matchFalta = falta === '' || item.Falta === falta;
+                const matchMinimo = item.minimo >= minimo;
+                
+                let matchComissao = true;
+                if (comissao === 'Consignado') {
+                    matchComissao = item.Comissão === 'Consignado';
+                } else if (comissao === 'Não') {
+                    matchComissao = item.Comissão === 'Não';
+                } else if (comissao === 'percentual') {
+                    matchComissao = item.Comissão.includes('%');
+                }
+
+                return matchGap && matchStatus && matchFalta && matchMinimo && matchComissao;
+            });
+
+            renderCards();
+            updateKPIs();
+            updateSummaryTable();
+        };
+
+        const clearFilters = () => {
+            document.getElementById('filter-gap-min').value = '';
+            document.getElementById('filter-gap-max').value = '';
+            document.getElementById('filter-status').value = '';
+            document.getElementById('filter-falta').value = '';
+            document.getElementById('filter-minimo').value = '';
+            document.getElementById('filter-comissao').value = '';
+            
+            filteredData = [...originalData];
+            renderCards();
+            updateKPIs();
+            updateSummaryTable();
+        };
+
+        const renderCards = () => {
+            const container = document.getElementById('cards-container');
+            const noResults = document.getElementById('no-results');
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = '';
+                noResults.style.display = 'block';
+            } else {
+                container.innerHTML = filteredData.map(createCard).join('');
+                noResults.style.display = 'none';
+            }
+        };
+
         const updateKPIs = () => {
-            const totalEmpresas = data.length;
-            const empresasRiscoGrave = data.filter(item => item.Risco === 'Grave').length;
-            const empresasFaltaDemanda = data.filter(item => item.Falta === 'Demanda').length;
+            const totalEmpresas = filteredData.length;
+            const empresasRiscoGrave = filteredData.filter(item => item.Risco === 'Grave').length;
+            const empresasFaltaDemanda = filteredData.filter(item => item.Falta === 'Demanda').length;
+            const receitaTotal = filteredData.reduce((sum, item) => sum + item.receita_prevista, 0);
 
             document.getElementById('total-empresas').textContent = totalEmpresas;
             document.getElementById('empresas-risco-grave').textContent = empresasRiscoGrave;
             document.getElementById('falta-demanda').textContent = empresasFaltaDemanda;
+            document.getElementById('receita-total').textContent = formatCurrency(receitaTotal).replace('R$ ', '');
         };
 
-        const createRiskChart = () => {
-            const riskCounts = data.reduce((acc, item) => {
-                acc[item.Risco] = (acc[item.Risco] || 0) + 1;
-                return acc;
-            }, {});
-
-            const ctx = document.getElementById('riskChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(riskCounts),
-                    datasets: [{
-                        data: Object.values(riskCounts),
-                        backgroundColor: [
-                            '#e63946', // Grave
-                            '#f95b3c', // Atenção
-                            '#57da1c', // Leve
-                            '#00BFB2'  // Nenhum
-                        ],
-                        borderWidth: 3,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                font: {
-                                    family: 'Nunito',
-                                    weight: '600'
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        };
-
-        const createDemandChart = () => {
-            const demandCounts = data.reduce((acc, item) => {
-                acc[item.Falta] = (acc[item.Falta] || 0) + 1;
-                return acc;
-            }, {});
-
-            const ctx = document.getElementById('demandChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(demandCounts),
-                    datasets: [{
-                        data: Object.values(demandCounts),
-                        backgroundColor: [
-                            '#E54E88', // Demanda
-                            '#FDBB2D'  // Oferta
-                        ],
-                        borderWidth: 3,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                font: {
-                                    family: 'Nunito',
-                                    weight: '600'
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        };
-
-        const createSummaryTable = () => {
-            const riskGroups = data.reduce((acc, item) => {
+        const updateSummaryTable = () => {
+            const riskGroups = filteredData.reduce((acc, item) => {
                 if (!acc[item.Risco]) {
                     acc[item.Risco] = [];
                 }
@@ -569,39 +809,40 @@
             }, {});
 
             const tbody = document.querySelector('#summaryTable tbody');
+            tbody.innerHTML = '';
             
             Object.keys(riskGroups).forEach(risk => {
                 const group = riskGroups[risk];
                 const count = group.length;
-                const avgDiferenca = group.reduce((sum, item) => sum + item.Diferença, 0) / count;
+                const avgReceita = group.reduce((sum, item) => sum + item.receita_prevista, 0) / count;
                 const avgGap = group.reduce((sum, item) => sum + item.Gap, 0) / count;
+                const avgMinimo = group.reduce((sum, item) => sum + item.minimo, 0) / count;
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><strong>${risk}</strong></td>
                     <td>${count}</td>
-                    <td class="${avgDiferenca < 0 ? 'metric-positive' : 'metric-negative'}">${formatCurrency(avgDiferenca)}</td>
+                    <td class="${avgReceita > 500000 ? 'metric-positive' : ''}">${formatCurrency(avgReceita)}</td>
                     <td>${avgGap.toFixed(1)}%</td>
+                    <td>${formatCurrency(avgMinimo)}</td>
                 `;
                 tbody.appendChild(row);
             });
         };
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('cards-container');
-            data.forEach(item => {
-                container.innerHTML += createCard(item);
-            });
-
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCards();
             updateKPIs();
+            updateSummaryTable();
+
+            // Event listeners para os filtros
+            document.getElementById('apply-filters').addEventListener('click', applyFilters);
+            document.getElementById('clear-filters').addEventListener('click', clearFilters);
             
-            // Aguardar um pequeno delay para garantir que os elementos canvas estejam renderizados
-            setTimeout(() => {
-                createRiskChart();
-                createDemandChart();
-            }, 100);
-            
-            createSummaryTable();
+            // Event listeners para aplicar filtros em tempo real
+            document.getElementById('filter-status').addEventListener('change', applyFilters);
+            document.getElementById('filter-falta').addEventListener('change', applyFilters);
+            document.getElementById('filter-comissao').addEventListener('change', applyFilters);
         });
     </script>
 

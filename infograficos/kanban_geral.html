@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Dashboard de Gestão de Expositores - Airtable</title>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -10,7 +10,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
+
+    <link rel="shortcut icon" href="../imagens/favicon.ico" type="image/x-icon">
+
     <style>
         /* Reset básico */
         * {
@@ -44,6 +46,21 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
+        }
+
+        .btn-warning {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: var(--color-white);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
         }
 
         .main-header {
@@ -127,11 +144,6 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-family: 'Nunito', sans-serif;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--color-secondary-purple), var(--color-accent-orange));
-            color: var(--color-white);
         }
 
         .btn-primary:hover {
@@ -225,6 +237,7 @@
             border-left: 6px solid var(--color-secondary-purple);
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .brand-card::before {
@@ -315,6 +328,166 @@
             background-color: var(--color-light-hover);
         }
 
+        .click-hint {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            background: rgba(229, 78, 136, 0.1);
+            color: var(--color-secondary-purple);
+            padding: 0.5rem;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--color-white);
+            border-radius: 1rem;
+            /* Tamanho fixo do modal */
+            width: 1000px;
+            height: 550px;
+            overflow-y: auto;
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--color-secondary-purple), var(--color-accent-orange));
+            color: var(--color-white);
+            padding: 2rem;
+            border-radius: 1rem 1rem 0 0;
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: var(--color-white);
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-content {
+            padding: 2rem;
+        }
+
+        .sector-section {
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .sector-header {
+            background: #f8fafc;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 700;
+            color: var(--color-dark-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sector-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .sector-color.comercial { background: var(--color-secondary-purple); }
+        .sector-color.financeiro { background: var(--color-accent-yellow); }
+        .sector-color.marketing { background: var(--color-accent-teal); }
+        .sector-color.producao { background: var(--color-accent-orange); }
+        .sector-color.meu-exagerado { background: #4299e1; }
+        .sector-color.sucesso-do-cliente { background: #48bb78; }
+        .sector-color.operacao-cesar { background: #ed8936; }
+
+
+        .sector-fields {
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .field-item {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border-left: 4px solid var(--color-secondary-purple);
+        }
+
+        .field-label {
+            font-size: 0.875rem;
+            color: var(--color-text-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .field-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--color-dark-blue);
+            word-break: break-word;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .field-value:hover {
+            background-color: var(--color-light-hover);
+        }
+
         .loading {
             display: flex;
             justify-content: center;
@@ -389,6 +562,15 @@
             .kpi-section {
                 grid-template-columns: repeat(2, 1fr);
             }
+
+            .modal {
+                max-width: 95vw;
+                margin: 1rem;
+            }
+
+            .sector-fields {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 480px) {
@@ -396,50 +578,57 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .swal2-custom-popup {
+            border-radius: 1rem !important;
+            font-family: 'Nunito', sans-serif !important;
+            background: #ffffff !important;
+            color: #222222 !important;
+        }
+
+        .swal2-custom-title {
+            font-weight: 800 !important;
+            font-size: 1.5rem !important;
+            color: #E54E88 !important; /* cor principal da página */
+        }
+
+        .swal2-custom-input {
+            border: 2px solid #E54E88 !important;
+            border-radius: 0.5rem !important;
+            padding: 0.75rem !important;
+            font-weight: 600 !important;
+        }
+
+        .swal2-custom-confirm {
+            background: linear-gradient(135deg, #00BFB2, #57da1c) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            border-radius: 0.5rem !important;
+        }
+
+        .swal2-custom-cancel {
+            background: #f8f8f8 !important;
+            color: #222222 !important;
+            font-weight: 600 !important;
+            border-radius: 0.5rem !important;
+        }
+
+
     </style>
 </head>
 <body>
     <div class="container">
         <header class="main-header">
             <h1>Dashboard de Gestão de Expositores</h1>
+            <p>Clique nos cards para ver todas as informações</p>
+            <div class="mt-4">
+                <a href="../index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
+            </div>
         </header>
 
-        <!-- Configuração da API -->
-        <section class="controls-section">
-            <h3>Configuração da Conexão</h3>
-            
-            <!-- Ajuda com credenciais -->
-            <div class="credentials-help">
-                <h4>📋 Como obter as credenciais:</h4>
-                <ul>
-                    <li><strong>Personal Access Token:</strong> Vá em Account → Developer Hub → Personal Access Tokens → Create new token</li>
-                    <li><strong>Base ID:</strong> Na URL da sua base: https://airtable.com/app123456/tbl789 → o Base ID é "app123456"</li>
-                    <li><strong>Table ID:</strong> Na mesma URL → o Table ID é "tbl789" (opcional, pode usar o nome da tabela)</li>
-                </ul>
-                <p><strong>⚠️ Importante:</strong> O token precisa ter permissões de leitura e escrita na base.</p>
-            </div>
+        <!-- REMOVIDA: seção de configurar conexão (feito conforme pedido) -->
 
-            <div class="filter-group">
-                <div class="filter-item">
-                    <label class="filter-label">Personal Access Token</label>
-                    <input type="password" id="airtable-token" placeholder="pat...">
-                </div>
-                <div class="filter-item">
-                    <label class="filter-label">Base ID</label>
-                    <input type="text" id="base-id" placeholder="app...">
-                </div>
-                <div class="filter-item">
-                    <label class="filter-label">Nome/ID da Tabela</label>
-                    <input type="text" id="table-name" placeholder="Expositores ou tbl..." value="Expositores">
-                </div>
-                <div class="filter-item">
-                    <button class="btn-primary" onclick="connectAirtable()">Conectar</button>
-                    <button class="btn-test" onclick="testConnection()">Testar Conexão</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Filtros -->
+        <!-- Filtros (aparece após carregar dados) -->
         <section class="controls-section hidden" id="filters-section">
             <h3>Filtros</h3>
             <div class="filter-group">
@@ -447,11 +636,6 @@
                     <label class="filter-label">Setor</label>
                     <select id="setor-filter">
                         <option value="">Todos os Setores</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="Operação">Operação</option>
-                        <option value="Fiscal">Financeiro</option>
-                        <option value="Montagem">Montagem</option>
-                        <option value="Montagem">Comercial</option>
                     </select>
                 </div>
                 <div class="filter-item">
@@ -466,13 +650,12 @@
                         <option value="">Todos os Status</option>
                         <option value="ASSINADO">Assinado</option>
                         <option value="CONTRATO COM JURIDICO">Com Jurídico</option>
-                        <option value="">Pendente</option>
+                        <option value="NÃO">Não Assinado</option>
                     </select>
                 </div>
             </div>
         </section>
 
-        <!-- KPIs -->
         <section class="kpi-section hidden" id="kpis-section">
             <div class="kpi-card">
                 <div class="kpi-value" id="total-expositores">0</div>
@@ -492,7 +675,6 @@
             </div>
         </section>
 
-        <!-- Loading/Error States -->
         <div id="loading" class="loading hidden">
             Carregando dados...
         </div>
@@ -501,422 +683,521 @@
         <div id="success" class="message success hidden"></div>
         <div id="info" class="message info-box hidden"></div>
 
-        <!-- Cards Container -->
         <main id="cards-container" class="grid-responsive">
-            <!-- Cards serão gerados dinamicamente -->
         </main>
     </div>
 
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Nome do Expositor</div>
+                <div class="modal-subtitle" id="modal-subtitle">Todas as informações</div>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-content" id="modal-content">
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Configuração global
-        let AIRTABLE_TOKEN = '';
-        let BASE_ID = '';
-        let TABLE_NAME = 'Expositores';
+        // CONFIGURAÇÃO FIXA (edite só o token)
+        let AIRTABLE_TOKEN = 'patIqj1d63msH5ha6.786ee455729222eb405055f2582203cf4ac76c38a3fd2ca24a42b2956be6263c'; // <-- coloque seu Personal Access Token aqui
+        const BASE_ID = "appo4tmCjHhFRgwsr";
+        const TABLE_NAME = "Imported table";
+
         let allData = [];
         let filteredData = [];
 
-        // Definição dos setores e campos
+        // Definição dos setores e campos (mantido como antes)
         const SETORES = {
-            'Marketing': ['MARKETING FEZ CONTATO?'],
-            'Financeiro': ['LINK DO CONTRATO', 'OPERAÇÃO FISCAL'],
-            'Produção': ['MONTAGEM DO STAND', 'ARMAZENAMENTO ES', 'MONTADORA', 'PROJETO APROVADO?', 'Briefing da Montagem', 'LINK PROJETO'],
-            "Comercial" : ['NUMERAÇÃO STAND', 'ÁREA M² POR STAND', 'CONTATO PONTO FOCAL', 'CONTATO GRUPO', 'LINK TO DENTRO', 'CONTRATO ASSINADO?', 'POSSUI VALOR FIXO?', 'TEM AUDITORIA?', 'TAXA DE SUCESSO']
+            'Comercial': [
+                'NUMERAÇÃO STAND',
+                'ÁREA M² POR STAND',
+                'CONTATO PONTO FOCAL',
+                'CRIAR GRUPO',
+                'LINK TO DENTRO',
+                'CONTRATO ASSINADO?',
+                'POSSUI VALOR FIXO?',
+                'TEM AUDITORIA?',
+                'TAXA DE SUCESSO'
+            ],
+            'Financeiro': [
+                'LINK DO CONTRATO',
+                'OPERAÇÃO FISCAL'
+            ],
+            'Marketing': [
+                'MARKETING FEZ CONTATO?',
+            ],
+            'Produção': [
+                'MONTADORA',
+                'ARMAZENAMENTO ES'
+            ],
+            'Meu Exagerado': [
+                'MONTAGEM DO STAND',
+                'Briefing da Montagem',
+                'OPERAÇÃO DE RECEBIMENTO',
+                'OPERAÇÃO MEU EXG',
+                'MARCKUP',
+                'PRECIFICAÇÃO',
+                'FRETE SP X ES',
+                'QUANTIDADE DE PEÇAS CONSIGNÇÃO',
+                'CAMERAS E CABEAMENTO',
+                'SEGURO MERCADORIAS NO ES',
+                'LINK PROJETO',
+                'PROJETO APROVADO?',
+                'ACESSOU SIGEVENTI?',
+                'CADASTRO SEFAZ',
+                'CONFERENCIA VOLUMES SP X ES'
+            ],
+            'Sucesso do Cliente': [
+                'ONBOARDING FEITO?'
+            ],
+            'Operação César': [
+                'OPERAÇÃO CESAR'
+            ]
         };
 
-        // Funções de utilitário para mensagens
+        const elements = {
+            filtersSection: document.getElementById('filters-section'),
+            kpisSection: document.getElementById('kpis-section'),
+            loading: document.getElementById('loading'),
+            error: document.getElementById('error'),
+            success: document.getElementById('success'),
+            info: document.getElementById('info'),
+            cardsContainer: document.getElementById('cards-container'),
+            totalExpositores: document.getElementById('total-expositores'),
+            contratosAssinados: document.getElementById('contratos-assinados'),
+            onboardingFeito: document.getElementById('onboarding-feito'),
+            comAuditoria: document.getElementById('com-auditoria'),
+            setorFilter: document.getElementById('setor-filter'),
+            expositorFilter: document.getElementById('expositor-filter'),
+            contratoFilter: document.getElementById('contrato-filter'),
+            modalOverlay: document.getElementById('modal-overlay'),
+            modalTitle: document.getElementById('modal-title'),
+            modalSubtitle: document.getElementById('modal-subtitle'),
+            modalContent: document.getElementById('modal-content'),
+            modalClose: document.getElementById('modal-close'),
+        };
+
+        // Mensagens utilitárias
         function showMessage(element, message) {
             element.textContent = message;
             element.classList.remove('hidden');
         }
-
         function hideMessages() {
-            document.getElementById('error').classList.add('hidden');
-            document.getElementById('success').classList.add('hidden');
-            document.getElementById('info').classList.add('hidden');
+            elements.error.classList.add('hidden');
+            elements.success.classList.add('hidden');
+            elements.info.classList.add('hidden');
         }
-
         function showError(message) {
             hideMessages();
-            showMessage(document.getElementById('error'), message);
+            showMessage(elements.error, message);
         }
-
         function showSuccess(message) {
             hideMessages();
-            showMessage(document.getElementById('success'), message);
+            showMessage(elements.success, message);
         }
-
         function showInfo(message) {
             hideMessages();
-            showMessage(document.getElementById('info'), message);
+            showMessage(elements.info, message);
         }
 
-        // Testar conexão sem carregar dados
-        async function testConnection() {
-            AIRTABLE_TOKEN = document.getElementById('airtable-token').value;
-            BASE_ID = document.getElementById('base-id').value;
-            TABLE_NAME = document.getElementById('table-name').value;
+        // Carregar todos os registros (com paginação) da tabela
+        async function loadData() {
+            if (!AIRTABLE_TOKEN) {
+                throw new Error('Defina AIRTABLE_TOKEN na linha 1 do script antes de executar (coloque seu Personal Access Token).');
+            }
 
-            if (!AIRTABLE_TOKEN || !BASE_ID || !TABLE_NAME) {
-                showError('Por favor, preencha todos os campos obrigatórios');
+            let records = [];
+            let offset = undefined;
+
+            try {
+                do {
+                    const url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}${offset ? '?offset=' + offset : ''}`;
+                    const resp = await fetch(url, {
+                        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
+                    });
+
+                    if (!resp.ok) {
+                        let errText;
+                        try {
+                            const errJson = await resp.json();
+                            errText = errJson.error ? (errJson.error.message || JSON.stringify(errJson)) : resp.statusText;
+                        } catch (e) {
+                            errText = resp.statusText;
+                        }
+                        throw new Error(`Erro HTTP ${resp.status}: ${errText}`);
+                    }
+
+                    const data = await resp.json();
+                    records = records.concat(data.records || []);
+                    offset = data.offset;
+                } while (offset);
+
+                allData = records;
+                filteredData = [...allData];
+            } catch (err) {
+                throw err;
+            }
+        }
+
+        // Renderizar os cards
+        function renderCards(dataToRender = filteredData) {
+            const container = elements.cardsContainer;
+            container.innerHTML = '';
+
+            if (dataToRender.length === 0) {
+                container.innerHTML = `<div class="info-box" style="grid-column: 1 / -1;">Nenhum expositor encontrado com os filtros selecionados.</div>`;
                 return;
             }
 
-            showInfo('Testando conexão...');
+            dataToRender.forEach(record => {
+                const fields = record.fields || {};
+                const statusRaw = (fields['CONTRATO ASSINADO?'] || '').toString();
+                const status = statusRaw.toLowerCase().includes('assinado') ? 'assinado' : 
+                               statusRaw.toLowerCase().includes('juridico') ? 'pendente' : 'vazio';
 
-            try {
-                // Fazemos uma chamada simples para listar apenas os metadados da tabela
-                const response = await fetch(`https://api.airtable.com/v0/meta/bases/${BASE_ID}/tables`, {
-                    headers: {
-                        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    }
+                const card = document.createElement('div');
+                card.className = 'brand-card';
+                card.onclick = () => openModal(record);
+                card.innerHTML = `
+                    <div class="brand-name">${fields['EXPOSITOR'] || 'Nome Vazio'}</div>
+                    <div class="status-pill status-${status}">${fields['CONTRATO ASSINADO?'] || 'Vazio'}</div>
+                    <div class="metric-row">
+                        <div class="metric-item">
+                            <div class="metric-label">Setor</div>
+                            <div class="metric-value">${Array.isArray(fields['SETOR']) ? fields['SETOR'].join(', ') : (fields['SETOR'] || 'Não Definido')}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Área</div>
+                            <div class="metric-value">${fields['ÁREA M² POR STAND'] || 'N/A'} ${fields['ÁREA M² POR STAND'] ? 'm²' : ''}</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Abrir modal com TODAS as seções (quando nenhum setor selecionado, ou sempre — como você pediu)
+        function openModal(record) {
+            const fields = record.fields || {};
+            elements.modalTitle.textContent = fields['EXPOSITOR'] || 'Nome Vazio';
+            elements.modalSubtitle.textContent = `ID: ${record.id}`;
+            elements.modalContent.innerHTML = '';
+
+            // Obtem setor selecionado no filtro
+            const setorSelecionado = elements.setorFilter.value;
+
+            for (const setor in SETORES) {
+                // Se existe um setor selecionado e não é este, pula
+                if (setorSelecionado && setor.toLowerCase() !== setorSelecionado.toLowerCase()) continue;
+
+                const setorFields = SETORES[setor];
+                const setorSection = document.createElement('div');
+                setorSection.className = 'sector-section';
+
+                const setorHeader = document.createElement('div');
+                setorHeader.className = 'sector-header';
+                setorHeader.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="sector-color ${setor.toLowerCase().replace(/\s/g, '-')}"></span>
+                        <span>${setor}</span>
+                    </div>
+                `;
+
+                const fieldsContainer = document.createElement('div');
+                fieldsContainer.className = 'sector-fields';
+
+                // Adiciona apenas os campos do setor
+                setorFields.forEach(fieldName => {
+                    let value = fields[fieldName];
+                    if (Array.isArray(value)) value = value.join(', ');
+                    if (value === undefined || value === null || value === '') value = 'N/A';
+
+                    const fieldItem = document.createElement('div');
+                    fieldItem.className = 'field-item';
+                    fieldItem.innerHTML = `
+                        <div class="field-label">${fieldName}</div>
+                        <div class="field-value" data-id="${record.id}" data-field="${fieldName}">${value}</div>
+                    `;
+                    fieldsContainer.appendChild(fieldItem);
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(getDetailedError(response.status, errorData));
-                }
-
-                const data = await response.json();
-                const tableExists = data.tables.find(table => 
-                    table.name === TABLE_NAME || table.id === TABLE_NAME
-                );
-
-                if (tableExists) {
-                    showSuccess(`✅ Conexão bem-sucedida! Tabela "${tableExists.name}" encontrada com ${tableExists.fields.length} campos.`);
-                } else {
-                    const availableTables = data.tables.map(t => t.name).join(', ');
-                    showError(`Tabela "${TABLE_NAME}" não encontrada. Tabelas disponíveis: ${availableTables}`);
-                }
-
-            } catch (error) {
-                showError(`Erro na conexão: ${error.message}`);
+                setorSection.appendChild(setorHeader);
+                setorSection.appendChild(fieldsContainer);
+                elements.modalContent.appendChild(setorSection);
             }
+
+            elements.modalOverlay.classList.add('active');
+            enableInlineEditing();
         }
 
-        // Conectar ao Airtable
-        async function connectAirtable() {
-            AIRTABLE_TOKEN = document.getElementById('airtable-token').value;
-            BASE_ID = document.getElementById('base-id').value;
-            TABLE_NAME = document.getElementById('table-name').value;
 
-            if (!AIRTABLE_TOKEN || !BASE_ID || !TABLE_NAME) {
-                showError('Por favor, preencha todos os campos obrigatórios');
-                return;
+        // Fechar modal
+        function closeModal(event) {
+            if (event && event.target.id !== 'modal-overlay' && event.target.className !== 'modal-close') {
+                // clique dentro do modal - ignorar
+                if (event.target !== elements.modalOverlay) return;
             }
-
-            document.getElementById('loading').classList.remove('hidden');
-            hideMessages();
-
-            try {
-                await loadData();
-                document.getElementById('filters-section').classList.remove('hidden');
-                document.getElementById('kpis-section').classList.remove('hidden');
-                setupFilters();
-                updateKPIs();
-                renderCards();
-                showSuccess(`✅ Dashboard carregado com sucesso! ${allData.length} registros encontrados.`);
-            } catch (error) {
-                showError(`Erro ao carregar dados: ${error.message}`);
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
-            }
+            elements.modalOverlay.classList.remove('active');
         }
 
-        // Obter erro detalhado
-        function getDetailedError(status, errorData) {
-            const errors = {
-                401: 'Token inválido ou expirado. Verifique seu Personal Access Token.',
-                403: 'Acesso negado. Verifique se:\n• O token tem permissões na base\n• O Base ID está correto\n• A tabela existe e você tem acesso a ela',
-                404: 'Base ou tabela não encontrada. Verifique o Base ID e nome da tabela.',
-                422: 'Dados inválidos na requisição.',
-                429: 'Muitas requisições. Aguarde um momento e tente novamente.',
-                500: 'Erro interno do Airtable. Tente novamente em alguns minutos.'
-            };
+        // Atualizar KPIs
+        function updateKPIs() {
+            const total = filteredData.length;
+            const contratos = filteredData.filter(record => (record.fields['CONTRATO ASSINADO?'] || '').toString().toLowerCase().includes('assinado')).length;
+            const onboarding = filteredData.filter(record => (record.fields['ONBOARDING FEITO?'] || '').toString().toLowerCase().includes('sim')).length;
+            const auditoria = filteredData.filter(record => (record.fields['TEM AUDITORIA?'] || record.fields['AUDITORIA'] || '').toString().toLowerCase().includes('sim')).length;
 
-            let message = errors[status] || `Erro HTTP ${status}`;
-            
-            if (errorData.error) {
-                if (errorData.error.message) {
-                    message += `\n\nDetalhes: ${errorData.error.message}`;
-                }
-                if (errorData.error.type) {
-                    message += `\nTipo: ${errorData.error.type}`;
-                }
-            }
-
-            return message;
+            elements.totalExpositores.textContent = total;
+            elements.contratosAssinados.textContent = contratos;
+            elements.onboardingFeito.textContent = onboarding;
+            elements.comAuditoria.textContent = auditoria;
         }
 
-        // Buscar dados do Airtable
-        async function fetchExpositores() {
-            const url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}`;
-            console.log('Fazendo requisição para:', url);
-
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
-                    'Content-Type': 'application/json'
-                }
+        // Configurar filtros
+        function setupFilters() {
+            // Popula dropdown de setores sempre com as chaves do SETORES + valores vindos da base
+            const setorSet = new Set(Object.keys(SETORES));
+            allData.forEach(r => {
+                const s = r.fields['SETOR'];
+                if (Array.isArray(s)) s.forEach(x => setorSet.add(String(x)));
+                else if (s) setorSet.add(String(s));
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(getDetailedError(response.status, errorData));
-            }
+            elements.setorFilter.innerHTML = '<option value="">Todos os Setores</option>';
+            [...setorSet].sort().forEach(setor => {
+                const opt = document.createElement('option');
+                opt.value = setor;
+                opt.textContent = setor;
+                elements.setorFilter.appendChild(opt);
+            });
 
-            return response.json();
+            // Popula dropdown de expositores a partir dos dados
+            const expositorNames = allData.map(record => record.fields['EXPOSITOR']).filter(Boolean).map(String).sort();
+            const uniqueExpositors = [...new Set(expositorNames)];
+            elements.expositorFilter.innerHTML = '<option value="">Todos os Expositores</option>';
+            uniqueExpositors.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                elements.expositorFilter.appendChild(option);
+            });
+
+            // Listeners
+            elements.setorFilter.addEventListener('change', applyFilters);
+            elements.expositorFilter.addEventListener('change', applyFilters);
+            elements.contratoFilter.addEventListener('change', applyFilters);
         }
 
-        // Atualizar campo no Airtable
-        async function updateExpositor(recordId, campo, novoValor) {
+        // Aplicar filtros
+        function applyFilters() {
+            const expositor = elements.expositorFilter.value;
+            const contrato = elements.contratoFilter.value;
+
+            filteredData = allData.filter(record => {
+                const fields = record.fields || {};
+
+                const recordExp = (fields['EXPOSITOR'] || '').toString().toLowerCase();
+                const matchesExpositor = !expositor || recordExp.includes(expositor.toLowerCase());
+
+                let matchesContrato = true;
+                if (contrato) {
+                    const status = (fields['CONTRATO ASSINADO?'] || '').toString().toLowerCase();
+                    if (contrato === 'ASSINADO') {
+                        matchesContrato = status.includes('assinado');
+                    } else if (contrato === 'CONTRATO COM JURIDICO') {
+                        matchesContrato = status.includes('juridico');
+                    } else if (contrato === 'NÃO') {
+                        matchesContrato = status.includes('não') || status.length === 0;
+                    }
+                }
+
+                return matchesExpositor && matchesContrato; // <-- setor não filtra os cards
+            });
+
+            updateKPIs();
+            renderCards(); // Todos os cards que passam pelos outros filtros continuam visíveis
+        }
+
+        function enableInlineEditing() {
+            const editableFields = document.querySelectorAll('.field-value');
+            
+            editableFields.forEach(el => {
+                el.addEventListener('click', function() {
+                    editFieldWithSwal(el.dataset.id, el.dataset.field, el.textContent);
+                });
+            });
+        }
+
+
+        async function updateAirtableRecord(recordId, fieldName, value) {
             const url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}/${recordId}`;
             
-            const response = await fetch(url, {
+            const body = {
+                fields: {
+                    [fieldName]: value
+                }
+            };
+
+            const resp = await fetch(url, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    fields: {
-                        [campo]: novoValor
-                    }
-                })
+                body: JSON.stringify(body)
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(getDetailedError(response.status, errorData));
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.error ? err.error.message : resp.statusText);
             }
 
-            return response.json();
+            return await resp.json();
         }
 
-        // Carregar dados
-        async function loadData() {
-            const airtableData = await fetchExpositores();
-            allData = airtableData.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-            filteredData = [...allData];
-            
-            // Log para debug
-            console.log(`Carregados ${allData.length} registros`);
-            if (allData.length > 0) {
-                console.log('Campos disponíveis:', Object.keys(allData[0]));
-            }
-        }
-
-        // Configurar filtros
-        function setupFilters() {
-            const expositorSelect = document.getElementById('expositor-filter');
-            expositorSelect.innerHTML = '<option value="">Todos os Expositores</option>';
-            
-            const expositores = [...new Set(allData.map(item => item.EXPOSITOR).filter(Boolean))].sort();
-            expositores.forEach(expositor => {
-                const option = document.createElement('option');
-                option.value = expositor;
-                option.textContent = expositor;
-                expositorSelect.appendChild(option);
-            });
-
-            // Event listeners para filtros
-            document.getElementById('setor-filter').addEventListener('change', filterData);
-            document.getElementById('expositor-filter').addEventListener('change', filterData);
-            document.getElementById('contrato-filter').addEventListener('change', filterData);
-        }
-
-        // Filtrar dados
-        function filterData() {
-            const setorFilter = document.getElementById('setor-filter').value;
-            const expositorFilter = document.getElementById('expositor-filter').value;
-            const contratoFilter = document.getElementById('contrato-filter').value;
-
-            filteredData = allData.filter(item => {
-                let match = true;
-                
-                if (expositorFilter && item.EXPOSITOR !== expositorFilter) {
-                    match = false;
-                }
-                
-                if (contratoFilter && item['CONTRATO ASSINADO?'] !== contratoFilter) {
-                    match = false;
-                }
-
-                return match;
-            });
-
-            renderCards();
-            updateKPIs();
-        }
-
-        // Atualizar KPIs
-        function updateKPIs() {
-            const data = filteredData;
-            
-            document.getElementById('total-expositores').textContent = data.length;
-            document.getElementById('contratos-assinados').textContent = 
-                data.filter(item => item['CONTRATO ASSINADO?'] === 'ASSINADO').length;
-            document.getElementById('onboarding-feito').textContent = 
-                data.filter(item => item['ONBOARDING FEITO?'] === 'Sim').length;
-            document.getElementById('com-auditoria').textContent = 
-                data.filter(item => item['TEM AUDITORIA?'] === 'SIM').length;
-        }
-
-        // Determinar status do contrato
-        function getContratoStatus(contrato) {
-            if (!contrato || contrato.trim() === '') return 'vazio';
-            if (contrato === 'ASSINADO') return 'assinado';
-            return 'pendente';
-        }
-
-        // Obter campos visíveis baseado no setor
-        function getVisibleFields(setor) {
-            if (!setor) return ['NUMERAÇÃO STAND', 'ÁREA M² POR STAND', 'CONTATO PONTO FOCAL', 'CONTRATO ASSINADO?'];
-            return SETORES[setor] || [];
-        }
-
-        // Criar card
-        function createCard(item) {
-            const setor = document.getElementById('setor-filter').value;
-            const contratoStatus = getContratoStatus(item['CONTRATO ASSINADO?']);
-            const visibleFields = getVisibleFields(setor);
-
-            const fieldsHtml = visibleFields.map(field => {
-                const value = item[field] || 'Não informado';
-                const isEditable = setor && SETORES[setor].includes(field);
-                
-                return `
-                    <div class="metric-item">
-                        <div class="metric-label">${field}</div>
-                        <div class="metric-value ${isEditable ? 'editable' : ''}" 
-                             ${isEditable ? `onclick="editField('${item.id}', '${field}', this)"` : ''}>
-                            ${value}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            return `
-                <div class="brand-card">
-                    <div class="brand-name">${item.EXPOSITOR || 'Expositor não informado'}</div>
-                    <div class="status-pill status-${contratoStatus}">
-                        ${item['CONTRATO ASSINADO?'] || 'Pendente'}
-                    </div>
-
-                    <div class="metric-row">
-                        ${fieldsHtml}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Renderizar cards
-        function renderCards() {
-            const container = document.getElementById('cards-container');
-            container.innerHTML = '';
-
-            if (filteredData.length === 0) {
-                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #6b7280; font-size: 1.125rem; padding: 2rem;">Nenhum expositor encontrado</div>';
-                return;
-            }
-
-            filteredData.forEach(item => {
-                container.innerHTML += createCard(item);
-            });
-        }
-
-        // Editar campo
-        async function editField(recordId, fieldName, element) {
-            const currentValue = element.textContent.trim();
-            
+        async function editField(recordId, fieldName, currentValue) {
             const { value: newValue } = await Swal.fire({
-                title: `Editar: ${fieldName}`,
+                title: `Editar "${fieldName}"`,
                 input: 'text',
-                inputValue: currentValue === 'Não informado' ? '' : currentValue,
+                inputLabel: `Valor atual: ${currentValue}`,
+                inputValue: currentValue,
                 showCancelButton: true,
                 confirmButtonText: 'Salvar',
                 cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#E54E88',
-                cancelButtonColor: '#6b7280',
-                inputValidator: (value) => {
-                    return Promise.resolve();
+                focusConfirm: false,
+                customClass: {
+                    popup: 'swal2-custom-popup',
+                    title: 'swal2-custom-title',
+                    confirmButton: 'swal2-custom-confirm',
+                    cancelButton: 'swal2-custom-cancel',
+                    input: 'swal2-custom-input'
+                }
+            });
+
+            if (newValue !== undefined) {
+                // Aqui você chama a função de atualização no Airtable
+                try {
+                    await updateAirtableRecord(recordId, fieldName, newValue);
+                    showSuccess(`✅ Campo "${fieldName}" atualizado com sucesso!`);
+                    // Atualiza o valor no modal sem precisar recarregar
+                    document.querySelector(`.field-value[data-id="${recordId}"][data-field="${fieldName}"]`).textContent = newValue;
+                } catch (error) {
+                    showError(`❌ Falha ao atualizar "${fieldName}": ${error.message}`);
+                }
+            }
+        }
+
+        async function updateAirtable(field, value) {
+            try {
+                const response = await fetch('SUA_API_ENDPOINT', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        field: field,
+                        value: value,
+                    }),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire('Sucesso!', 'Valor atualizado com sucesso.', 'success');
+                } else {
+                    Swal.fire('Erro', 'Não foi possível atualizar o valor.', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Erro', 'Erro na comunicação com o servidor.', 'error');
+            }
+        }
+
+        async function editFieldWithSwal(recordId, fieldName, currentValue) {
+            const { value: newValue } = await Swal.fire({
+                title: `Editar "${fieldName}"`,
+                input: 'text',
+                inputLabel: `Valor atual: ${currentValue}`,
+                inputValue: currentValue,
+                showCancelButton: true,
+                confirmButtonText: 'Salvar',
+                cancelButtonText: 'Cancelar',
+                focusConfirm: false,
+                customClass: {
+                    popup: 'swal2-custom-popup',
+                    title: 'swal2-custom-title',
+                    input: 'swal2-custom-input',
+                    confirmButton: 'swal2-custom-confirm',
+                    cancelButton: 'swal2-custom-cancel'
                 }
             });
 
             if (newValue !== undefined) {
                 try {
-                    element.textContent = 'Salvando...';
-                    await updateExpositor(recordId, fieldName, newValue);
-                    element.textContent = newValue || 'Não informado';
-                    
-                    // Atualizar dados locais
-                    const itemIndex = allData.findIndex(item => item.id === recordId);
-                    if (itemIndex !== -1) {
-                        allData[itemIndex][fieldName] = newValue;
-                        filterData(); // Re-aplicar filtros
-                        updateKPIs(); // Atualizar KPIs
-                    }
-
-                    Swal.fire({
-                        title: 'Sucesso!', 
-                        text: 'Campo atualizado com sucesso', 
-                        icon: 'success',
-                        confirmButtonColor: '#E54E88'
-                    });
+                    await updateAirtableRecord(recordId, fieldName, newValue);
+                    showSuccess(`✅ Campo "${fieldName}" atualizado com sucesso!`);
+                    document.querySelector(`.field-value[data-id="${recordId}"][data-field="${fieldName}"]`).textContent = newValue;
                 } catch (error) {
-                    element.textContent = currentValue;
-                    Swal.fire({
-                        title: 'Erro!', 
-                        text: 'Falha ao atualizar: ' + error.message, 
-                        icon: 'error',
-                        confirmButtonColor: '#dc2626'
-                    });
+                    showError(`❌ Falha ao atualizar "${fieldName}": ${error.message}`);
                 }
             }
         }
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Dashboard carregado. Insira suas credenciais do Airtable para começar.');
-            
-            // Verificar se há dados salvos no session (apenas para desenvolvimento)
-            const savedToken = sessionStorage.getItem('airtable_token');
-            const savedBaseId = sessionStorage.getItem('base_id');
-            const savedTableName = sessionStorage.getItem('table_name');
-            
-            if (savedToken) document.getElementById('airtable-token').value = savedToken;
-            if (savedBaseId) document.getElementById('base-id').value = savedBaseId;
-            if (savedTableName) document.getElementById('table-name').value = savedTableName;
+
+
+        document.querySelectorAll('.metric-value.editable').forEach(el => {
+            el.addEventListener('click', async () => {
+                const fieldName = el.dataset.field;
+                const { value: newValue } = await Swal.fire({
+                    title: 'Editar valor',
+                    input: 'text',
+                    inputLabel: `Atualizar ${fieldName}`,
+                    inputValue: el.textContent,
+                    showCancelButton: true,
+                    confirmButtonText: 'Salvar',
+                    cancelButtonText: 'Cancelar',
+                    customClass: {
+                        popup: 'swal2-custom-popup',
+                        title: 'swal2-custom-title',
+                        input: 'swal2-custom-input',
+                        confirmButton: 'swal2-custom-confirm',
+                        cancelButton: 'swal2-custom-cancel'
+                    }
+                });
+
+                if (newValue !== undefined) {
+                    el.textContent = newValue; // atualiza na tela
+                    // chamada para atualizar no Airtable
+                    updateAirtable(fieldName, newValue);
+                }
+            });
         });
 
-        // Salvar credenciais no session storage (apenas para desenvolvimento)
-        function saveCredentials() {
-            sessionStorage.setItem('airtable_token', AIRTABLE_TOKEN);
-            sessionStorage.setItem('base_id', BASE_ID);
-            sessionStorage.setItem('table_name', TABLE_NAME);
-        }
 
-        // Modificar as funções de conexão para salvar as credenciais
-        const originalConnect = connectAirtable;
-        connectAirtable = async function() {
-            await originalConnect();
-            if (allData.length > 0) {
-                saveCredentials();
-            }
-        };
+        // Handlers do modal
+        elements.modalClose.addEventListener('click', () => elements.modalOverlay.classList.remove('active'));
+        elements.modalOverlay.addEventListener('click', (e) => {
+            if (e.target === elements.modalOverlay) elements.modalOverlay.classList.remove('active');
+        });
 
-        const originalTest = testConnection;
-        testConnection = async function() {
-            await originalTest();
-            // Salvar credenciais mesmo no teste, se bem-sucedido
-            if (document.getElementById('success').textContent.includes('✅')) {
-                saveCredentials();
+        // Inicialização automática
+        (async function init() {
+            try {
+                elements.loading.classList.remove('hidden');
+                hideMessages();
+                await loadData();
+                setupFilters();
+                updateKPIs();
+                renderCards();
+                elements.filtersSection.classList.remove('hidden');
+                elements.kpisSection.classList.remove('hidden');
+                elements.loading.classList.add('hidden');
+                showSuccess(`✅ Dashboard carregado: ${allData.length} registros.`);
+            } catch (error) {
+                elements.loading.classList.add('hidden');
+                showError(error.message || 'Erro ao carregar dados.');
             }
-        };
+        })();
     </script>
-
 </body>
 </html>

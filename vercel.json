@@ -1,19 +1,14 @@
 {
   "functions": {
-    "api/expositores.js": {
-      "runtime": "nodejs18.x"
+    "api/**/*.js": {
+      "runtime": "@vercel/node@3.0.5"
     }
   },
   "rewrites": [
     {
       "source": "/api/expositores",
-      "destination": "/api/expositores.js"
-    },
-    {
-      "source": "/infograficos/(.*)",
-      "destination": "/infograficos/$1"
+      "destination": "/api/expositores"
     }
   ],
-  "outputDirectory": "infograficos",
-  "buildCommand": "echo 'No build required'"
+  "outputDirectory": "infograficos"
 }

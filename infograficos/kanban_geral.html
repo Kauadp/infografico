@@ -811,7 +811,12 @@
             let offset = undefined;
 
             try {
-                const resp = await fetch("/api/expositores");
+                // Se estiver rodando localmente, use localhost, senão use a URL do Vercel
+                const baseUrl = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:3000' 
+                    : window.location.origin;
+                
+                const resp = await fetch(`${baseUrl}/api/expositores`);
 
                 if (!resp.ok) {
                     let errText;
@@ -830,8 +835,11 @@
                 allData = data.records || [];
                 filteredData = [...allData];
 
+                console.log('Dados carregados:', allData.length, 'registros');
+
             } catch (err) {
                 console.error("Erro ao carregar dados:", err);
+                throw err; // Re-throw para ser capturado pela função init()
             }
         }
 

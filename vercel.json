@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "api/expositores.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/expositores",
+      "destination": "/api/expositores.js"
+    },
+    {
+      "source": "/infograficos/(.*)",
+      "destination": "/infograficos/$1"
+    }
+  ],
+  "outputDirectory": "infograficos",
+  "buildCommand": "echo 'No build required'"
+}

@@ -21,7 +21,7 @@
 
   // Se não houver token, redireciona imediatamente
   if (!token) {
-    window.location.href = "../login.html";
+    window.location.href = "login.html";
   }
 
   // Função para verificar se o token é válido
@@ -43,7 +43,7 @@
     } catch (error) {
       console.error("Erro de autenticação:", error);
       localStorage.removeItem("token"); // Limpa o token inválido
-      window.location.href = "../login.html"; // Redireciona para o login
+      window.location.href = "login.html"; // Redireciona para o login
     }
   }
   
@@ -55,7 +55,7 @@
         <header class="text-center mb-12">
             <h1 class="text-4xl md:text-5xl font-bold text-[var(--color-dark-blue)] mb-2">Diagnóstico de Performance em Vendas - Junho 2025</h1>
             <p class="text-lg text-gray-600 max-w-3xl mx-auto">Uma análise visual dos funis de Outbound e Inbound, revelando gargalos críticos e oportunidades de crescimento.</p>
-            <a href="../index.html" class="text-[var(--color-dark-blue)] hover:underline mt-4 inline-block">&larr; Voltar ao Dashboard Principal</a>
+            <a href="index.html" class="text-[var(--color-dark-blue)] hover:underline mt-4 inline-block">&larr; Voltar ao Dashboard Principal</a>
         </header>
 
         <main>

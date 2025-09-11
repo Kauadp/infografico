@@ -491,7 +491,7 @@
 
       // Se não houver token, redireciona imediatamente
       if (!token) {
-        window.location.href = "../login.html";
+        window.location.href = "login.html";
       }
 
       // Função para verificar se o token é válido
@@ -511,7 +511,7 @@
         } catch (error) {
           console.error("Erro de autenticação:", error);
           localStorage.removeItem("token"); // Limpa o token inválido
-          window.location.href = "../login.html"; // Redireciona para o login
+          window.location.href = "login.html"; // Redireciona para o login
         }
       }
       
@@ -523,7 +523,7 @@
         <header class="main-header">
             <h1>Dashboard de Previsão de Tendências de Marcas</h1>
             <div class="mt-4">
-                <a href="../index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
+                <a href="index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
             </div>
         </header>
 

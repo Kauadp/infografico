@@ -257,7 +257,7 @@
 
   // Se não houver token, redireciona imediatamente
   if (!token) {
-    window.location.href = "../login.html";
+    window.location.href = "login.html";
   }
 
   // Função para verificar se o token é válido
@@ -279,7 +279,7 @@
     } catch (error) {
       console.error("Erro de autenticação:", error);
       localStorage.removeItem("token"); // Limpa o token inválido
-      window.location.href = "../login.html"; // Redireciona para o login
+      window.location.href = "login.html"; // Redireciona para o login
     }
   }
   
@@ -292,7 +292,7 @@
             <h1 class="text-3xl font-extrabold text-[var(--color-accent-orange)]">Dashboard de Desempenho de Vendas</h1>
             <p class="text-lg text-gray-600 max-w-3xl mx-auto">Configure os agendamentos da equipe e visualize o desempenho diário e semanal em tempo real.</p>
             <div class="mt-4">
-                <a href="../index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
+                <a href="index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
             </div>
         </header>
 

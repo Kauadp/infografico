@@ -1,4 +1,5 @@
 {
+  "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/dashboard",
@@ -9,16 +10,8 @@
       "destination": "/infograficos/infografico_jun_2025.html"
     },
     {
-      "source": "/css/(.*)",
-      "destination": "/css/$1"
-    },
-    {
-      "source": "/js/(.*)",
-      "destination": "/js/$1"
-    },
-    {
       "source": "/",
-      "destination": "/infograficos/index.html"
+      "destination": "/infograficos/kanban_geral.html"
     }
   ]
 }

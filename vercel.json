@@ -6,6 +6,18 @@
       "destination": "/kanban_geral.html"
     },
     {
+      "source": "/infografico-jun",
+      "destination": "/infografico_jun_2025.html"
+    },
+    {
+      "source": "/infografico-jul",
+      "destination": "/infografico_jul_2025.html"
+    },
+    {
+      "source": "/infografico-ago",
+      "destination": "/infografico_ago_2025.html"
+    },
+    {
       "source": "/",
       "destination": "/kanban_geral.html"
     }

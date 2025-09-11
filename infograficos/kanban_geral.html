@@ -700,13 +700,17 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO FIXA (edite só o token)
-        let AIRTABLE_TOKEN = 'patIqj1d63msH5ha6.786ee455729222eb405055f2582203cf4ac76c38a3fd2ca24a42b2956be6263c'; // <-- coloque seu Personal Access Token aqui
-        const BASE_ID = "appo4tmCjHhFRgwsr";
-        const TABLE_NAME = "Imported table";
-
         let allData = [];
         let filteredData = [];
+
+        fetch("/api/expositores")
+        .then(res => res.json())
+        .then(data => {
+            const records = data.records || [];
+            records.forEach(item => console.log(item));
+        })
+        .catch(err => console.error("Erro ao carregar dados:", err));
+
 
         // Definição dos setores e campos (mantido como antes)
         const SETORES = {
@@ -734,7 +738,6 @@
             ],
             'Meu Exagerado': [
                 'MONTAGEM DO STAND',
-                'Briefing da Montagem',
                 'OPERAÇÃO DE RECEBIMENTO',
                 'OPERAÇÃO MEU EXG',
                 'MARCKUP',
@@ -804,40 +807,31 @@
 
         // Carregar todos os registros (com paginação) da tabela
         async function loadData() {
-            if (!AIRTABLE_TOKEN) {
-                throw new Error('Defina AIRTABLE_TOKEN na linha 1 do script antes de executar (coloque seu Personal Access Token).');
-            }
-
             let records = [];
             let offset = undefined;
 
             try {
-                do {
-                    const url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME)}${offset ? '?offset=' + offset : ''}`;
-                    const resp = await fetch(url, {
-                        headers: { 'Authorization': `Bearer ${AIRTABLE_TOKEN}` }
-                    });
+                const resp = await fetch("/api/expositores");
 
-                    if (!resp.ok) {
-                        let errText;
-                        try {
-                            const errJson = await resp.json();
-                            errText = errJson.error ? (errJson.error.message || JSON.stringify(errJson)) : resp.statusText;
-                        } catch (e) {
-                            errText = resp.statusText;
-                        }
-                        throw new Error(`Erro HTTP ${resp.status}: ${errText}`);
+                if (!resp.ok) {
+                    let errText;
+                    try {
+                        const errJson = await resp.json();
+                        errText = errJson.error ? (errJson.error.message || JSON.stringify(errJson)) : resp.statusText;
+                    } catch (e) {
+                        errText = resp.statusText;
                     }
+                    throw new Error(`Erro HTTP ${resp.status}: ${errText}`);
+                }
 
-                    const data = await resp.json();
-                    records = records.concat(data.records || []);
-                    offset = data.offset;
-                } while (offset);
+                const data = await resp.json();
 
-                allData = records;
+                // Supondo que sua API retorna os registros dentro de "records"
+                allData = data.records || [];
                 filteredData = [...allData];
+
             } catch (err) {
-                throw err;
+                console.error("Erro ao carregar dados:", err);
             }
         }
 

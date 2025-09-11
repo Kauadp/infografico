@@ -1,11 +1,14 @@
 {
   "name": "infografico",
   "version": "1.0.0",
-  "description": "",
+  "description": "Dashboard de Gestão de Expositores",
+  "type": "module",
   "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "dependencies": {
-    "node-fetch": "^3.3.2"
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -21,7 +21,7 @@
 
   // Se não houver token, redireciona imediatamente
   if (!token) {
-    window.location.href = "../login.html";
+    window.location.href = "login.html";
   }
 
   // Função para verificar se o token é válido
@@ -43,7 +43,7 @@
     } catch (error) {
       console.error("Erro de autenticação:", error);
       localStorage.removeItem("token"); // Limpa o token inválido
-      window.location.href = "../login.html"; // Redireciona para o login
+      window.location.href = "login.html"; // Redireciona para o login
     }
   }
   

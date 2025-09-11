@@ -1,3 +1,17 @@
 {
-  "outputDirectory": "infograficos"
+  "functions": {
+    "api/expositores.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/dashboard",
+      "destination": "/infograficos/dashboard.html"
+    },
+    {
+      "source": "/",
+      "destination": "/infograficos/index.html"
+    }
+  ]
 }

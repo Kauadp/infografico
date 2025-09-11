@@ -1,12 +1,13 @@
 {
+  "outputDirectory": "infograficos",
   "rewrites": [
     {
-      "source": "/kanban_geral",
-      "destination": "/infograficos/kanban_geral.html"
+      "source": "/dashboard",
+      "destination": "/kanban_geral.html"
     },
     {
       "source": "/",
-      "destination": "/infograficos/index.html"
+      "destination": "/kanban_geral.html"
     }
   ]
 }

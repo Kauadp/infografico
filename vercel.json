@@ -1,13 +1,8 @@
 {
-  "functions": {
-    "api/expositores.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     {
-      "source": "/dashboard",
-      "destination": "/infograficos/dashboard.html"
+      "source": "/kanban_geral",
+      "destination": "/infograficos/kanban_geral.html"
     },
     {
       "source": "/",

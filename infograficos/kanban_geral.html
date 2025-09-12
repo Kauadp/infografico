@@ -617,6 +617,41 @@
     </style>
 </head>
 <body>
+    <script>
+        // O token do usuário logado
+        const token = localStorage.getItem("token");
+
+        // Se não houver token, redireciona imediatamente
+        if (!token) {
+            window.location.href = "login.html";
+        }
+
+        // Função para verificar se o token é válido
+        async function checkAuth() {
+            try {
+            const response = await fetch("https://api-login-zmcb.onrender.com/dados-protegidos", {
+                method: "GET",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            
+            // Se a resposta não for OK (por exemplo, 401), redireciona
+            if (!response.ok) {
+                throw new Error("Token inválido ou expirado.");
+            }
+            
+            console.log("Token válido. O usuário pode continuar.");
+            // Aqui você poderia carregar dados ou exibir o conteúdo
+            // document.body.style.display = 'block'; // Se o body estiver hidden inicialmente
+            } catch (error) {
+            console.error("Erro de autenticação:", error);
+            localStorage.removeItem("token"); // Limpa o token inválido
+            window.location.href = "login.html"; // Redireciona para o login
+            }
+        }
+        
+    // Executa a verificação
+    checkAuth();
+    </script>
     <div class="container">
         <header class="main-header">
             <h1>Dashboard de Gestão de Expositores</h1>

@@ -867,12 +867,22 @@
                     <div class="status-pill status-${status}">${fields['CONTRATO ASSINADO?'] || 'Vazio'}</div>
                     <div class="metric-row">
                         <div class="metric-item">
-                            <div class="metric-label">Setor</div>
-                            <div class="metric-value">${Array.isArray(fields['SETOR']) ? fields['SETOR'].join(', ') : (fields['SETOR'] || 'Não Definido')}</div>
+                            <div class="metric-label">Contato Ponto Focal</div>
+                            <div class="metric-value">${fields['CONTATO PONTO FOCAL'] || 'N/A'}</div>
                         </div>
                         <div class="metric-item">
                             <div class="metric-label">Área</div>
                             <div class="metric-value">${fields['ÁREA M² POR STAND'] || 'N/A'} ${fields['ÁREA M² POR STAND'] ? 'm²' : ''}</div>
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-item">
+                            <div class="metric-label">Numeração Stand</div>
+                            <div class="metric-value">${fields['NUMERAÇÃO STAND'] || 'N/A'}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Acessou Sigeventi?</div>
+                            <div class="metric-value">${fields['ACESSOU SIGEVENTI?'] || 'N/A'}</div>
                         </div>
                     </div>
                 `;

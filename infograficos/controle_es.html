@@ -629,302 +629,198 @@
     </div>
 
     <script>
-        let allData = [];
-        let filteredData = [];
+    let allData = [];
+    let filteredData = [];
 
-        const elements = {
-            filtersSection: document.getElementById('filters-section'),
-            kpisSection: document.getElementById('kpis-section'),
-            loading: document.getElementById('loading'),
-            error: document.getElementById('error'),
-            success: document.getElementById('success'),
-            info: document.getElementById('info'),
-            cardsContainer: document.getElementById('cards-container'),
-            totalExpositores: document.getElementById('total-expositores'),
-            standsVendidos: document.getElementById('stands-vendidos'),
-            contratosAssinados: document.getElementById('contratos-assinados'),
-            onboardingFeito: document.getElementById('onboarding-feito'),
-            categoriaFilter: document.getElementById('categoria-filter'),
-            expositorFilter: document.getElementById('expositor-filter'),
-            contratoFilter: document.getElementById('contrato-filter'),
-            vendidoFilter: document.getElementById('vendido-filter'),
-            modalOverlay: document.getElementById('modal-overlay'),
-            modalTitle: document.getElementById('modal-title'),
-            modalSubtitle: document.getElementById('modal-subtitle'),
-            modalContent: document.getElementById('modal-content'),
-            modalClose: document.getElementById('modal-close'),
-        };
+    const elements = {
+        filtersSection: document.getElementById('filters-section'),
+        kpisSection: document.getElementById('kpis-section'),
+        loading: document.getElementById('loading'),
+        error: document.getElementById('error'),
+        success: document.getElementById('success'),
+        info: document.getElementById('info'),
+        cardsContainer: document.getElementById('cards-container'),
+        totalExpositores: document.getElementById('total-expositores'),
+        standsVendidos: document.getElementById('stands-vendidos'),
+        contratosAssinados: document.getElementById('contratos-assinados'),
+        onboardingFeito: document.getElementById('onboarding-feito'),
+        categoriaFilter: document.getElementById('categoria-filter'),
+        expositorFilter: document.getElementById('expositor-filter'),
+        contratoFilter: document.getElementById('contrato-filter'),
+        vendidoFilter: document.getElementById('vendido-filter'),
+        modalOverlay: document.getElementById('modal-overlay'),
+        modalTitle: document.getElementById('modal-title'),
+        modalSubtitle: document.getElementById('modal-subtitle'),
+        modalContent: document.getElementById('modal-content'),
+        modalClose: document.getElementById('modal-close'),
+    };
 
-        // Mensagens utilitárias
-        function showMessage(element, message) {
-            element.textContent = message;
-            element.classList.remove('hidden');
-        }
-        function hideMessages() {
-            elements.error.classList.add('hidden');
-            elements.success.classList.add('hidden');
-            elements.info.classList.add('hidden');
-        }
-        function showError(message) {
-            hideMessages();
-            showMessage(elements.error, message);
-        }
-        function showSuccess(message) {
-            hideMessages();
-            showMessage(elements.success, message);
-        }
-        function showInfo(message) {
-            hideMessages();
-            showMessage(elements.info, message);
-        }
+    // Mensagens utilitárias
+    function showMessage(element, message) {
+        element.textContent = message;
+        element.classList.remove('hidden');
+    }
+    function hideMessages() {
+        elements.error.classList.add('hidden');
+        elements.success.classList.add('hidden');
+        elements.info.classList.add('hidden');
+    }
+    function showError(message) {
+        hideMessages();
+        showMessage(elements.error, message);
+    }
+    function showSuccess(message) {
+        hideMessages();
+        showMessage(elements.success, message);
+    }
+    function showInfo(message) {
+        hideMessages();
+        showMessage(elements.info, message);
+    }
 
-        // Carregar dados da API
-        async function loadData() {
-            try {
-                // Se estiver rodando localmente, use localhost, senão use a URL do Vercel
-                const baseUrl = window.location.hostname === 'localhost' 
-                    ? 'http://localhost:3000' 
-                    : window.location.origin;
-                
-                console.log('Tentando carregar dados de:', `${baseUrl}/api/expositores2`);
-                
-                const resp = await fetch(`${baseUrl}/api/expositores2`);
+    async function loadData() {
+        elements.loading.classList.remove('hidden');
+        try {
+            const resp = await fetch("/api/expositores2"); // caminho relativo do Vercel
+            if (!resp.ok) throw new Error(`Erro HTTP ${resp.status}`);
+            const data = await resp.json();
 
-                if (!resp.ok) {
-                    let errText;
-                    try {
-                        const errJson = await resp.json();
-                        errText = errJson.error ? (errJson.error.message || JSON.stringify(errJson)) : resp.statusText;
-                    } catch (e) {
-                        errText = resp.statusText;
-                    }
-                    throw new Error(`Erro HTTP ${resp.status}: ${errText}`);
-                }
-
-                const data = await resp.json();
-                console.log('Resposta da API:', data);
-                
-                // Verificações de segurança
-                if (!data) {
-                    throw new Error('Resposta vazia da API');
-                }
-                
-                // Se a resposta tem records (formato Airtable)
-                if (data.records && Array.isArray(data.records)) {
-                    allData = data.records;
-                }
-                // Se a resposta é um array direto
-                else if (Array.isArray(data)) {
-                    allData = data.map((item, index) => ({
-                        id: item.id || `rec${index + 1}`,
-                        fields: item.fields || item
-                    }));
-                }
-                // Se a resposta tem outra estrutura
-                else {
-                    console.warn('Formato de dados não reconhecido, tentando usar diretamente:', data);
-                    allData = [{ id: 'rec1', fields: data }];
-                }
-
-                filteredData = [...allData];
-                console.log('Dados processados:', allData.length, 'registros');
-                
-                // Debug: mostra o primeiro registro
-                if (allData.length > 0) {
-                    console.log('Primeiro registro:', allData[0]);
-                }
-                
-            } catch (err) {
-                console.error("Erro ao carregar dados:", err);
-                throw err;
-            }
-        }
-
-        // Renderizar os cards
-        function renderCards(dataToRender = filteredData) {
-            const container = elements.cardsContainer;
-            container.innerHTML = '';
-
-            if (dataToRender.length === 0) {
-                container.innerHTML = `<div class="info-box" style="grid-column: 1 / -1;">Nenhum expositor encontrado com os filtros selecionados.</div>`;
-                return;
+            // Processa dados
+            if (data.records && Array.isArray(data.records)) {
+                allData = data.records;
+            } else if (Array.isArray(data)) {
+                allData = data.map((item, index) => ({
+                    id: item.id || `rec${index + 1}`,
+                    fields: item.fields || item
+                }));
+            } else {
+                allData = [{ id: 'rec1', fields: data }];
             }
 
-            dataToRender.forEach(record => {
-                const fields = record.fields || {};
-                
-                // Determina o status baseado no contrato
-                const contratoStatus = (fields['CONTRATO.ASSINADO.'] || '').toString().toLowerCase();
-                const vendidoStatus = (fields['vendido'] || '').toString().toUpperCase();
-                
-                let status = 'vazio';
-                let statusText = 'N/A';
-                
-                if (contratoStatus.includes('assinado')) {
-                    status = 'assinado';
-                    statusText = 'Assinado';
-                } else if (vendidoStatus === 'SIM') {
-                    status = 'vendido';
-                    statusText = 'Vendido';
-                } else {
-                    status = 'pendente';
-                    statusText = 'Pendente';
-                }
+            filteredData = [...allData];
 
-                const card = document.createElement('div');
-                card.className = 'brand-card';
-                card.onclick = () => openModal(record);
-                card.innerHTML = `
-                    <div class="brand-name">${fields['Expositor..N.Fantasia'] || 'Nome Vazio'}</div>
-                    <div class="status-pill status-${status}">${statusText}</div>
-                    <div class="metric-row">
-                        <div class="metric-item">
-                            <div class="metric-label">Stand</div>
-                            <div class="metric-value">${fields['STAND'] || 'N/A'}</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-label">Área</div>
-                            <div class="metric-value">${fields['ÁREA.M.'] || 'N/A'} ${fields['ÁREA.M.'] ? 'm²' : ''}</div>
-                        </div>
-                    </div>
-                    <div class="metric-row">
-                        <div class="metric-item">
-                            <div class="metric-label">Categoria</div>
-                            <div class="metric-value">${fields['CATEGORIA'] || 'N/A'}</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-label">Receita Realizada</div>
-                            <div class="metric-value">${fields['RECEITA.REALIZADA'] || 'N/A'}</div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+            // Mostra filtros e KPIs
+            elements.filtersSection.classList.remove('hidden');
+            elements.kpisSection.classList.remove('hidden');
+
+            updateKPIs();
+            renderCards(filteredData);
+            setupFilters();
+
+        } catch (err) {
+            console.error(err);
+            showError("Erro ao carregar dados da API.");
+        } finally {
+            elements.loading.classList.add('hidden');
+        }
+    }
+
+    function renderCards(dataToRender = filteredData) {
+        const container = elements.cardsContainer;
+        container.innerHTML = '';
+
+        if (!dataToRender.length) {
+            container.innerHTML = `<div class="info-box" style="grid-column: 1 / -1;">Nenhum expositor encontrado.</div>`;
+            return;
         }
 
-        // Abrir modal com todas as informações
-        function openModal(record) {
+        dataToRender.forEach(record => {
             const fields = record.fields || {};
-            elements.modalTitle.textContent = fields['Expositor..N.Fantasia'] || 'Nome Vazio';
-            elements.modalSubtitle.textContent = `ID: ${record.id}`;
-            elements.modalContent.innerHTML = '';
+            const contratoStatus = (fields['CONTRATO.ASSINADO.'] || '').toLowerCase();
+            const vendidoStatus = (fields['vendido'] || '').toUpperCase();
 
-            // Cria campos dinamicamente baseado nos dados reais do registro
-            Object.keys(fields).forEach(fieldName => {
-                let value = fields[fieldName];
-                if (Array.isArray(value)) value = value.join(', ');
-                if (value === undefined || value === null || value === '') value = 'N/A';
+            let status = 'vazio';
+            let statusText = 'N/A';
+            if (contratoStatus.includes('assinado')) { status = 'assinado'; statusText = 'Assinado'; }
+            else if (vendidoStatus === 'SIM') { status = 'vendido'; statusText = 'Vendido'; }
+            else { status = 'pendente'; statusText = 'Pendente'; }
 
-                const fieldItem = document.createElement('div');
-                fieldItem.className = 'field-item';
-                fieldItem.innerHTML = `
-                    <div class="field-label">${fieldName}</div>
-                    <div class="field-value" data-id="${record.id}" data-field="${fieldName}">${value}</div>
-                `;
-                elements.modalContent.appendChild(fieldItem);
-            });
+            const card = document.createElement('div');
+            card.className = 'brand-card';
+            card.onclick = () => openModal(record);
+            card.innerHTML = `
+                <div class="brand-name">${fields['Expositor..N.Fantasia'] || 'Nome Vazio'}</div>
+                <div class="status-pill status-${status}">${statusText}</div>
+                <div class="metric-row">
+                    <div class="metric-item">
+                        <div class="metric-label">Stand</div>
+                        <div class="metric-value">${fields['STAND'] || 'N/A'}</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Área</div>
+                        <div class="metric-value">${fields['ÁREA.M.'] || 'N/A'} ${fields['ÁREA.M.'] ? 'm²' : ''}</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
 
-            elements.modalOverlay.classList.add('active');
-            enableInlineEditing();
-        }
+    function updateKPIs() {
+        const total = filteredData.length;
+        const vendidos = filteredData.filter(r => (r.fields['vendido'] || '').toUpperCase() === 'SIM').length;
+        const contratos = filteredData.filter(r => (r.fields['CONTRATO.ASSINADO.'] || '').toLowerCase().includes('assinado')).length;
+        const onboarding = filteredData.filter(r => (r.fields['FEZ.ONBOARDING.'] || '').toLowerCase().includes('marcado')).length;
 
-        // Fechar modal
-        function closeModal(event) {
-            if (event && event.target.id !== 'modal-overlay' && event.target.className !== 'modal-close') {
-                if (event.target !== elements.modalOverlay) return;
-            }
-            elements.modalOverlay.classList.remove('active');
-        }
+        elements.totalExpositores.textContent = total;
+        elements.standsVendidos.textContent = vendidos;
+        elements.contratosAssinados.textContent = contratos;
+        elements.onboardingFeito.textContent = onboarding;
+    }
 
-        // Atualizar KPIs
-        function updateKPIs() {
-            // Verificação de segurança
-            if (!filteredData || !Array.isArray(filteredData)) {
-                console.warn('Dados filtrados não disponíveis para atualizar KPIs');
-                elements.totalExpositores.textContent = '0';
-                elements.standsVendidos.textContent = '0';
-                elements.contratosAssinados.textContent = '0';
-                elements.onboardingFeito.textContent = '0';
-                return;
-            }
+    function setupFilters() {
+        const categorias = [...new Set(allData.map(r => r.fields?.['CATEGORIA']).filter(Boolean))].sort();
+        elements.categoriaFilter.innerHTML = '<option value="">Todas as Categorias</option>';
+        categorias.forEach(c => elements.categoriaFilter.appendChild(new Option(c, c)));
 
-            try {
-                const total = filteredData.length;
-                const vendidos = filteredData.filter(record => {
-                    const fields = record.fields || {};
-                    return (fields['vendido'] || '').toString().toUpperCase() === 'SIM';
-                }).length;
-                
-                const contratos = filteredData.filter(record => {
-                    const fields = record.fields || {};
-                    return (fields['CONTRATO.ASSINADO.'] || '').toString().toLowerCase().includes('assinado');
-                }).length;
-                
-                const onboarding = filteredData.filter(record => {
-                    const fields = record.fields || {};
-                    return (fields['FEZ.ONBOARDING.'] || '').toString().toLowerCase().includes('marcado');
-                }).length;
+        const expositores = [...new Set(allData.map(r => r.fields?.['Expositor..N.Fantasia']).filter(Boolean))].sort();
+        elements.expositorFilter.innerHTML = '<option value="">Todos os Expositores</option>';
+        expositores.forEach(e => elements.expositorFilter.appendChild(new Option(e, e)));
 
-                elements.totalExpositores.textContent = total;
-                elements.standsVendidos.textContent = vendidos;
-                elements.contratosAssinados.textContent = contratos;
-                elements.onboardingFeito.textContent = onboarding;
-                
-                console.log(`KPIs atualizados: Total: ${total}, Vendidos: ${vendidos}, Contratos: ${contratos}, Onboarding: ${onboarding}`);
-            } catch (error) {
-                console.error('Erro ao atualizar KPIs:', error);
-                showError('Erro ao calcular estatísticas.');
-            }
-        }
+        elements.categoriaFilter.addEventListener('change', applyFilters);
+        elements.expositorFilter.addEventListener('change', applyFilters);
+        elements.contratoFilter.addEventListener('change', applyFilters);
+        elements.vendidoFilter.addEventListener('change', applyFilters);
+    }
 
-        // Configurar filtros
-        function setupFilters() {
-            // Verificação de segurança
-            if (!allData || !Array.isArray(allData) || allData.length === 0) {
-                console.warn('Nenhum dado disponível para configurar filtros');
-                return;
-            }
+    function applyFilters() {
+        filteredData = allData.filter(r => {
+            const f = r.fields || {};
+            const cat = elements.categoriaFilter.value;
+            const exp = elements.expositorFilter.value;
+            const con = elements.contratoFilter.value;
+            const ven = elements.vendidoFilter.value;
 
-            try {
-                // Popula dropdown de categorias
-                const categorias = [...new Set(
-                    allData
-                        .map(r => r.fields && r.fields['CATEGORIA'])
-                        .filter(Boolean)
-                )].sort();
-                
-                elements.categoriaFilter.innerHTML = '<option value="">Todas as Categorias</option>';
-                categorias.forEach(categoria => {
-                    const opt = document.createElement('option');
-                    opt.value = categoria;
-                    opt.textContent = categoria;
-                    elements.categoriaFilter.appendChild(opt);
-                });
+            return (!cat || f['CATEGORIA'] === cat) &&
+                   (!exp || f['Expositor..N.Fantasia'] === exp) &&
+                   (!con || (f['CONTRATO.ASSINADO.'] || '').toLowerCase().includes(con.toLowerCase())) &&
+                   (!ven || (f['vendido'] || '').toUpperCase() === ven.toUpperCase());
+        });
 
-                // Popula dropdown de expositores
-                const expositores = [...new Set(
-                    allData
-                        .map(r => r.fields && r.fields['Expositor..N.Fantasia'])
-                        .filter(Boolean)
-                )].sort();
-                
-                elements.expositorFilter.innerHTML = '<option value="">Todos os Expositores</option>';
-                expositores.forEach(expositor => {
-                    const opt = document.createElement('option');
-                    opt.value = expositor;
-                    opt.textContent = expositor;
-                    elements.expositorFilter.appendChild(opt);
-                });
+        renderCards(filteredData);
+        updateKPIs();
+    }
 
-                console.log(`Filtros configurados: ${categorias.length} categorias, ${expositores.length} expositores`);
+    function openModal(record) {
+        const fields = record.fields || {};
+        elements.modalTitle.textContent = fields['Expositor..N.Fantasia'] || 'Nome Vazio';
+        elements.modalSubtitle.textContent = `ID: ${record.id}`;
+        elements.modalContent.innerHTML = '';
+        Object.keys(fields).forEach(fn => {
+            let val = fields[fn]; 
+            if (Array.isArray(val)) val = val.join(', ');
+            if (!val) val = 'N/A';
+            const div = document.createElement('div');
+            div.className = 'field-item';
+            div.innerHTML = `<div class="field-label">${fn}</div><div class="field-value">${val}</div>`;
+            elements.modalContent.appendChild(div);
+        });
+        elements.modalOverlay.classList.add('active');
+    }
 
-                // Event listeners
-                elements.categoriaFilter.addEventListener('change', applyFilters);
-                elements.expositorFilter.addEventListener('change', applyFilters);
-                elements.contratoFilter.addEventListener('change', applyFilters);
-                elements.vendidoFilter.addEventListener('change', applyFilters);
-            } catch (error) {
-                console.error('Erro ao configurar filtros:', error);
-                showError('Erro ao configurar filtros. Verifique os dados.');
-            }
-        }
+    elements.modalClose.onclick = () => elements.modalOverlay.classList.remove('active');
+    elements.modalOverlay.onclick = (e) => { if(e.target.id === 'modal-overlay') elements.modalOverlay.classList.remove('active'); }
+
+    // Inicialização
+    loadData();
+</script>

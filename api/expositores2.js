@@ -26,36 +26,44 @@ export default async function handler(req, res) {
 
     const url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(TABLE_NAME2)}`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    });
+    let records = [];
+    let offset;
 
-    console.log("Status da resposta:", response.status);
+    do {
+      const response = await fetch(`${url}${offset ? `?offset=${offset}` : ""}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Erro da API Airtable:", errorText);
+      console.log("Status da resposta:", response.status);
 
-      let errorDetails;
-      try {
-        errorDetails = JSON.parse(errorText);
-      } catch (e) {
-        errorDetails = { message: errorText };
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Erro da API Airtable:", errorText);
+
+        let errorDetails;
+        try {
+          errorDetails = JSON.parse(errorText);
+        } catch (e) {
+          errorDetails = { message: errorText };
+        }
+
+        throw new Error(
+          `Erro HTTP ${response.status}: ${errorDetails.error?.message || errorText}`
+        );
       }
 
-      throw new Error(
-        `Erro HTTP ${response.status}: ${errorDetails.error?.message || errorText}`
-      );
-    }
+      const data = await response.json();
+      console.log("Dados recebidos:", data.records?.length || 0, "registros");
 
-    const data = await response.json();
-    console.log("Dados recebidos:", data.records?.length || 0, "registros");
+      records = records.concat(data.records || []);
+      offset = data.offset; // se existir, continua a buscar
+    } while (offset);
 
-    res.status(200).json(data);
+    res.status(200).json({ records });
   } catch (err) {
     console.error("Erro na API:", err.message);
     res.status(500).json({

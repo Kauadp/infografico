@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
   <link rel="shortcut icon" href="imagens/favicon.ico" type="image/x-icon">
+  
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <style>
     :root {
       --primary-color: #61BB46;
@@ -31,7 +35,6 @@
       overflow: hidden;
     }
 
-    /* Pseudo-elemento para criar uma sobreposição escura sobre o fundo desfocado */
     body::before {
       content: ' ';
       background-image: url("https://alfaiatariadeideias.com.br/wp-content/uploads/2023/09/01-banner-principal-parasite-04.jpg");
@@ -41,8 +44,6 @@
       filter: blur(5px);
       -webkit-filter: blur(5px);
       position: absolute;
-      overflow: hidden;
-      position: absolute;
       top: -10px;
       left: -10px;
       right: -10px;
@@ -50,7 +51,6 @@
       z-index: -2;
     }
 
-    /* Pseudo-elemento para a sobreposição escura (agora acima da imagem desfocada) */
     body::after {
       content: ' ';
       top: 0;
@@ -59,13 +59,13 @@
       bottom: 0;
       background-color: rgba(0, 0, 0, 0.4);
       z-index: -1;
+      position: absolute;
     }
 
-     /* O conteúdo do body precisa de um z-index maior que o pseudo-elemento */
-     body > *:not(script) {
+    body > *:not(script) {
       position: relative;
       z-index: 2;
-     }
+    }
 
     .container {
       flex-grow: 1;
@@ -150,20 +150,6 @@
       cursor: not-allowed;
     }
 
-    .status-msg {
-      margin-top: 1rem;
-      font-weight: 500;
-    }
-    
-    .status-msg.success {
-      color: #28a745;
-    }
-
-    .status-msg.error {
-      color: #dc3545;
-    }
-
-    /* Estilização para a animação de carregamento */
     .loader {
       border: 4px solid rgba(255, 255, 255, 0.3);
       border-top: 4px solid #fff;
@@ -171,15 +157,15 @@
       width: 24px;
       height: 24px;
       animation: spin 1s linear infinite;
-      display: none; /* Inicia escondido */
+      display: none;
     }
 
     .btn.loading .loader {
-      display: block; /* Mostra quando o botão está carregando */
+      display: block;
     }
 
     .btn.loading .btn-text {
-      visibility: hidden; /* Esconde o texto do botão */
+      visibility: hidden;
     }
 
     @keyframes spin {
@@ -187,7 +173,6 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Responsividade */
     @media (max-width: 600px) {
       .card {
         padding: 1.5rem;
@@ -215,24 +200,18 @@
           <span class="btn-text">Entrar</span>
         </button>
       </form>
-      <p id="loginMessage" class="status-msg"></p>
     </section>
   </main>
-  
-   <script>
+
+  <script>
     const loginForm = document.getElementById("loginForm");
     const loginBtn = document.getElementById("loginBtn");
-    const loginMessage = document.getElementById("loginMessage");
 
     async function loginUser(username, password) {
-      // Inicia a animação de carregamento
       loginBtn.disabled = true;
       loginBtn.classList.add('loading');
-      loginMessage.textContent = '';
-      loginMessage.className = 'status-msg';
 
       try {
-        // Usando URLSearchParams para enviar como form-data (compatível com Plumber)
         const formData = new URLSearchParams();
         formData.append('username', username);
         formData.append('password', password);
@@ -242,31 +221,39 @@
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: formData
         });
-        
-        const data = await response.json();
 
-        // Como os dados podem vir como array do Plumber, verificamos adequadamente
+        const data = await response.json();
         const success = Array.isArray(data.success) ? data.success[0] : data.success;
         const message = Array.isArray(data.message) ? data.message[0] : data.message;
+        const token = Array.isArray(data.token) ? data.token[0] : data.token;
 
-        if (success) {
-          localStorage.setItem("token", data.token);
-          loginMessage.textContent = "Login realizado com sucesso!";
-          loginMessage.className = "status-msg success";
+        if (success && token) {
+          localStorage.setItem("token", token);
 
-          setTimeout(() => {
-            window.location.href = "index.html";
-          }, 1200);
+          Swal.fire({
+            icon: "success",
+            title: "Login realizado",
+            text: message || "Bem-vindo!",
+            timer: 1200,
+            showConfirmButton: false
+          }).then(() => window.location.href = "index.html");
+
         } else {
-          loginMessage.textContent = message || "Credenciais inválidas";
-          loginMessage.className = "status-msg error";
+          Swal.fire({
+            icon: "error",
+            title: "Falha no login",
+            text: message || "Usuário ou senha incorretos"
+          });
         }
+
       } catch (error) {
         console.error("Erro:", error);
-        loginMessage.textContent = "Erro de conexão com a API";
-        loginMessage.className = "status-msg error";
+        Swal.fire({
+          icon: "error",
+          title: "Erro de conexão",
+          text: "Não foi possível conectar à API"
+        });
       } finally {
-        // Finaliza a animação de carregamento
         loginBtn.disabled = false;
         loginBtn.classList.remove('loading');
       }
@@ -276,14 +263,16 @@
       e.preventDefault();
       const user = document.getElementById("username").value.trim();
       const pass = document.getElementById("password").value;
-      
-      // Validação básica no frontend
+
       if (!user || !pass) {
-        loginMessage.textContent = "Por favor, preencha todos os campos";
-        loginMessage.className = "status-msg error";
+        Swal.fire({
+          icon: "warning",
+          title: "Campos obrigatórios",
+          text: "Por favor, preencha todos os campos"
+        });
         return;
       }
-      
+
       loginUser(user, pass);
     });
   </script>

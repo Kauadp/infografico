@@ -65,31 +65,5 @@ async function checkAccess(allowedRoles = [], onAuthorized = null) {
         return;
     }
 
-    // Valida token no backend (opcional, mas seguro)
-    try {
-        const response = await fetch("https://api-login-zmcb.onrender.com/perfil", {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error("Token inválido no backend");
-        const data = await response.json();
-        console.log("Usuário autorizado:", data.usuario, "Role:", data.setor);
-
-        // Se forneceu callback, executa
-        if (onAuthorized && typeof onAuthorized === "function") {
-            onAuthorized(data);
-        }
-    } catch (err) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Erro no backend',
-            text: 'Problema ao validar token. Você será redirecionado para login.'
-        }).then(() => {
-            localStorage.removeItem("token");
-            window.location.href = "../login.html";
-        });
-        return;
-    }
-
     return payload;
 }

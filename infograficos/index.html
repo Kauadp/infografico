@@ -153,12 +153,11 @@
     <script src="./js/auth.js"></script>
 </head>
 <body class="text-gray-800">
-    <h1>Página Protegida</h1>
-    <p id="user-info"></p>
+    <h1 id="usuario-logado"></h1>
 
     <script>
         // Define os roles permitidos para esta página
-        const allowedRoles = ["comercial", "financeiro", "admin"];
+        const allowedRoles = ["comercial", "financeiro", "admin", "producao", "marketing", "rh"];
 
         // Chama a função checkAccess
         checkAccess(allowedRoles, function(user) {

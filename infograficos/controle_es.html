@@ -689,10 +689,18 @@
     // Função para converter texto "R$ 1.234,56" para número
     function parseBRL(valor) {
         if (!valor) return 0;
-        return parseFloat(valor.toString()
-                        .replace(/[R$\s.]/g, '')  // remove R$, espaços e pontos
-                        .replace(',', '.')) || 0;
+
+        // remove R$ e espaços
+        valor = valor.toString().replace(/R\$|\s/g, '');
+
+        // se tiver vírgula antes do ponto (formato invertido), remove a vírgula de milhar
+        // ex: "200,502.00" -> "200502.00"
+        valor = valor.replace(/,(\d{3})\./, '$1.');
+
+        // converte para número
+        return parseFloat(valor) || 0;
     }
+
 
     // Calcular soma de uma coluna
     function calcularSoma(filteredData, campo) {

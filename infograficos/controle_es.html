@@ -564,6 +564,14 @@
                         <option value="NAO">Não</option>
                     </select>
                 </div>
+                <div class="filter-item">
+                    <label class="filter-label">Tipo de Controle</label>
+                    <select id="controle-filter">
+                        <option value="">Todos os Status</option>
+                        <option value="FOOD">Food</option>
+                        <option value="STAND">Stand</option>
+                    </select>
+                </div>
             </div>
         </section>
 
@@ -630,6 +638,7 @@
         expositorFilter: document.getElementById('expositor-filter'),
         contratoFilter: document.getElementById('contrato-filter'),
         vendidoFilter: document.getElementById('vendido-filter'),
+        controleFilter: document.getElementById('controle-filter'),
         modalOverlay: document.getElementById('modal-overlay'),
         modalTitle: document.getElementById('modal-title'),
         modalSubtitle: document.getElementById('modal-subtitle'),
@@ -763,6 +772,7 @@
         elements.expositorFilter.addEventListener('change', applyFilters);
         elements.contratoFilter.addEventListener('change', applyFilters);
         elements.vendidoFilter.addEventListener('change', applyFilters);
+        elements.controleFilter.addEventListener('change', applyFilters);
     }
 
     function applyFilters() {
@@ -772,6 +782,7 @@
             const exp = elements.expositorFilter.value;
             const con = elements.contratoFilter.value;
             const ven = elements.vendidoFilter.value;
+            const contrl = elements.controleFilter.value;
 
             // Filtro de categoria
             if (cat && f['CATEGORIA'] !== cat) return false;
@@ -799,6 +810,14 @@
                 
                 if (ven === 'SIM' && vendidoStatus !== 'SIM') return false;
                 if (ven === 'NAO' && vendidoStatus === 'SIM') return false;
+            }
+
+            // Filtro de controle - lógica corrigida
+            if (contrl) {
+                const controleStatus = (f['CONTROL'] || '').toString().trim().toUpperCase();
+
+                if (contrl == "FOOD" && controleStatus !== "FOOD") return false;
+                if (contrl == "STAND" && controleStatus === "FOOD") return false;
             }
 
             return true;

@@ -773,10 +773,35 @@
             const con = elements.contratoFilter.value;
             const ven = elements.vendidoFilter.value;
 
-            return (!cat || f['CATEGORIA'] === cat) &&
-                   (!exp || f['Expositor..N.Fantasia'] === exp) &&
-                   (!con || (f['CONTRATO.ASSINADO.'] || '').toLowerCase().includes(con.toLowerCase())) &&
-                   (!ven || (f['vendido'] || '').toUpperCase() === ven.toUpperCase());
+            // Filtro de categoria
+            if (cat && f['CATEGORIA'] !== cat) return false;
+            
+            // Filtro de expositor
+            if (exp && f['Expositor..N.Fantasia'] !== exp) return false;
+            
+            // Filtro de contrato - lógica corrigida
+            if (con) {
+                const contratoStatus = (f['CONTRATO.ASSINADO.'] || '').toString().trim().toUpperCase();
+                
+                if (con === 'ASSINADO') {
+                    if (!contratoStatus.includes('ASSINADO')) return false;
+                } else if (con === 'NAO') {
+                    if (contratoStatus === '' || contratoStatus.includes('ASSINADO')) return false;
+                } else if (con === 'PENDENTE') {
+                    // Pendente = não está vazio, mas também não está assinado
+                    if (contratoStatus === '' || contratoStatus.includes('ASSINADO')) return false;
+                }
+            }
+            
+            // Filtro de vendido - lógica corrigida
+            if (ven) {
+                const vendidoStatus = (f['vendido'] || '').toString().trim().toUpperCase();
+                
+                if (ven === 'SIM' && vendidoStatus !== 'SIM') return false;
+                if (ven === 'NAO' && vendidoStatus === 'SIM') return false;
+            }
+
+            return true;
         });
 
         renderCards(filteredData);

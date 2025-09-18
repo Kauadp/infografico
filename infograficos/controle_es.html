@@ -534,6 +534,14 @@
         <!-- Filtros -->
         <section class="controls-section hidden" id="filters-section">
             <h3>Filtros</h3>
+            <div class="filter-item">
+                <label class="filter-label">Tipo de Controle</label>
+                <select id="controle-filter">
+                    <option value="">Todos os Status</option>
+                    <option value="FOOD">Food</option>
+                    <option value="STAND">Stand</option>
+                </select>
+            </div>
             <div class="filter-group">
                 <div class="filter-item">
                     <label class="filter-label">Categoria</label>
@@ -564,14 +572,6 @@
                         <option value="NAO">Não</option>
                     </select>
                 </div>
-                <div class="filter-item">
-                    <label class="filter-label">Tipo de Controle</label>
-                    <select id="controle-filter">
-                        <option value="">Todos os Status</option>
-                        <option value="FOOD">Food</option>
-                        <option value="STAND">Stand</option>
-                    </select>
-                </div>
             </div>
         </section>
 
@@ -591,6 +591,20 @@
             <div class="kpi-card">
                 <div class="kpi-value" id="onboarding-feito">0</div>
                 <div class="kpi-label">Onboarding Feito</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="receita-realizada">0</div>
+                <div class="kpi-label">Receita Realizada</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-value" id="receita-prevista">0</div>
+                <div class="kpi-label">Receita Prevista</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-value" id="receita-diferenca">0</div>
+                <div class="kpi-label">Diferença de Receita</div>
             </div>
         </section>
 
@@ -634,6 +648,9 @@
         standsVendidos: document.getElementById('stands-vendidos'),
         contratosAssinados: document.getElementById('contratos-assinados'),
         onboardingFeito: document.getElementById('onboarding-feito'),
+        receitaRealizada: document.getElementById('receita-realizada'),
+        receitaPrevista: document.getElementById('receita-prevista'),
+        receitaDiferenca: document.getElementById('receita-diferenca'),
         categoriaFilter: document.getElementById('categoria-filter'),
         expositorFilter: document.getElementById('expositor-filter'),
         contratoFilter: document.getElementById('contrato-filter'),
@@ -668,6 +685,21 @@
         hideMessages();
         showMessage(elements.info, message);
     }
+
+    // Função para converter texto "R$ 1.234,56" para número
+    function parseBRL(valor) {
+        if (!valor) return 0;
+        return parseFloat(valor.toString()
+                        .replace(/[R$\s.]/g, '')  // remove R$, espaços e pontos
+                        .replace(',', '.')) || 0;
+    }
+
+    // Calcular soma de uma coluna
+    function calcularSoma(filteredData, campo) {
+        return filteredData.reduce((acc, r) => acc + parseBRL(r.fields[campo]), 0);
+    }
+
+
 
     async function loadData() {
         elements.loading.classList.remove('hidden');
@@ -752,11 +784,18 @@
         const vendidos = filteredData.filter(r => (r.fields['vendido'] || '').toUpperCase() === 'SIM').length;
         const contratos = filteredData.filter(r => (r.fields['CONTRATO.ASSINADO.'] || '').toLowerCase().includes('assinado')).length;
         const onboarding = filteredData.filter(r => (r.fields['FEZ.ONBOARDING.'] || '').toLowerCase().includes('marcado')).length;
+        const somaRealizada = calcularSoma(filteredData, 'RECEITA.REALIZADA');
+        const somaPrevista = calcularSoma(filteredData, 'RECEITA.PREVISTA');
+        const diferenca = somaRealizada - somaPrevista;
+
 
         elements.totalExpositores.textContent = total;
         elements.standsVendidos.textContent = vendidos;
         elements.contratosAssinados.textContent = contratos;
         elements.onboardingFeito.textContent = onboarding;
+        elements.receitaRealizada.textContent = somaRealizada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        elements.receitaPrevista.textContent = somaPrevista.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        elements.receitaDiferenca.textContent = diferenca.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
     function setupFilters() {

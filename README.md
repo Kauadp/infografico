@@ -4,7 +4,7 @@
 
 ## Descrição
 
-Este repositório apresenta um infográfico interativo para Análise de Desempenho, desenvolvido durante meu estágio em uma empresa de consultoria. O projeto vai além de uma interface web, integrando ciência de dados, modelagem estatística, engenharia de dados e automação de relatórios para gerar insights de negócios.
+Este repositório apresenta um infográfico interativo para Análise de Desempenho, desenvolvido durante meu estágio na empresa Exagerado, a maior produtora de evento de varejo no Brasil. O projeto vai além de uma interface web, integrando ciência de dados, modelagem estatística, engenharia de dados e automação de relatórios para gerar insights de negócios.
 
 ## Principais Destaques
 

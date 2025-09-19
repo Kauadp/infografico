@@ -6,6 +6,8 @@
     <title>Dashboard de Controle de Vendas Pavilhão Outubro</title>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -531,6 +533,27 @@
             </div>
         </header>
 
+        <button id="export-relatorio">Exportar Relatório</button>
+
+        <!-- Container do relatório -->
+        <div id="relatorio" style="padding:20px; background:white; color:black;">
+        <h2>Relatório do Evento</h2>
+
+        <h3>1. STANDS</h3>
+        <p>Total de Stands: 181</p>
+        <p>Receita Realizada: R$ 1.911.494,50</p>
+        <p>Receita Prevista: R$ 2.105.000,00</p>
+
+        <h3>2. FOODS</h3>
+        <p>Total de Stands: 34</p>
+        <p>Receita Realizada: R$ 115.552,00</p>
+        <p>Receita Prevista: R$ 200.000,00</p>
+
+        <h3>3. CONTRATOS</h3>
+        <p>Total de contratos: 187</p>
+        <p>Contratos Pendentes: 19</p>
+        </div>
+
         <!-- Filtros -->
         <section class="controls-section hidden" id="filters-section">
             <h3>Filtros</h3>
@@ -904,4 +927,21 @@
 
     // Inicialização
     loadData();
+
+    document.getElementById("export-relatorio").addEventListener("click", () => {
+    const { jsPDF } = window.jspdf;
+    const relatorio = document.getElementById("relatorio");
+
+    html2canvas(relatorio).then(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const imgProps = pdf.getImageProperties(imgData);
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        pdf.save("relatorio-evento.pdf");
+    });
+    });
 </script>

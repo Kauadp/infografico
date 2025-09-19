@@ -507,6 +507,150 @@
             font-weight: 600 !important;
             border-radius: 0.5rem !important;
         }
+
+        .btn-export {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--color-primary-green), var(--color-accent-teal));
+            color: var(--color-white);
+            text-decoration: none;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            font-family: 'Nunito', sans-serif;
+            margin-left: 1rem;
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-export:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Estilos para o relatório */
+        .report-container {
+            position: fixed;
+            top: -9999px;
+            left: -9999px;
+            width: 1200px;
+            background: white;
+            font-family: 'Nunito', sans-serif;
+            z-index: -1;
+        }
+
+        .report-header {
+            background: linear-gradient(135deg, #E54E88, #f95b3c);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .report-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .report-section {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .report-section h3 {
+            color: #E54E88;
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #E54E88;
+            padding-bottom: 0.5rem;
+        }
+
+        .report-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .report-kpi {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            border-left: 4px solid #E54E88;
+        }
+
+        .report-kpi-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #f95b3c;
+            margin-bottom: 0.25rem;
+        }
+
+        .report-kpi-label {
+            font-size: 0.9rem;
+            color: #4A5568;
+            font-weight: 600;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .report-table th {
+            background: #E54E88;
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .report-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+        }
+
+        .report-table tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .report-footer {
+            background: #f8fafc;
+            padding: 1rem;
+            text-align: center;
+            border-radius: 0 0 1rem 1rem;
+            color: #4A5568;
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .status-assinado { background: #57da1c; }
+        .status-vendido { background: #57da1c; }
+        .status-pendente { background: #f95b3c; }
+        .status-vazio { background: #6b7280; }
     </style>
     <script src="./js/auth.js"></script>
 </head>
@@ -530,29 +674,9 @@
             <p>Clique nos cards para ver todas as informações</p>
             <div class="mt-4">
                 <a href="../index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
+                <button onclick="exportReport()" class="btn-export" id="export-btn">📊 Exportar Relatório PNG</button>
             </div>
         </header>
-
-        <button id="export-relatorio">Exportar Relatório</button>
-
-        <!-- Container do relatório -->
-        <div id="relatorio" style="padding:20px; background:white; color:black;">
-        <h2>Relatório do Evento</h2>
-
-        <h3>1. STANDS</h3>
-        <p>Total de Stands: 181</p>
-        <p>Receita Realizada: R$ 1.911.494,50</p>
-        <p>Receita Prevista: R$ 2.105.000,00</p>
-
-        <h3>2. FOODS</h3>
-        <p>Total de Stands: 34</p>
-        <p>Receita Realizada: R$ 115.552,00</p>
-        <p>Receita Prevista: R$ 200.000,00</p>
-
-        <h3>3. CONTRATOS</h3>
-        <p>Total de contratos: 187</p>
-        <p>Contratos Pendentes: 19</p>
-        </div>
 
         <!-- Filtros -->
         <section class="controls-section hidden" id="filters-section">
@@ -928,20 +1052,199 @@
     // Inicialização
     loadData();
 
-    document.getElementById("export-relatorio").addEventListener("click", () => {
-    const { jsPDF } = window.jspdf;
-    const relatorio = document.getElementById("relatorio");
+    // Função para exportar relatório
+    async function exportReport() {
+        const exportBtn = document.getElementById('export-btn');
+        exportBtn.disabled = true;
+        exportBtn.textContent = '📊 Gerando Relatório...';
 
-    html2canvas(relatorio).then(canvas => {
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
-        const imgProps = pdf.getImageProperties(imgData);
+        try {
+            // Criar container do relatório
+            const reportContainer = document.createElement('div');
+            reportContainer.className = 'report-container';
+            document.body.appendChild(reportContainer);
 
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            // Calcular estatísticas por categoria
+            const estatisticasPorCategoria = calcularEstatisticasPorCategoria();
+            const dataAtual = new Date().toLocaleDateString('pt-BR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
 
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-        pdf.save("relatorio-evento.pdf");
-    });
-    });
+            reportContainer.innerHTML = `
+                <div class="report-header">
+                    <div class="report-title">Relatório de Gestão de Expositores</div>
+                    <div class="report-subtitle">Pavilhão Outubro Rosa - ${dataAtual}</div>
+                </div>
+
+                <div class="report-section">
+                    <h3>📊 KPIs Gerais</h3>
+                    <div class="report-kpis">
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${filteredData.length}</div>
+                            <div class="report-kpi-label">Total Expositores</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${filteredData.filter(r => (r.fields['vendido'] || '').toUpperCase() === 'SIM').length}</div>
+                            <div class="report-kpi-label">Stands Vendidos</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${filteredData.filter(r => (r.fields['CONTRATO.ASSINADO.'] || '').toLowerCase().includes('assinado')).length}</div>
+                            <div class="report-kpi-label">Contratos Assinados</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${filteredData.filter(r => (r.fields['FEZ.ONBOARDING.'] || '').toLowerCase().includes('marcado')).length}</div>
+                            <div class="report-kpi-label">Onboarding Feito</div>
+                        </div>
+                    </div>
+
+                    <div class="report-kpis">
+                        <div class="report-kpi">
+                            <div class="report-kpi-value" style="font-size: 1.1rem;">${calcularSoma(filteredData, 'RECEITA.REALIZADA').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                            <div class="report-kpi-label">Receita Realizada</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value" style="font-size: 1.1rem;">${calcularSoma(filteredData, 'RECEITA.PREVISTA').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                            <div class="report-kpi-label">Receita Prevista</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${((calcularSoma(filteredData, 'RECEITA.REALIZADA') / calcularSoma(filteredData, 'RECEITA.PREVISTA')) * 100 || 0).toFixed(1)}%</div>
+                            <div class="report-kpi-label">% Receita Realizada</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${Math.round((filteredData.filter(r => (r.fields['vendido'] || '').toUpperCase() === 'SIM').length / filteredData.length) * 100 || 0)}%</div>
+                            <div class="report-kpi-label">Taxa de Ocupação</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>📈 Estatísticas por Categoria</h3>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Categoria</th>
+                                <th>Total</th>
+                                <th>Vendidos</th>
+                                <th>Contratos Assinados</th>
+                                <th>Taxa Ocupação</th>
+                                <th>Receita Realizada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${estatisticasPorCategoria.map(cat => `
+                                <tr>
+                                    <td><strong>${cat.categoria}</strong></td>
+                                    <td>${cat.total}</td>
+                                    <td>${cat.vendidos}</td>
+                                    <td>${cat.contratos}</td>
+                                    <td>${cat.taxaOcupacao}%</td>
+                                    <td>${cat.receita}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-section">
+                    <h3>🏢 Top 10 Expositores por Receita</h3>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Expositor</th>
+                                <th>Status</th>
+                                <th>Stand</th>
+                                <th>Área (m²)</th>
+                                <th>Receita Realizada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredData
+                                .sort((a, b) => parseBRL(b.fields['RECEITA.REALIZADA']) - parseBRL(a.fields['RECEITA.REALIZADA']))
+                                .slice(0, 10)
+                                .map(record => {
+                                    const fields = record.fields || {};
+                                    const contratoStatus = (fields['CONTRATO.ASSINADO.'] || '').toLowerCase();
+                                    const vendidoStatus = (fields['vendido'] || '').toUpperCase();
+                                    
+                                    let status = 'vazio', statusText = 'N/A';
+                                    if (contratoStatus.includes('assinado')) { status = 'assinado'; statusText = 'Assinado'; }
+                                    else if (vendidoStatus === 'SIM') { status = 'vendido'; statusText = 'Vendido'; }
+                                    else { status = 'pendente'; statusText = 'Pendente'; }
+
+                                    return `
+                                        <tr>
+                                            <td><strong>${fields['Expositor..N.Fantasia'] || 'N/A'}</strong></td>
+                                            <td><span class="status-badge status-${status}">${statusText}</span></td>
+                                            <td>${fields['STAND'] || 'N/A'}</td>
+                                            <td>${fields['ÁREA.M.'] || 'N/A'}</td>
+                                            <td><strong>${parseBRL(fields['RECEITA.REALIZADA']).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-footer">
+                    Relatório gerado automaticamente pelo Sistema de Gestão de Expositores - ${dataAtual}
+                </div>
+            `;
+
+            // Aguardar um pouco para renderização
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Capturar e baixar
+            const canvas = await html2canvas(reportContainer, {
+                width: 1200,
+                height: reportContainer.scrollHeight,
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+
+            // Remover container
+            document.body.removeChild(reportContainer);
+
+            // Fazer download
+            const link = document.createElement('a');
+            link.download = `relatorio_expositores_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            showSuccess('Relatório exportado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao exportar relatório:', error);
+            showError('Erro ao gerar relatório. Tente novamente.');
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.textContent = '📊 Exportar Relatório PNG';
+        }
+    }
+
+    // Função auxiliar para calcular estatísticas por categoria
+    function calcularEstatisticasPorCategoria() {
+        const categorias = [...new Set(filteredData.map(r => r.fields?.['CATEGORIA']).filter(Boolean))];
+        
+        return categorias.map(categoria => {
+            const dadosCategoria = filteredData.filter(r => r.fields?.['CATEGORIA'] === categoria);
+            const total = dadosCategoria.length;
+            const vendidos = dadosCategoria.filter(r => (r.fields['vendido'] || '').toUpperCase() === 'SIM').length;
+            const contratos = dadosCategoria.filter(r => (r.fields['CONTRATO.ASSINADO.'] || '').toLowerCase().includes('assinado')).length;
+            const taxaOcupacao = total > 0 ? Math.round((vendidos / total) * 100) : 0;
+            const receita = calcularSoma(dadosCategoria, 'RECEITA.REALIZADA');
+
+            return {
+                categoria,
+                total,
+                vendidos,
+                contratos,
+                taxaOcupacao,
+                receita: receita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            };
+        }).sort((a, b) => b.total - a.total);
+    }
 </script>

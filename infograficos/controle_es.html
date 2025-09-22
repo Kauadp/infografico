@@ -1167,7 +1167,6 @@
                             <div style="background: #f8fafc; padding: 1.5rem; border-radius: 0.75rem; border-left: 4px solid ${controle.tipo === 'STAND' ? '#E54E88' : '#57da1c'};">
                                 <h4 style="color: ${controle.tipo === 'STAND' ? '#E54E88' : '#57da1c'}; font-weight: 700; margin-bottom: 1rem; font-size: 1.1rem;">${controle.tipo === 'STAND' ? '🏪 STAND' : '🍔 FOOD'} - Contratos</h4>
                                 <div style="font-size: 0.9rem; line-height: 1.6; color: #4A5568;">
-                                    <p><strong>Contratos a Elaborar:</strong> ${controle.aElaborar}</p>
                                     <p><strong>Contratos Enviados:</strong> ${controle.enviados}</p>
                                     <p><strong>Contratos Assinados:</strong> ${controle.assinados}</p>
                                     <p style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;"><strong>Total de contratos:</strong> ${controle.total}</p>
@@ -1351,15 +1350,13 @@
             const assinados = dadosControle.filter(r => (r.fields['CONTRATO.ASSINADO.'] || '').toLowerCase().includes('assinado')).length;
             
             // Simulando dados para elaborar e enviados (você pode ajustar conforme sua lógica)
-            const aElaborar = Math.max(0, Math.floor(total * 0.1)); // 10% aproximadamente
-            const enviados = Math.max(0, total - assinados - aElaborar);
+            const enviados = Math.max(0, total - assinados);
             
             const percentual = total > 0 ? Math.round((assinados / total) * 100) : 0;
 
             return {
                 tipo: tipoControle,
                 total,
-                aElaborar,
                 enviados,
                 assinados,
                 percentual

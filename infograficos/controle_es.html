@@ -943,7 +943,7 @@
         const total = filteredData.length;
         const vendidos = filteredData.filter(r => (r.fields['vendido'] || '').toUpperCase() === 'SIM').length;
         const contratos = filteredData.filter(r => (r.fields['CONTRATO.ASSINADO.'] || '').toLowerCase().includes('assinado')).length;
-        const onboarding = filteredData.filter(r => (r.fields['FEZ.ONBOARDING.'] || '').toLowerCase().includes('SIM')).length;
+        const onboarding = filteredData.filter(r => (r.fields['FEZ.ONBOARDING.'] || '').includes('SIM')).length;
         const somaRealizada = calcularSoma(filteredData, 'RECEITA.REALIZADA');
         const somaPrevista = calcularSoma(filteredData, 'RECEITA.PREVISTA');
         const diferenca = somaPrevista - somaRealizada;

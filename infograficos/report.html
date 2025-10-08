@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Estratégica de Risco de Expositores</title>
+    <link rel="shortcut icon" href="../imagens/favicon.ico" type="image/x-icon">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Paleta de cores do e-commerce */
+        :root {
+            --color-primary-green: #57da1c;
+            --color-secondary-purple: #E54E88;
+            --color-dark-blue: #222222;
+            --color-accent-orange: #f95b3c;
+            --color-accent-teal: #00BFB2;
+            --color-accent-yellow: #FDBB2D;
+            --color-light-gray-bg: #F0F0F0;
+            --color-white: #FFFFFF;
+            --color-text-dark: #4A5568;
+            --color-light-hover: #EFEFEF;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--color-light-gray-bg);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, var(--color-secondary-purple), var(--color-accent-orange));
+            color: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(229, 78, 136, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        .main-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.5rem;
+        }
+
+        .main-header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            max-width: 900px;
+            margin: 1rem auto;
+        }
+
+        .navigation-buttons {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            color: var(--color-white);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-accent-teal), #06b6d4);
+            box-shadow: 0 4px 15px rgba(0, 191, 178, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 191, 178, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #9ca3af);
+            box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(107, 114, 128, 0.4);
+        }
+
+        .section {
+            background-color: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            border-left: 6px solid var(--color-secondary-purple);
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--color-dark-blue);
+        }
+
+        .section-description {
+            text-align: center;
+            color: var(--color-text-dark);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            font-size: 1rem;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8fafc, #ffffff);
+            border-radius: 0.75rem;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            border-color: var(--color-secondary-purple);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(229, 78, 136, 0.2);
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--color-text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-description {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .framework-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .framework-card {
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+
+        .framework-card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .framework-card.grave {
+            border-left-color: #b91c1c;
+        }
+
+        .framework-card.atencao {
+            border-left-color: var(--color-accent-orange);
+        }
+
+        .framework-card h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .framework-card.grave h3 {
+            color: #b91c1c;
+        }
+
+        .framework-card.atencao h3 {
+            color: var(--color-accent-orange);
+        }
+
+        .framework-card p {
+            color: var(--color-text-dark);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .framework-card .action {
+            font-weight: 700;
+            padding-top: 1rem;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            height: 450px;
+        }
+
+        .priority-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .priority-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .priority-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .priority-card h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .priority-card p {
+            line-height: 1.6;
+        }
+
+        .conclusion-section {
+            background: linear-gradient(135deg, var(--color-accent-teal), #06b6d4);
+            color: var(--color-white);
+            border-left: none;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem 0;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-header h1 {
+                font-size: 1.75rem;
+            }
+
+            .main-header p {
+                font-size: 0.95rem;
+            }
+
+            .kpi-value {
+                font-size: 2rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .chart-container {
+                height: 350px;
+            }
+
+            .navigation-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <script src="./js/auth.js"></script>
+</head>
+<body>
+    <h1 id="usuario-logado" style="display: none;"></h1>
+
+    <script>
+        // Define os roles permitidos para esta página
+        const allowedRoles = ["comercial", "financeiro", "admin", "producao", "marketing"];
+
+        // Chama a função checkAccess
+        checkAccess(allowedRoles, function(user) {
+            // Atualiza a página com informações do usuário se necessário
+            const info = document.getElementById("usuario-logado");
+            if (info) {
+                info.textContent = `Usuário: ${user.usuario} - Setor: ${user.setor}`;
+            }
+        });
+    </script>
+
+    <div class="container">
+        <header class="main-header">
+            <h1>📊 Análise Estratégica de Risco de Expositores</h1>
+            <p>Um framework de duas dimensões para priorizar ações, otimizar receita e gerenciar o risco de investimento dos expositores.</p>
+            
+            <div class="navigation-buttons">
+                <a href="index.html" class="btn btn-secondary">⬅ Voltar à Página Inicial</a>
+                <a href="previsoes_sp.html" class="btn btn-primary">📈 Ver Dashboard de Previsão</a>
+            </div>
+        </header>
+
+        <main>
+            <!-- KPIs -->
+            <section class="section">
+                <h2 class="section-title" style="color: var(--color-accent-orange);">Visão Geral do Desempenho do Modelo</h2>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <p class="kpi-value" style="color: var(--color-accent-orange);">R$ 437.878</p>
+                        <p class="kpi-label">Erro Absoluto Médio (MAE)</p>
+                        <p class="kpi-description">Representa a margem de erro média da previsão por empresa.</p>
+                    </div>
+                    <div class="kpi-card">
+                        <p class="kpi-value" style="color: var(--color-accent-teal);">24%</p>
+                        <p class="kpi-label">Margem de Erro Relativa</p>
+                        <p class="kpi-description">O MAE corresponde a 24% da média do Gap Real.</p>
+                    </div>
+                    <div class="kpi-card">
+                        <p id="negative-margin-count" class="kpi-value" style="color: #ef4444;">0</p>
+                        <p class="kpi-label">Empresas em Risco Operacional</p>
+                        <p class="kpi-description">Previsão de não recuperar o investimento inicial.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Framework -->
+            <section class="section">
+                <h2 class="section-title" style="color: var(--color-accent-teal);">A Regra da Previsibilidade Inversa</h2>
+                <p class="section-description">A análise revelou que o poder preditivo do modelo é inverso ao risco percebido. Isso nos permite criar um framework de ação claro, focando recursos onde a incerteza é maior e gerenciando o risco onde a falha é previsível.</p>
+                
+                <div class="framework-grid">
+                    <div class="framework-card grave">
+                        <h3>🔴 Risco "Grave": Alta Certeza de Falha</h3>
+                        <p>O modelo é <strong>altamente preciso</strong> ao prever baixa demanda para este grupo. O Erro Absoluto Médio aqui é o menor, confirmando que a tendência de falha é real. O risco é previsível.</p>
+                        <p class="action">⚡ Ação Estratégica: Gestão de Perdas e Triage Operacional.</p>
+                    </div>
+                    <div class="framework-card atencao">
+                        <h3>🟠 Risco "Atenção": Alta Incerteza e Volatilidade</h3>
+                        <p>Este grupo apresenta o <strong>maior Erro Absoluto Médio</strong>. O modelo é incerto, e a receita real pode desviar-se drasticamente da previsão. Aqui reside o maior risco desconhecido e a maior oportunidade.</p>
+                        <p class="action">⚡ Ação Estratégica: Otimização de Receita e Monitoramento Intenso.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Margem de Segurança -->
+            <section class="section">
+                <h2 class="section-title" style="color: #ef4444;">⚠️ Alerta Máximo: Risco de Recuperação do Investimento</h2>
+                <p class="section-description">A Margem de Segurança (Receita Prevista - Custo Fixo Pago) é a métrica mais crítica. Empresas com margem negativa estão previstas para não recuperar o investimento inicial. Esta é a lista de prioridade zero para intervenção.</p>
+                <div class="chart-container">
+                    <canvas id="marginChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Clusters -->
+            <section class="section">
+                <h2 class="section-title" style="color: var(--color-accent-teal);">📍 Segmentação Estratégica por Clusters</h2>
+                <p class="section-description">A análise de cluster (K-Means) dividiu o portfólio em dois grupos distintos, definindo a alocação de recursos: o grupo de alto valor e alta incerteza (Cluster 1) e o grupo de risco operacional previsível (Cluster 2).</p>
+                <div class="chart-container">
+                    <canvas id="clusterChart"></canvas>
+                </div>
+            </section>
+            
+            <!-- Atenção Risk -->
+            <section class="section">
+                <h2 class="section-title" style="color: var(--color-accent-orange);">💎 Oportunidade no Risco "Atenção"</h2>
+                <p class="section-description">Dentro do volátil grupo "Atenção", o foco deve ser nas empresas com maior Potencial, pois representam o maior retorno possível. Este gráfico mostra o Gap (tamanho da bolha) entre Potencial e Receita Prevista para este segmento.</p>
+                <div class="chart-container">
+                    <canvas id="attentionChart"></canvas>
+                </div>
+            </section>
+            
+            <!-- Conclusão -->
+            <section class="section conclusion-section">
+                <h2 class="section-title">🎯 Plano de Ação Estratégico</h2>
+                <div class="priority-grid">
+                    <div class="priority-card">
+                        <h3>1️⃣ Prioridade 1: Falha Operacional</h3>
+                        <p>Focar imediatamente nas empresas com <strong>Margem de Segurança negativa</strong>. O objetivo é reverter o prejuízo previsto e garantir a recuperação do investimento.</p>
+                    </div>
+                    <div class="priority-card">
+                        <h3>2️⃣ Prioridade 2: Otimização do Cluster 1</h3>
+                        <p>Alocar recursos premium para o grupo de <strong>"Alto Valor / Risco Atenção"</strong>. O objetivo é fechar o Gap de R$ 5 milhões e gerenciar a alta volatilidade.</p>
+                    </div>
+                    <div class="priority-card">
+                        <h3>3️⃣ Prioridade 3: Triage do Cluster 2</h3>
+                        <p>Aplicar um plano de <strong>gestão de perdas</strong> para o grupo de <strong>"Risco Grave"</strong>. A demanda é previsivelmente baixa; o foco é a eficiência e o suporte mínimo.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Relatório gerado em 08 de Outubro de 2025. Análise de Risco e Potencial de Expositores.</p>
+        </footer>
+    </div>
+
+<script>
+    const fullData = [
+      { Empresa: 'Acostamento', Diferença: 720000, Potencial: 720000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Consignado', receita_prevista: 0, minimo: 15000 },
+      { Empresa: 'Ana Gonçalves Tricot', Diferença: 1499654, Potencial: 1500000, Gap: 99.9769, Risco: 'Grave', Falta: 'Demanda', Comissão: '10%', receita_prevista: 346, minimo: 30000 },
+      { Empresa: 'Approve', Diferença: 2000280, Potencial: 3500000, Gap: 57.1509, Risco: 'Atenção', Falta: 'Demanda', Comissão: '15%', receita_prevista: 1499720, minimo: 30000 },
+      { Empresa: 'Aramis', Diferença: -3545375, Potencial: 1200000, Gap: -295.448, Risco: 'Ótimo', Falta: 'Oferta', Comissão: 'Consignado', receita_prevista: 4745375, minimo: 0 },
+      { Empresa: 'Arezzo', Diferença: 1200682, Potencial: 1666000, Gap: 72.0697, Risco: 'Atenção', Falta: 'Demanda', Comissão: '8,5%', receita_prevista: 465318, minimo: 0 },
+      { Empresa: 'Bella Curves', Diferença: 300000, Potencial: 300000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 0, minimo: 25000 },
+      { Empresa: 'Blunt', Diferença: 240213.9, Potencial: 400000, Gap: 60, Risco: 'Atenção', Falta: 'Demanda', Comissão: '8%', receita_prevista: 159786.1, minimo: 0 },
+      { Empresa: 'Casas Bahia', Diferença: 766620, Potencial: 1000000, Gap: 76.662, Risco: 'Atenção', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 233380, minimo: 30000 },
+      { Empresa: 'Chilli Beans', Diferença: 1408300, Potencial: 1408300, Gap: 69.6416, Risco: 'Atenção', Falta: 'Demanda', Comissão: '10%', receita_prevista: 0, minimo: 0 },
+      { Empresa: 'Consciência Jeans', Diferença: 572056, Potencial: 1257400, Gap: 45.4952, Risco: 'Leve', Falta: 'Demanda', Comissão: '10%', receita_prevista: 685344, minimo: 30000 },
+      { Empresa: 'Di Santini', Diferença: 799029.7, Potencial: 800000, Gap: 99.8787, Risco: 'Grave', Falta: 'Demanda', Comissão: '10%', receita_prevista: 970.3, minimo: 0 },
+      { Empresa: 'Gigio Geek', Diferença: 900000, Potencial: 900000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: '10%', receita_prevista: 0, minimo: 2000 },
+      { Empresa: 'Highstil', Diferença: 2749155, Potencial: 4000000, Gap: 68.7289, Risco: 'Atenção', Falta: 'Demanda', Comissão: '8%', receita_prevista: 1250845, minimo: 30000 },
+      { Empresa: 'Jequitibá Móveis', Diferença: 8500000, Potencial: 8500000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: '10%', receita_prevista: 0, minimo: 30000 },
+      { Empresa: 'Laguna', Diferença: 3412025, Potencial: 5500000, Gap: 62.0368, Risco: 'Atenção', Falta: 'Demanda', Comissão: '10%', receita_prevista: 2087975, minimo: 0 },
+      { Empresa: 'M.Officer', Diferença: 1050000, Potencial: 1050000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: '10%', receita_prevista: 0, minimo: 0 },
+      { Empresa: 'Malwee', Diferença: 1190720, Potencial: 1440000, Gap: 82.6889, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Consignado', receita_prevista: 249280, minimo: 0 },
+      { Empresa: 'Nicoboco', Diferença: 467059.1, Potencial: 500000, Gap: 93.4118, Risco: 'Grave', Falta: 'Demanda', Comissão: '8%', receita_prevista: 32940.9, minimo: 0 },
+      { Empresa: 'NXO', Diferença: 300000, Potencial: 300000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 0, minimo: 48320 },
+      { Empresa: 'Privalia', Diferença: 4481111, Potencial: 4800000, Gap: 93.3565, Risco: 'Grave', Falta: 'Demanda', Comissão: '7,5%', receita_prevista: 318889, minimo: 0 },
+      { Empresa: 'Rojemac', Diferença: 1198131, Potencial: 1500000, Gap: 79.8754, Risco: 'Atenção', Falta: 'Demanda', Comissão: 'Consignado', receita_prevista: 301869, minimo: 0 },
+      { Empresa: 'Tapetes São Carlos', Diferença: 7599581, Potencial: 8000000, Gap: 94.9948, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Consignado', receita_prevista: 400419, minimo: 0 },
+      { Empresa: 'Triton', Diferença: 2486702, Potencial: 2500000, Gap: 99.4681, Risco: 'Grave', Falta: 'Demanda', Comissão: '20%', receita_prevista: 13298, minimo: 0 },
+      { Empresa: 'Tupode', Diferença: -595012.7, Potencial: 500000, Gap: -119.0025, Risco: 'Nenhum', Falta: 'Oferta', Comissão: '10%', receita_prevista: 1095012.7, minimo: 2000 },
+      { Empresa: 'Vans', Diferença: 1603044, Potencial: 2509000, Gap: 63.8918, Risco: 'Atenção', Falta: 'Demanda', Comissão: '8,5%', receita_prevista: 905956, minimo: 0 },
+      { Empresa: 'Zoe Sports', Diferença: 300000, Potencial: 300000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: '10%', receita_prevista: 0, minimo: 0 },
+      { Empresa: 'Rock e Soda', Diferença: 2302282, Potencial: 2400000, Gap: 95.9284, Risco: 'Grave', Falta: 'Demanda', Comissão: '10%', receita_prevista: 97717.53, minimo: 7500 },
+      { Empresa: 'Disparate', Diferença: 2400000, Potencial: 2400000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: '10%', receita_prevista: 0, minimo: 7500 },
+      { Empresa: 'Grand Cru', Diferença: 418563.5, Potencial: 1500000, Gap: 27.9042, Risco: 'Leve', Falta: 'Demanda', Comissão: '10%', receita_prevista: 1081436, minimo: 0 },
+      { Empresa: 'Evino', Diferença: 508314.2, Potencial: 750000, Gap: 67.7752, Risco: 'Atenção', Falta: 'Demanda', Comissão: '10%', receita_prevista: 241685.7, minimo: 0 },
+      { Empresa: 'Nike', Diferença: 3895309, Potencial: 5600000, Gap: 69.5591, Risco: 'Atenção', Falta: 'Demanda', Comissão: 'Consignado', receita_prevista: 1704691, minimo: 0 },
+      { Empresa: 'Adidas', Diferença: 3290998, Potencial: 5600000, Gap: 58.7678, Risco: 'Atenção', Falta: 'Demanda', Comissão: 'Consignado', receita_prevista: 2309002, minimo: 0 },
+      { Empresa: 'Lacoste', Diferença: 5472991, Potencial: 6400000, Gap: 85.5155, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Consignado', receita_prevista: 927009.3, minimo: 0 },
+      { Empresa: 'Oakley', Diferença: 8493903, Potencial: 9600000, Gap: 88.4782, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Consignado', receita_prevista: 1106097, minimo: 0 },
+      { Empresa: 'Cattai', Diferença: 1427567, Potencial: 1434000, Gap: 99.5514, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 6433.015, minimo: 48320 },
+      { Empresa: 'Colcci', Diferença: 1031170, Potencial: 1500000, Gap: 68.7447, Risco: 'Atenção', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 468829.9, minimo: 30000 },
+      { Empresa: 'Gardana Jeans', Diferença: 900000, Potencial: 900000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 0, minimo: 30500 },
+      { Empresa: 'Jocker Socks', Diferença: 300000, Potencial: 300000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 0, minimo: 18620 },
+      { Empresa: 'Olótipo', Diferença: 17820, Potencial: 17820, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 0, minimo: 17820 },
+      { Empresa: 'Panelas Ultra Premium Outlet', Diferença: 200000, Potencial: 200000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 0, minimo: 24560 },
+      { Empresa: 'Rei do Reparador', Diferença: 200000, Potencial: 200000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 0, minimo: 47520 },
+      { Empresa: 'Volkert Bruto e Prata', Diferença: 500000, Potencial: 500000, Gap: 100, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 0, minimo: 16000 },
+      { Empresa: 'AMC Têxtil', Diferença: 1616710, Potencial: 1620000, Gap: 99.7969, Risco: 'Grave', Falta: 'Demanda', Comissão: 'Não', receita_prevista: 3290.3, minimo: 0 }
+    ];
+
+    const riskColors = {
+        'Grave': '#b91c1c',
+        'Atenção': '#f95b3c',
+        'Leve': '#00A0B0',
+        'Nenhum': '#FDBB2D',
+        'Ótimo': '#57da1c',
+    };
+
+    const clusterColors = {
+        1: 'rgba(249, 91, 60, 0.8)',
+        2: 'rgba(0, 160, 176, 0.8)'
+    };
+
+    const tooltipCallback = {
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    title: function(tooltipItems) {
+                        const item = tooltipItems[0];
+                        let label = item.chart.data.labels[item.dataIndex];
+                        if (Array.isArray(label)) {
+                          return label.join(' ');
+                        }
+                        return label;
+                    }
+                }
+            }
+        }
+    };
+    
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    }
+    
+    function wrapLabel(str, maxWidth = 16) {
+        if (str.length <= maxWidth) return str;
+        
+        let words = str.split(' ');
+        let lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            if (currentLine.length + words[i].length + 1 < maxWidth) {
+                currentLine += ' ' + words[i];
+            } else {
+                lines.push(currentLine);
+                currentLine = words[i];
+            }
+        }
+        lines.push(currentLine);
+        return lines;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        
+        const dataWithMargin = fullData.map(d => ({
+            ...d,
+            margemSeguranca: d.receita_prevista - d.minimo
+        }));
+
+        const negativeMarginData = dataWithMargin
+            .filter(d => d.margemSeguranca < 0)
+            .sort((a, b) => a.margemSeguranca - b.margemSeguranca);
+        
+        document.getElementById('negative-margin-count').textContent = negativeMarginData.length;
+
+        new Chart(document.getElementById('marginChart'), {
+            type: 'bar',
+            data: {
+                labels: negativeMarginData.map(d => wrapLabel(d.Empresa)),
+                datasets: [{
+                    label: 'Prejuízo Previsto (R$)',
+                    data: negativeMarginData.map(d => d.margemSeguranca),
+                    backgroundColor: '#ef4444',
+                    borderColor: '#dc2626',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...tooltipCallback,
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { 
+                            display: true, 
+                            text: 'Valor Abaixo do Mínimo (R$)',
+                            font: {
+                                weight: 'bold',
+                                size: 13
+                            }
+                        },
+                        ticks: {
+                            callback: value => formatCurrency(value)
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            font: {
+                                weight: '600'
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    ...tooltipCallback.plugins,
+                    legend: { display: false },
+                    title: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        const attentionData = fullData.filter(d => d.Risco === 'Atenção');
+        new Chart(document.getElementById('attentionChart'), {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: 'Risco Atenção',
+                    data: attentionData.map(d => ({
+                        x: d.Potencial,
+                        y: d.receita_prevista,
+                        r: Math.sqrt(d.Diferença) / 100, 
+                        label: d.Empresa
+                    })),
+                    backgroundColor: 'rgba(249, 91, 60, 0.7)',
+                    borderColor: 'rgba(249, 91, 60, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: { 
+                        title: { 
+                            display: true, 
+                            text: 'Potencial (R$)',
+                            font: {
+                                weight: 'bold',
+                                size: 13
+                            }
+                        },
+                        ticks: { callback: value => formatCurrency(value) } 
+                    },
+                    y: { 
+                        title: { 
+                            display: true, 
+                            text: 'Receita Prevista (R$)',
+                            font: {
+                                weight: 'bold',
+                                size: 13
+                            }
+                        },
+                        ticks: { callback: value => formatCurrency(value) } 
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const dataPoint = context.dataset.data[context.dataIndex];
+                                return `${dataPoint.label}: Gap de ${formatCurrency(dataPoint.r * dataPoint.r * 10000)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        const dataWithClusters = fullData.map(d => ({
+            ...d,
+            cluster: d.Potencial > 2500000 ? 1 : 2
+        }));
+
+        const cluster1Data = dataWithClusters.filter(d => d.cluster === 1);
+        const cluster2Data = dataWithClusters.filter(d => d.cluster === 2);
+
+        new Chart(document.getElementById('clusterChart'), {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Cluster 1: Alto Valor/Risco',
+                        data: cluster1Data.map(d => ({ x: d.Potencial, y: d.receita_prevista })),
+                        backgroundColor: clusterColors[1],
+                        borderColor: '#f95b3c',
+                        borderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    },
+                    {
+                        label: 'Cluster 2: Risco Operacional',
+                        data: cluster2Data.map(d => ({ x: d.Potencial, y: d.receita_prevista })),
+                        backgroundColor: clusterColors[2],
+                        borderColor: '#00A0B0',
+                        borderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: { 
+                            display: true, 
+                            text: 'Potencial (R$)',
+                            font: {
+                                weight: 'bold',
+                                size: 13
+                            }
+                        },
+                        ticks: { callback: value => formatCurrency(value) }
+                    },
+                    y: {
+                        title: { 
+                            display: true, 
+                            text: 'Receita Prevista (R$)',
+                            font: {
+                                weight: 'bold',
+                                size: 13
+                            }
+                        },
+                        ticks: { callback: value => formatCurrency(value) }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += `(${formatCurrency(context.parsed.x)}, ${formatCurrency(context.parsed.y)})`;
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>

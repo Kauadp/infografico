@@ -5,6 +5,7 @@ const BLING_OAUTH_URL = 'https://api.bling.com.br/oauth/token';
 const BLING_API_BASE_URL = 'https://api.bling.com.br/Api/v3';
 
 // Credenciais (Lidas das Variáveis de Ambiente do Vercel)
+// IMPORTANTE: Configure estas variáveis no painel do Vercel
 const CLIENT_ID = process.env.BLING_CLIENT_ID;
 const CLIENT_SECRET = process.env.BLING_CLIENT_SECRET;
 const REDIRECT_URI = process.env.BLING_REDIRECT_URI;
@@ -29,18 +30,26 @@ async function getNewTokens(code) {
         throw new Error("AUTH_CODE VAZIO: Configure a variável BLING_AUTH_CODE no Vercel.");
     }
 
+    // 🌟🌟🌟 LOGS DE DEBUG DE CREDENCIAIS (CRUCIAL PARA O ERRO "Missing Authentication Token") 🌟🌟🌟
+    console.log(`Debug - Cliente ID lido: ${CLIENT_ID ? 'OK' : 'FALHOU!'}`);
+    console.log(`Debug - Cliente Secret lido: ${CLIENT_SECRET ? 'OK' : 'FALHOU!'}`);
+    console.log(`Debug - Redirect URI lido: ${REDIRECT_URI ? 'OK' : 'FALHOU!'}`);
+    console.log('----------------------------------------------------');
+    // 🌟🌟🌟 --------------------------------------------------------------------------------- 🌟🌟🌟
+
     console.log('Iniciando troca de código por tokens...');
     const body = new URLSearchParams();
     body.append('grant_type', 'authorization_code');
     body.append('code', code);
     body.append('client_id', CLIENT_ID);
     body.append('client_secret', CLIENT_SECRET);
+    body.append('redirect_uri', REDIRECT_URI); // Adiciona o REDIRECT_URI ao corpo (segurança extra)
 
     try {
         const response = await fetch(BLING_OAUTH_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/x-www-form-urlencoded', // CRÍTICO para requisições POST
                 'Accept': 'application/json'
             },
             body: body
@@ -53,16 +62,16 @@ async function getNewTokens(code) {
             refresh_token = data.refresh_token;
 
             console.log('----------------------------------------------------');
-            console.log('TOKENS OBTIDOS COM SUCESSO!');
-            console.log('ATENÇÃO: Você deve salvar os tokens ABAIXO nas Variaveis de Ambiente do Vercel:');
+            console.log('TOKENS OBTIDOS COM SUCESSO! PASSO 2B CONCLUÍDO.');
+            console.log('>> AÇÃO NECESSÁRIA: Salve os tokens ABAIXO nas Variaveis de Ambiente do Vercel:');
             console.log(`NOVO BLING_ACCESS_TOKEN: ${access_token}`);
             console.log(`NOVO BLING_REFRESH_TOKEN: ${refresh_token}`);
-            console.log('E REMOVER a variável BLING_AUTH_CODE.');
+            console.log('Em seguida, REMOVA a variável BLING_AUTH_CODE.');
             console.log('----------------------------------------------------');
 
             return true;
         } else {
-            console.error('Erro na troca de código:', data);
+            console.error('Erro na troca de código (Bling):', data);
             throw new Error(`Erro OAuth: ${data.error_description || JSON.stringify(data)}`);
         }
     } catch (error) {
@@ -79,7 +88,7 @@ async function refreshAccessToken() {
         throw new Error("REFRESH TOKEN AUSENTE: Por favor, execute a troca de código (getNewTokens) primeiro.");
     }
 
-    console.log('Renovando Access Token...');
+    console.log('Iniciando renovação do Access Token...');
     const body = new URLSearchParams();
     body.append('grant_type', 'refresh_token');
     body.append('refresh_token', refresh_token);
@@ -100,18 +109,17 @@ async function refreshAccessToken() {
 
         if (response.ok) {
             access_token = data.access_token;
-            refresh_token = data.refresh_token; // O refresh token também pode ser renovado
+            refresh_token = data.refresh_token; 
             
             console.log('----------------------------------------------------');
             console.log('ACCESS TOKEN RENOVADO!');
             console.log(`NOVO BLING_ACCESS_TOKEN: ${access_token}`);
-            console.log('O Refresh Token também pode ter sido atualizado. Verifique!');
+            console.log(`NOVO BLING_REFRESH_TOKEN: ${refresh_token}`); // Guarde este, ele pode ter mudado
             console.log('----------------------------------------------------');
             return true;
         } else {
-             // Se falhar, pode ser que o Refresh Token tenha expirado (30 dias)
             console.error('Erro na renovação:', data);
-            throw new Error(`Falha na renovação de token. Necessário re-autorizar no navegador.`);
+            throw new Error(`Falha na renovação de token: ${data.error_description || JSON.stringify(data)}`);
         }
     } catch (error) {
         throw new Error(`Falha na requisição de renovação: ${error.message}`);
@@ -125,27 +133,25 @@ async function refreshAccessToken() {
 
 /**
  * Busca as Notas Fiscais no Bling, garantindo que o token esteja pronto.
- * @param {string} filter - Filtro da API do Bling (ex: 'dataEmissao[01/01/2025 TO 01/01/2025]')
  */
 async function fetchNotasFiscais(filter) {
-    // 1. Garante que os tokens foram lidos (do Vercel ENV)
-    if (!access_token && !AUTH_CODE) {
-        throw new Error("Autenticação Pendente: Access Token ou Auth Code não encontrado. Configure as variáveis!");
+    // 1. Garante que as credenciais base existem
+    if (!CLIENT_ID || !CLIENT_SECRET) {
+         throw new Error("Credenciais do APP ausentes. Verifique CLIENT_ID e CLIENT_SECRET no Vercel.");
     }
 
     // 2. Se o Access Token estiver vazio, tenta renovar ou fazer a troca inicial
     if (!access_token) {
         if (AUTH_CODE) {
-            await getNewTokens(AUTH_CODE); // Tenta a troca inicial
+            await getNewTokens(AUTH_CODE); // Tenta a troca inicial com o código de 1 minuto
         } else {
-            await refreshAccessToken(); // Tenta renovar o token
+            // Tenta renovar, caso a primeira troca já tenha sido feita
+            await refreshAccessToken(); 
         }
     }
 
     // 3. Endpoint da API (NF-e)
     const url = `${BLING_API_BASE_URL}/nfes?filters=${encodeURIComponent(filter)}`;
-
-    console.log(`Buscando dados em: ${url}`);
 
     const response = await fetch(url, {
         method: 'GET',
@@ -164,11 +170,9 @@ async function fetchNotasFiscais(filter) {
             notas: data.data
         };
     } else {
-        // Trata erro de token expirado, forçando a renovação na próxima chamada
+        // Trata erro de token expirado (requer renovação na próxima chamada)
         if (data.error && data.error.type === 'invalid_token') {
-             // Não podemos renovar aqui, senão entramos em loop. Deixamos o Access Token
-             // vazio e a próxima chamada tentará a renovação.
-             access_token = null; 
+             access_token = null; // Zera para tentar renovar na próxima execução
              throw new Error("Access Token Expirado/Inválido. Próxima execução tentará renovação.");
         }
         
@@ -188,27 +192,26 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Define o filtro para buscar dados.
-        // Mude isso para a lógica de filtro que você precisa (ex: notas do último dia).
+        // Mude o filtro de data para o que você precisa.
         const filtro = 'dataEmissao[01/01/2025 TO 01/01/2025]'; 
         
         const result = await fetchNotasFiscais(filtro);
         
         if (result.status === 'success') {
-            // **AQUI VOCÊ SALVARIA result.notas EM UM BANCO DE DADOS PERSISTENTE**
-            // Como este é o endpoint de coleta, ele apenas retorna o status.
+            // Este é o ponto onde a auditoria de dados está completa.
             return res.status(200).json({ 
                 status: 'success', 
                 message: `Coleta e Autenticação OK. ${result.totalNotas} notas processadas.`,
-                // Para testes, retorne uma amostra
-                dataSample: result.notas.slice(0, 5) 
+                dataSample: result.notas.slice(0, 5) // Amostra de dados para verificação
             });
-        } else {
-            return res.status(500).json(result);
         }
 
     } catch (error) {
         console.error('Erro fatal no handler:', error);
-        return res.status(500).json({ status: 'error', message: 'Erro interno do servidor.', detail: error.message });
+        return res.status(500).json({ 
+            status: 'error', 
+            message: 'Erro interno do servidor.', 
+            detail: error.message 
+        });
     }
 }

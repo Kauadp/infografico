@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prospecção Marcas Rio de Janeiro</title>
+    <link rel="shortcut icon" href="../imagens/favicon.ico" type="image/x-icon">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --color-primary-green: #57da1c;
+            --color-secondary-purple: #E54E88;
+            --color-dark-blue: #222222;
+            --color-accent-orange: #f95b3c;
+            --color-accent-teal: #00BFB2;
+            --color-accent-yellow: #FDBB2D;
+            --color-light-gray-bg: #F0F0F0;
+            --color-white: #FFFFFF;
+            --color-text-dark: #4A5568;
+            --color-light-hover: #EFEFEF;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--color-light-gray-bg);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, #dc2626, var(--color-accent-orange));
+            color: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(220, 38, 38, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        .main-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.5rem;
+        }
+
+        .main-header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            max-width: 900px;
+            margin: 1rem auto;
+        }
+
+        .navigation-buttons {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            color: var(--color-white);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-accent-teal), #06b6d4);
+            box-shadow: 0 4px 15px rgba(0, 191, 178, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 191, 178, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #9ca3af);
+            box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(107, 114, 128, 0.4);
+        }
+
+        .section {
+            background-color: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            border-left: 6px solid #dc2626;
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--color-dark-blue);
+        }
+
+        .section-description {
+            text-align: center;
+            color: var(--color-text-dark);
+            max-width: 900px;
+            margin: 0 auto 2rem;
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8fafc, #ffffff);
+            border-radius: 0.75rem;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            border-color: #dc2626;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.2);
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--color-text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-description {
+            font-size: 0.875rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .process-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .process-card {
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+
+        .process-card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .process-card.blue {
+            border-left-color: #2563eb;
+        }
+
+        .process-card.green {
+            border-left-color: #16a34a;
+        }
+
+        .process-card.purple {
+            border-left-color: #9333ea;
+        }
+
+        .process-card h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .process-card.blue h3 {
+            color: #2563eb;
+        }
+
+        .process-card.green h3 {
+            color: #16a34a;
+        }
+
+        .process-card.purple h3 {
+            color: #9333ea;
+        }
+
+        .process-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            background: currentColor;
+            color: white;
+            border-radius: 50%;
+            font-size: 1.25rem;
+        }
+
+        .process-card p {
+            color: var(--color-text-dark);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .process-card .metric {
+            font-weight: 700;
+            padding-top: 1rem;
+            border-top: 2px solid #e2e8f0;
+            color: currentColor;
+            font-size: 1.1rem;
+        }
+
+        .tier-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .tier-card {
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 3px solid;
+            transition: all 0.3s ease;
+        }
+
+        .tier-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .tier-card.tier1 {
+            background: linear-gradient(135deg, #fef3c7, #fef9e7);
+            border-color: #f59e0b;
+        }
+
+        .tier-card.tier2 {
+            background: linear-gradient(135deg, #dcfce7, #f0fdf4);
+            border-color: #16a34a;
+        }
+
+        .tier-card h3 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tier-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .tier-card.tier1 .tier-badge {
+            background: #dc2626;
+            color: white;
+        }
+
+        .tier-card.tier2 .tier-badge {
+            background: #16a34a;
+            color: white;
+        }
+
+        .tier-card .profiles {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+
+        .tier-card .pitch-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .tier-card.tier1 .pitch-title {
+            color: #b91c1c;
+        }
+
+        .tier-card.tier2 .pitch-title {
+            color: #15803d;
+        }
+
+        .tier-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .tier-card li {
+            padding-left: 1.5rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .tier-card li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            font-weight: 700;
+        }
+
+        .tier-card.tier1 li:before {
+            color: #dc2626;
+        }
+
+        .tier-card.tier2 li:before {
+            color: #16a34a;
+        }
+
+        .ranking-table-container {
+            overflow-x: auto;
+            margin-top: 2rem;
+        }
+
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .ranking-table thead {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            color: white;
+        }
+
+        .ranking-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .ranking-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.9rem;
+        }
+
+        .ranking-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .ranking-table tbody tr:hover {
+            background-color: #f9fafb;
+            transform: scale(1.01);
+        }
+
+        .ranking-table .rank-cell {
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .ranking-table .tier1-row {
+            background: linear-gradient(to right, #fef3c7, #ffffff);
+        }
+
+        .ranking-table .tier2-row {
+            background: linear-gradient(to right, #dcfce7, #ffffff);
+        }
+
+        .ranking-table .tier3-row {
+            background: linear-gradient(to right, #f3f4f6, #ffffff);
+        }
+
+        .ranking-table .score-cell {
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .conclusion-section {
+            background: linear-gradient(135deg, #dc2626, var(--color-accent-orange));
+            color: var(--color-white);
+            border-left: none;
+        }
+
+        .conclusion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .conclusion-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .conclusion-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .conclusion-card h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem 0;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-header h1 {
+                font-size: 1.75rem;
+            }
+
+            .main-header p {
+                font-size: 0.95rem;
+            }
+
+            .kpi-value {
+                font-size: 2rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .navigation-buttons {
+                flex-direction: column;
+            }
+
+            .ranking-table {
+                font-size: 0.8rem;
+            }
+
+            .ranking-table th,
+            .ranking-table td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+    </style>
+    <script src="./js/auth.js"></script>
+</head>
+<body>
+    <h1 id="usuario-logado" style="display: none;"></h1>
+
+    <script>
+        const allowedRoles = ["comercial", "financeiro", "admin", "producao", "marketing"];
+
+        checkAccess(allowedRoles, function(user) {
+            const info = document.getElementById("usuario-logado");
+            if (info) {
+                info.textContent = `Usuário: ${user.usuario} - Setor: ${user.setor}`;
+            }
+        });
+    </script>
+
+    <div class="container">
+        <header class="main-header">
+            <h1>🎯 DA COLETA AO FECHAMENTO: A CADEIA DE VALOR DA PROSPECÇÃO</h1>
+            <p>Um framework completo de Data Science: do scraping de 88 marcas no Instagram à modelagem estatística, revelando como Engajamento e Conexão RJ definem a estratégia de vendas do Exagerado.</p>
+            
+            <div class="navigation-buttons">
+                <a href="index.html" class="btn btn-secondary">⬅ Voltar à Página Inicial</a>
+            </div>
+        </header>
+
+        <main>
+            <!-- KPIs do Projeto -->
+            <section class="section">
+                <h2 class="section-title" style="color: #dc2626;">📈 Métricas do Projeto: Escala e Profundidade</h2>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <p class="kpi-value" style="color: #dc2626;">88</p>
+                        <p class="kpi-label">Marcas Analisadas</p>
+                        <p class="kpi-description">Perfis coletados via scraping com instagrapi, totalizando ~3 horas de coleta de dados.</p>
+                    </div>
+                    <div class="kpi-card">
+                        <p class="kpi-value" style="color: #2563eb;">880</p>
+                        <p class="kpi-label">Posts Analisados</p>
+                        <p class="kpi-description">Até 10 posts por marca para cálculo de engajamento médio e menções RJ.</p>
+                    </div>
+                    <div class="kpi-card">
+                        <p class="kpi-value" style="color: #16a34a;">4.400+</p>
+                        <p class="kpi-label">Comentários Processados</p>
+                        <p class="kpi-description">Análise de sentimento com VADER e léxico customizado para termos cariocas.</p>
+                    </div>
+                    <div class="kpi-card">
+                        <p class="kpi-value" style="color: #9333ea;">8X</p>
+                        <p class="kpi-label">Mais Engajamento com RJ</p>
+                        <p class="kpi-description">Marcas com "RJ" na bio demonstraram engajamento 8 vezes superior às demais.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Processo Científico -->
+            <section class="section">
+                <h2 class="section-title" style="color: var(--color-accent-teal);">🔬 O Processo: Da Coleta à Estratégia</h2>
+                <p class="section-description">O projeto seguiu uma metodologia rigorosa em três fases: coleta automatizada via Python, transformação e engenharia de features, e modelagem estatística em R com clusterização K-Means e regressão múltipla. Cada etapa validou KPIs específicos que fundamentam o ranqueamento final.</p>
+                
+                <div class="process-grid">
+                    <div class="process-card blue">
+                        <h3><span class="process-number">1</span> FASE EDA: VALIDAÇÃO DO KPI BASE</h3>
+                        <p><strong>Objetivo:</strong> Estabelecer o benchmark de engajamento através de ranqueamento interno por quartis.</p>
+                        <p><strong>Método:</strong> Análise exploratória revelou que o Top 25% do dataset (Engajamento "Muito Alto") apresenta performance dramaticamente superior.</p>
+                        <p><strong>Descoberta-Chave:</strong> Marcas com "RJ" na bio não apenas engajam mais, mas o fazem de forma consistente em todas as métricas (comentários, curtidas, menções).</p>
+                        <div class="metric">KPI Validado: 8X Mais Engajamento com RJ na Bio</div>
+                    </div>
+                    
+                    <div class="process-card green">
+                        <h3><span class="process-number">2</span> FASE K-MEANS: CRIAÇÃO DA ESTRATÉGIA</h3>
+                        <p><strong>Objetivo:</strong> Segmentar o portfólio em perfis estratégicos distintos para personalizar a abordagem de vendas.</p>
+                        <p><strong>Método:</strong> Clusterização com K=5 usando variáveis de Engajamento (log-transformado), Seguidores e % Posts RJ.</p>
+                        <p><strong>Resultado:</strong> Criação de 5 Tiers hierarquizados, do "Fenômeno RJ" (máxima conversão) aos "Globais/Nacionais" (grande alcance, baixo foco local).</p>
+                        <div class="metric">KPI Validado: 5 Estratégias de Prospecção Únicas</div>
+                    </div>
+                    
+                    <div class="process-card purple">
+                        <h3><span class="process-number">3</span> FASE REGRESSÃO: QUANTIFICAÇÃO DO ARGUMENTO</h3>
+                        <p><strong>Objetivo:</strong> Isolar e quantificar o efeito causal da Conexão RJ sobre o Engajamento.</p>
+                        <p><strong>Método:</strong> Regressão linear múltipla com seleção stepwise backward (AIC) para otimizar o modelo preditivo.</p>
+                        <p><strong>Coeficientes Finais:</strong> % Posts RJ (+0.013, P<0.05), Seguidores Log (-0.006, P<0.001), Interações Log (+0.005, P<0.001).</p>
+                        <div class="metric">KPI Validado: β+ Positivo e Significativo para % Posts RJ</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hierarquia de Tiers -->
+            <section class="section">
+                <h2 class="section-title" style="color: #dc2626;">🎯 PRIORIDADE E PITCH: Hierarquia de Prospecção</h2>
+                <p class="section-description">O Ranking Híbrido ordena as 88 marcas por <strong>TIER (Estratégia de Abordagem)</strong> e <strong>Score Ponderado (60% Engajamento + 40% Conexão RJ)</strong>. A equipe de vendas deve concentrar 80% dos esforços nos Tiers 1 e 2, que representam as maiores oportunidades de conversão.</p>
+
+                <div class="tier-grid">
+                    <div class="tier-card tier1">
+                        <h3>
+                            <span>🥇 TIER 1</span>
+                            <span class="tier-badge">Conversão Máxima</span>
+                        </h3>
+                        <p class="profiles"><strong>Perfis:</strong> FENÔMENOS RJ + POTENTES DE NICHO (13 marcas)</p>
+                        
+                        <p class="pitch-title">💰 PITCH DE VENDAS:</p>
+                        <ul>
+                            <li><strong>Foco:</strong> Vender a MONETIZAÇÃO da alta performance existente.</li>
+                            <li><strong>Argumento:</strong> "Sua marca tem a audiência mais ativa do dataset (Engajamento até 14.92%). O Exagerado é o evento único no Brasil para converter essa lealdade em volume de vendas."</li>
+                            <li><strong>Regra Operacional:</strong> Prioridade absoluta. Score SP > 1.0. Contato imediato.</li>
+                        </ul>
+                    </div>
+
+                    <div class="tier-card tier2">
+                        <h3>
+                            <span>🥈 TIER 2</span>
+                            <span class="tier-badge">Posicionamento RJ</span>
+                        </h3>
+                        <p class="profiles"><strong>Perfis:</strong> GIGANTES CARIOCAS (11 marcas)</p>
+                        
+                        <p class="pitch-title">🏆 PITCH DE VENDAS:</p>
+                        <ul>
+                            <li><strong>Foco:</strong> Vender a CONSOLIDAÇÃO da presença no mercado RJ.</li>
+                            <li><strong>Argumento:</strong> "Sua marca já investe pesado em conteúdo RJ (até 100% de Posts). O Exagerado é a ativação física e o maior evento Outlet para transformar esse esforço digital em presença física e lucro."</li>
+                            <li><strong>Regra Operacional:</strong> Contatar após saturação do TIER 1. Ranquear internamente por Score SP.</li>
+                            <li><strong>Diferencial:</strong> Alto reconhecimento de marca + forte conexão local = menor resistência à participação.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Top 5 Acionável -->
+            <section class="section">
+                <h2 class="section-title" style="color: var(--color-accent-orange);">🚀 TOP 5: SUA LISTA DE CHAMADAS IMEDIATAS</h2>
+                <p class="section-description">As 5 marcas com maior <strong>Score de Prospecção</strong> (Performance + Relevância RJ), prontas para contato com pitch de Vendas & Engajamento. Estas marcas representam o "Quick Win" do projeto: alta probabilidade de conversão, argumentação baseada em dados e ROI maximizado.</p>
+
+                <div class="ranking-table-container">
+                    <table class="ranking-table">
+                        <thead>
+                            <tr>
+                                <th>RANK</th>
+                                <th>USERNAME</th>
+                                <th>NOME</th>
+                                <th>PERFIL DE PROSPECÇÃO</th>
+                                <th style="text-align: center;">ENGAJAMENTO</th>
+                                <th style="text-align: center;">% POSTS RJ</th>
+                                <th style="text-align: center;">SCORE FINAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="tier1-row">
+                                <td class="rank-cell" style="color: #dc2626;">#1</td>
+                                <td style="font-weight: 700; color: #b91c1c;">@baobabrasil</td>
+                                <td>Baobá Brasil by Tenka Dara</td>
+                                <td>🥇 FENÔMENO RJ (T1)</td>
+                                <td style="text-align: center; font-weight: 700; color: #dc2626;">14.92%</td>
+                                <td style="text-align: center; font-weight: 700;">90%</td>
+                                <td class="score-cell" style="text-align: center; color: #dc2626;">28.28</td>
+                            </tr>
+                            <tr class="tier1-row">
+                                <td class="rank-cell" style="color: #2563eb;">#2</td>
+                                <td style="font-weight: 700; color: #1e40af;">@bluemanbrasil</td>
+                                <td>BlueMan ®</td>
+                                <td>🥇 POTENTES DE NICHO (T1)</td>
+                                <td style="text-align: center; font-weight: 700;">1.57%</td>
+                                <td style="text-align: center; font-weight: 700;">30%</td>
+                                <td class="score-cell" style="text-align: center; color: #2563eb;">3.40</td>
+                            </tr>
+                            <tr class="tier1-row">
+                                <td class="rank-cell" style="color: #2563eb;">#3</td>
+                                <td style="font-weight: 700; color: #1e40af;">@nanaioficial</td>
+                                <td>Nanai</td>
+                                <td>🥇 POTENTES DE NICHO (T1)</td>
+                                <td style="text-align: center; font-weight: 700;">1.47%</td>
+                                <td style="text-align: center; font-weight: 700;">30%</td>
+                                <td class="score-cell" style="text-align: center; color: #2563eb;">3.22</td>
+                            </tr>
+                            <tr class="tier1-row">
+                                <td class="rank-cell" style="color: #2563eb;">#4</td>
+                                <td style="font-weight: 700; color: #1e40af;">@augustana_store</td>
+                                <td>Augustana</td>
+                                <td>🥇 POTENTES DE NICHO (T1)</td>
+                                <td style="text-align: center; font-weight: 700;">1.07%</td>
+                                <td style="text-align: center; font-weight: 700;">10%</td>
+                                <td class="score-cell" style="text-align: center; color: #2563eb;">2.10</td>
+                            </tr>
+                            <tr class="tier1-row">
+                                <td class="rank-cell" style="color: #2563eb;">#5</td>
+                                <td style="font-weight: 700; color: #1e40af;">@cherrymodaplussize</td>
+                                <td>C H E R R Y M O D A P L U S S I Z E</td>
+                                <td>🥇 POTENTES DE NICHO (T1)</td>
+                                <td style="text-align: center; font-weight: 700;">0.03%</td>
+                                <td style="text-align: center; font-weight: 700;">50%</td>
+                                <td class="score-cell" style="text-align: center; color: #2563eb;">1.08</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Ranking Completo -->
+            <section class="section">
+                <h2 class="section-title" style="color: #374151;">📋 RANKING COMPLETO: 88 Marcas Ranqueadas</h2>
+                <p class="section-description">Lista completa ordenada por Score de Prospecção, com marcação visual por Tier. Use este ranking como roteiro de prospecção: inicie pelo topo e avance sequencialmente, respeitando a hierarquia estratégica definida pela modelagem.</p>
+
+                <div class="ranking-table-container">
+                    <table class="ranking-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">RANK</th>
+                                <th style="width: 5%;">TIER</th>
+                                <th style="width: 15%;">USERNAME</th>
+                                <th style="width: 25%;">NOME</th>
+                                <th style="width: 20%;">PERFIL</th>
+                                <th style="text-align: center; width: 10%;">ENG.</th>
+                                <th style="text-align: center; width: 10%;">% RJ</th>
+                                <th style="text-align: center; width: 10%;">SCORE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rankingTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Conclusão -->
+            <section class="section conclusion-section">
+                <h2 class="section-title">🎯 FECHAMENTO: A VANTAGEM DATA-DRIVEN</h2>
+                <p class="section-description">Este projeto transforma intuição em estratégia quantificada. Cada marca no ranking foi avaliada por 17+ métricas, processada através de 3 modelos estatísticos e validada contra benchmarks internos. O resultado: um roteiro de vendas que maximiza ROI, reduz tempo de prospecção e fundamenta cada argumento comercial em dados concretos.</p>
+                
+                <div class="conclusion-grid">
+                    <div class="conclusion-card">
+                        <h3>📊 Argumentação Científica</h3>
+                        <p>Toda pitch de vendas está baseada em coeficientes de regressão, clusters validados e KPIs de engajamento. Não há subjetividade: os números falam por si.</p>
+                    </div>
+                    <div class="conclusion-card">
+                        <h3>🎯 Foco Estratégico</h3>
+                        <p>80% do esforço nos Tiers 1 e 2 (24 marcas) garante o melhor retorno. O ranqueamento elimina desperdício de tempo com prospects de baixa conversão.</p>
+                    </div>
+                    <div class="conclusion-card">
+                        <h3>🚀 Execução Ágil</h3>
+                        <p>Lista priorizada, pitches personalizados por tier e métricas de acompanhamento: tudo pronto para ação imediata da equipe comercial.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Projeto desenvolvido durante estágio de Ciência de Dados para o Exagerado - O Maior Evento de Outlet do Brasil</p>
+            <p>Metodologia: Scraping (Python/instagrapi) + EDA e Modelagem (R) | 88 marcas | ~3h de coleta | 17+ features engineered</p>
+        </footer>
+    </div>
+
+    <script>
+        const fullRankingData = [
+            {"Prioridade_Tier":1,"Perfil_Prospeccao":"1. FENÔMENO RJ","username":"baobabrasil","nome":"Baobá Brasil by Tenka Dara","seguidores":49253,"engajamento_medio":0.1492,"rj_mentions_posts":0.9,"Score_Prospeccao":28.2792},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"bluemanbrasil","nome":"BlueMan ®","seguidores":224485,"engajamento_medio":0.0157,"rj_mentions_posts":0.3,"Score_Prospeccao":3.3984},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"nanaioficial","nome":"Nanai","seguidores":85055,"engajamento_medio":0.0147,"rj_mentions_posts":0.3,"Score_Prospeccao":3.2212},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"augustana_store","nome":"Augustana","seguidores":16899,"engajamento_medio":0.0107,"rj_mentions_posts":0.1,"Score_Prospeccao":2.1011},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"cherrymodaplussize","nome":"C H E R R Y  M O D A   P L U S   S I Z E","seguidores":55411,"engajamento_medio":0.0003,"rj_mentions_posts":0.5,"Score_Prospeccao":1.0824},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"carlosherrerajoalheria","nome":"Carlos Herrera Joalheria","seguidores":11420,"engajamento_medio":0.0048,"rj_mentions_posts":0.1,"Score_Prospeccao":1.056},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"belcosmeticosoficial","nome":"Bel Variedades","seguidores":1310,"engajamento_medio":0.0057,"rj_mentions_posts":0,"Score_Prospeccao":1.0096},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"gozcosmeticos","nome":"GOZ Cosméticos 🇧🇷 🇦🇪","seguidores":1848,"engajamento_medio":0.0041,"rj_mentions_posts":0,"Score_Prospeccao":0.7262},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"yoboh.gram","nome":"YOBOH!","seguidores":27229,"engajamento_medio":0.0035,"rj_mentions_posts":0,"Score_Prospeccao":0.6199},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"helenapontes","nome":"HELENA PONTES","seguidores":23987,"engajamento_medio":0.0001,"rj_mentions_posts":0.2,"Score_Prospeccao":0.4294},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"vixpaulahermanny","nome":"ViX Paula Hermanny","seguidores":97659,"engajamento_medio":0.0011,"rj_mentions_posts":0.1,"Score_Prospeccao":0.4007},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"felpspro","nome":"FELPS PROFESSIONAL OFICIAL","seguidores":92188,"engajamento_medio":0.0007,"rj_mentions_posts":0.1,"Score_Prospeccao":0.3298},{"Prioridade_Tier":1,"Perfil_Prospeccao":"1. POTENTES DE NICHO","username":"phpraia","nome":"Ph Praia","seguidores":85642,"engajamento_medio":0.0004,"rj_mentions_posts":0.1,"Score_Prospeccao":0.2767},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"nabecatamanhosreais","nome":"NaBeca |  Moda Plus Size no Centro do Rio","seguidores":92424,"engajamento_medio":0.0025,"rj_mentions_posts":1,"Score_Prospeccao":2.5013},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"farmrio","nome":"FARM Rio","seguidores":1706228,"engajamento_medio":0.0017,"rj_mentions_posts":1,"Score_Prospeccao":2.3596},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"oboticario","nome":"O Boticário","seguidores":12271609,"engajamento_medio":0.0003,"rj_mentions_posts":1,"Score_Prospeccao":2.1116},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"delphinadesigns","nome":"Delphina | Moda Plus Size Copacabana RJ","seguidores":45104,"engajamento_medio":0.0006,"rj_mentions_posts":0.9,"Score_Prospeccao":1.9589},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"angelabritobrand","nome":"ANGELA BRITO","seguidores":36109,"engajamento_medio":0.0012,"rj_mentions_posts":0.8,"Score_Prospeccao":1.8593},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"garagerio","nome":"Garage","seguidores":397095,"engajamento_medio":0.0005,"rj_mentions_posts":0.3,"Score_Prospeccao":0.7061},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"isabelacapeto","nome":"Isabela Capeto","seguidores":101589,"engajamento_medio":0.0014,"rj_mentions_posts":0.2,"Score_Prospeccao":0.6597},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"bagaggio","nome":"Bagaggio | Malas e Acessórios de Viagem","seguidores":670077,"engajamento_medio":0.0002,"rj_mentions_posts":0.2,"Score_Prospeccao":0.4471},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"opalocka_biquinis","nome":"Opalocka Biquínis","seguidores":72467,"engajamento_medio":0.0002,"rj_mentions_posts":0.1,"Score_Prospeccao":0.2413},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"melissaoficial","nome":"Melissa Brasil","seguidores":4809573,"engajamento_medio":0.0011,"rj_mentions_posts":0,"Score_Prospeccao":0.1948},{"Prioridade_Tier":2,"Perfil_Prospeccao":"2. GIGANTES CARIOCAS","username":"osklen","nome":"OSKLEN","seguidores":587318,"engajamento_medio":0.0009,"rj_mentions_posts":0,"Score_Prospeccao":0.1594},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"victordzenk","nome":"Victor Dzenk","seguidores":56944,"engajamento_medio":0.0054,"rj_mentions_posts":0.5,"Score_Prospeccao":1.9857},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"linhabrunatavares","nome":"Bruna Tavares - maquiagem e produtos de beleza","seguidores":2275523,"engajamento_medio":0.0032,"rj_mentions_posts":0.4,"Score_Prospeccao":1.3902},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"voliacosmeticos","nome":"Vòlia Cosméticos","seguidores":1281691,"engajamento_medio":0.0015,"rj_mentions_posts":0.5,"Score_Prospeccao":1.2949},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"granado","nome":"Granado Pharmácias","seguidores":924883,"engajamento_medio":0.0014,"rj_mentions_posts":0.5,"Score_Prospeccao":1.2772},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"naturabroficial","nome":"Natura","seguidores":6114242,"engajamento_medio":0.0009,"rj_mentions_posts":0.5,"Score_Prospeccao":1.1886},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"havaianas","nome":"Havaianas","seguidores":4001951,"engajamento_medio":0.0023,"rj_mentions_posts":0.3,"Score_Prospeccao":1.0249},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"lacostebrasil","nome":"Lacoste Brasil","seguidores":1614628,"engajamento_medio":0.0022,"rj_mentions_posts":0.3,"Score_Prospeccao":1.0072},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"thenorthfacebr","nome":"The North Face BR","seguidores":316926,"engajamento_medio":0.0009,"rj_mentions_posts":0.4,"Score_Prospeccao":0.9828},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"dailus","nome":"Dailus","seguidores":3012062,"engajamento_medio":0.0008,"rj_mentions_posts":0.4,"Score_Prospeccao":0.9651},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"chillibeansoficial","nome":"CHILLI BEANS","seguidores":1561850,"engajamento_medio":0.0007,"rj_mentions_posts":0.4,"Score_Prospeccao":0.9474},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"riodejas_","nome":"Rio de Jas","seguidores":59380,"engajamento_medio":0.0007,"rj_mentions_posts":0.4,"Score_Prospeccao":0.9474},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"reserva","nome":"Reserva","seguidores":1647759,"engajamento_medio":0.0014,"rj_mentions_posts":0.3,"Score_Prospeccao":0.8655},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"diorbeauty","nome":"Dior Beauty Official","seguidores":13979309,"engajamento_medio":0.0013,"rj_mentions_posts":0.3,"Score_Prospeccao":0.8478},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"sephorabrasil","nome":"Sephora Brasil","seguidores":3080467,"engajamento_medio":0.0013,"rj_mentions_posts":0.3,"Score_Prospeccao":0.8478},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"pumabrasil","nome":"PUMA Brasil","seguidores":1939733,"engajamento_medio":0.0046,"rj_mentions_posts":0,"Score_Prospeccao":0.8148},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"tacoloja","nome":"TACO Jeans","seguidores":211750,"engajamento_medio":0.0046,"rj_mentions_posts":0,"Score_Prospeccao":0.8148},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"levisbrasil","nome":"Levi's Brasil","seguidores":621112,"engajamento_medio":0.004,"rj_mentions_posts":0,"Score_Prospeccao":0.7085},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"eudora","nome":"Eudora","seguidores":6720756,"engajamento_medio":0.0016,"rj_mentions_posts":0.2,"Score_Prospeccao":0.6951},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"gucci","nome":"GUCCI","seguidores":51834466,"engajamento_medio":0.0039,"rj_mentions_posts":0,"Score_Prospeccao":0.6908},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"sacadacom","nome":"SACADA","seguidores":215421,"engajamento_medio":0.0003,"rj_mentions_posts":0.3,"Score_Prospeccao":0.6707},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"avonbrasil","nome":"Avon Brasil 💄","seguidores":4484512,"engajamento_medio":0.0014,"rj_mentions_posts":0.2,"Score_Prospeccao":0.6597},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"risqueoficial","nome":"Risqué","seguidores":2946835,"engajamento_medio":0.0013,"rj_mentions_posts":0.2,"Score_Prospeccao":0.642},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"zegna","nome":"ZEGNA","seguidores":1968233,"engajamento_medio":0.0036,"rj_mentions_posts":0,"Score_Prospeccao":0.6376},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"ohboyoficial","nome":"OH, BOY!","seguidores":354681,"engajamento_medio":0.0001,"rj_mentions_posts":0.3,"Score_Prospeccao":0.6353},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"cartier","nome":"Cartier Official","seguidores":15889468,"engajamento_medio":0.0035,"rj_mentions_posts":0,"Score_Prospeccao":0.6199},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"soldejaneiro","nome":"Sol de Janeiro","seguidores":3001953,"engajamento_medio":0.0023,"rj_mentions_posts":0.1,"Score_Prospeccao":0.6132},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"lennyniemeyer","nome":"LENNY NIEMEYER","seguidores":389214,"engajamento_medio":0.0011,"rj_mentions_posts":0.2,"Score_Prospeccao":0.6065},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"mariafilo","nome":"Maria Filó","seguidores":1133774,"engajamento_medio":0.0007,"rj_mentions_posts":0.2,"Score_Prospeccao":0.5357},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"marykaybrasil","nome":"Mary Kay Brasil","seguidores":2392780,"engajamento_medio":0.0006,"rj_mentions_posts":0.2,"Score_Prospeccao":0.518},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"prada","nome":"Prada","seguidores":34051820,"engajamento_medio":0.0002,"rj_mentions_posts":0.2,"Score_Prospeccao":0.4471},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"polowearoficial","nome":"Polo Wear Oficial","seguidores":534934,"engajamento_medio":0.0001,"rj_mentions_posts":0.2,"Score_Prospeccao":0.4294},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"ciamaritimabeachwear","nome":"Cia.Marítima","seguidores":1168880,"engajamento_medio":0.0001,"rj_mentions_posts":0.2,"Score_Prospeccao":0.4294},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"bobonews","nome":"BO.BÔ","seguidores":901897,"engajamento_medio":0.0001,"rj_mentions_posts":0.2,"Score_Prospeccao":0.4294},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"crocsbrasil","nome":"Crocs Brasil Oficial","seguidores":1394533,"engajamento_medio":0.002,"rj_mentions_posts":0,"Score_Prospeccao":0.3542},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"vansbrasil","nome":"Vans","seguidores":1164458,"engajamento_medio":0.0008,"rj_mentions_posts":0.1,"Score_Prospeccao":0.3475},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"filabr","nome":"FILA BRASIL","seguidores":787107,"engajamento_medio":0.0008,"rj_mentions_posts":0.1,"Score_Prospeccao":0.3475},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"carmensteffens","nome":"Carmen Steffens","seguidores":2434240,"engajamento_medio":0.0016,"rj_mentions_posts":0,"Score_Prospeccao":0.2834},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"rubyrosebrasil","nome":"Ruby Rose Brasil","seguidores":3880027,"engajamento_medio":0.0004,"rj_mentions_posts":0.1,"Score_Prospeccao":0.2767},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"elizabetharden","nome":"Elizabeth Arden","seguidores":437950,"engajamento_medio":0.0015,"rj_mentions_posts":0,"Score_Prospeccao":0.2657},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"quemdisseberenice","nome":"Quem Disse, Berenice?","seguidores":3141224,"engajamento_medio":0.0002,"rj_mentions_posts":0.1,"Score_Prospeccao":0.2413},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"animalebrasil","nome":"ANIMALE","seguidores":1507591,"engajamento_medio":0.0002,"rj_mentions_posts":0.1,"Score_Prospeccao":0.2413},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"arezzo","nome":"Arezzo","seguidores":6289433,"engajamento_medio":0.0001,"rj_mentions_posts":0.1,"Score_Prospeccao":0.2236},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"revlonbrasil","nome":"Revlon Brasil","seguidores":257466,"engajamento_medio":0.0001,"rj_mentions_posts":0.1,"Score_Prospeccao":0.2236},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"tiffanyandco","nome":"Tiffany & Co.","seguidores":16656330,"engajamento_medio":0.0012,"rj_mentions_posts":0,"Score_Prospeccao":0.2125},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"boss","nome":"BOSS","seguidores":12341252,"engajamento_medio":0.0012,"rj_mentions_posts":0,"Score_Prospeccao":0.2125},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"theofficialpandora","nome":"Pandora","seguidores":11379710,"engajamento_medio":0.0011,"rj_mentions_posts":0,"Score_Prospeccao":0.1948},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"diesel","nome":"Diesel","seguidores":3457417,"engajamento_medio":0.001,"rj_mentions_posts":0,"Score_Prospeccao":0.1771},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"caudalie","nome":"Caudalie","seguidores":1459258,"engajamento_medio":0.0008,"rj_mentions_posts":0,"Score_Prospeccao":0.1417},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"haight_clothing","nome":"Haight","seguidores":172150,"engajamento_medio":0.0008,"rj_mentions_posts":0,"Score_Prospeccao":0.1417},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"calvinkleinbrasil","nome":"Calvin Klein Brasil","seguidores":1013093,"engajamento_medio":0.0007,"rj_mentions_posts":0,"Score_Prospeccao":0.124},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"burberry","nome":"Burberry","seguidores":20229873,"engajamento_medio":0.0006,"rj_mentions_posts":0,"Score_Prospeccao":0.1063},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"louisvuitton","nome":"Louis Vuitton","seguidores":55922538,"engajamento_medio":0.0005,"rj_mentions_posts":0,"Score_Prospeccao":0.0886},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"miumiu","nome":"Miu Miu","seguidores":12562518,"engajamento_medio":0.0004,"rj_mentions_posts":0,"Score_Prospeccao":0.0708},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"katespadeny","nome":"kate spade new york","seguidores":3458124,"engajamento_medio":0.0004,"rj_mentions_posts":0,"Score_Prospeccao":0.0708},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"brooksfielddonna","nome":"BROOKSFIELD DONNA","seguidores":164336,"engajamento_medio":0.0004,"rj_mentions_posts":0,"Score_Prospeccao":0.0708},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"niveabrasil","nome":"NIVEA Brasil","seguidores":1494996,"engajamento_medio":0.0003,"rj_mentions_posts":0,"Score_Prospeccao":0.0531},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"kiehls","nome":"Kiehl's Since 1851","seguidores":958184,"engajamento_medio":0.0003,"rj_mentions_posts":0,"Score_Prospeccao":0.0531},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"michaelkors","nome":"Michael Kors","seguidores":19273405,"engajamento_medio":0.0002,"rj_mentions_posts":0,"Score_Prospeccao":0.0354},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"shopginger","nome":"Shop GINGER","seguidores":393244,"engajamento_medio":0.0002,"rj_mentions_posts":0,"Score_Prospeccao":0.0354},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"tommyhilfiger","nome":"Tommy Hilfiger","seguidores":15215247,"engajamento_medio":0.0002,"rj_mentions_posts":0,"Score_Prospeccao":0.0354},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"colccioficial","nome":"Colcci","seguidores":3088383,"engajamento_medio":0.0001,"rj_mentions_posts":0,"Score_Prospeccao":0.0177},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. MEGA-MARCAS GLOBAIS","username":"toryburch","nome":"TORY BURCH","seguidores":3808951,"engajamento_medio":0.0001,"rj_mentions_posts":0,"Score_Prospeccao":0.0177},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"maccosmeticsbrasil","nome":"M·A·C Cosmetics BR Market","seguidores":2123657,"engajamento_medio":0.0001,"rj_mentions_posts":0,"Score_Prospeccao":0.0177},{"Prioridade_Tier":3,"Perfil_Prospeccao":"3. GRANDES NACIONAIS","username":"alexandrepavaodotcom","nome":"ALEXANDRE PAVÃO","seguidores":195006,"engajamento_medio":0.0001,"rj_mentions_posts":0,"Score_Prospeccao":0.0177}
+        ]
+
+        const rankingBody = document.getElementById("rankingTableBody");
+
+        fullRankingData.forEach((item, index) => {
+            const tr = document.createElement("tr");
+            tr.className = `tier${item.Prioridade_Tier}-row`;
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>T${item.Prioridade_Tier}</td>
+                <td>@${item.username}</td>
+                <td>${item.nome}</td>
+                <td>${item.Perfil_Prospeccao}</td>
+                <td style="text-align:center;">${(item.engajamento_medio * 100).toFixed(2)}%</td>
+                <td style="text-align:center;">${(item.rj_mentions_posts * 100).toFixed(0)}%</td>
+                <td style="text-align:center;">${item.Score_Prospeccao.toFixed(2)}</td>
+            `;
+            rankingBody.appendChild(tr);
+        });
+
+    </script>

@@ -26,105 +26,75 @@ let refresh_token = process.env.BLING_REFRESH_TOKEN;
  * @param {string} code - O Authorization Code temporário.
  */
 async function getNewTokens(code) {
-    if (!code) {
-        throw new Error("AUTH_CODE VAZIO: Configure a variável BLING_AUTH_CODE no Vercel.");
+  if (!code) {
+    throw new Error("AUTH_CODE VAZIO: Configure a variável BLING_AUTH_CODE no Vercel.");
+  }
+
+  console.log(`Debug - Cliente ID lido: ${CLIENT_ID ? 'OK' : 'FALHOU!'}`);
+  console.log(`Debug - Cliente Secret lido: ${CLIENT_SECRET ? 'OK' : 'FALHOU!'}`);
+  console.log(`Debug - Redirect URI lido: ${REDIRECT_URI ? 'OK' : 'FALHOU!'}`);
+  console.log('----------------------------------------------------');
+  
+  console.log('Iniciando troca de código por tokens...');
+
+  const auth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+
+  const body = new URLSearchParams();
+  body.append('grant_type', 'authorization_code');
+  body.append('code', code);
+  body.append('redirect_uri', REDIRECT_URI);
+
+  try {
+    const response = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      access_token = data.access_token;
+      refresh_token = data.refresh_token;
+
+      console.log('----------------------------------------------------');
+      console.log('TOKENS OBTIDOS COM SUCESSO! PASSO 2B CONCLUÍDO.');
+      console.log(`NOVO BLING_ACCESS_TOKEN: ${access_token}`);
+      console.log(`NOVO BLING_REFRESH_TOKEN: ${refresh_token}`);
+      console.log('----------------------------------------------------');
+
+      return true;
+    } else {
+      console.error('Erro na troca de código (Bling):', data);
+      throw new Error(`Erro OAuth: ${data.error_description || JSON.stringify(data)}`);
     }
-
-    // 🌟🌟🌟 LOGS DE DEBUG DE CREDENCIAIS (CRUCIAL PARA O ERRO "Missing Authentication Token") 🌟🌟🌟
-    console.log(`Debug - Cliente ID lido: ${CLIENT_ID ? 'OK' : 'FALHOU!'}`);
-    console.log(`Debug - Cliente Secret lido: ${CLIENT_SECRET ? 'OK' : 'FALHOU!'}`);
-    console.log(`Debug - Redirect URI lido: ${REDIRECT_URI ? 'OK' : 'FALHOU!'}`);
-    console.log('----------------------------------------------------');
-    // 🌟🌟🌟 --------------------------------------------------------------------------------- 🌟🌟🌟
-
-    console.log('Iniciando troca de código por tokens...');
-    const body = new URLSearchParams();
-    body.append('grant_type', 'authorization_code');
-    body.append('code', code);
-    body.append('client_id', CLIENT_ID);
-    body.append('client_secret', CLIENT_SECRET);
-    body.append('redirect_uri', REDIRECT_URI); // Adiciona o REDIRECT_URI ao corpo (segurança extra)
-
-    try {
-        const response = await fetch(BLING_OAUTH_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded', // CRÍTICO para requisições POST
-                'Accept': 'application/json'
-            },
-            body: body
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            access_token = data.access_token;
-            refresh_token = data.refresh_token;
-
-            console.log('----------------------------------------------------');
-            console.log('TOKENS OBTIDOS COM SUCESSO! PASSO 2B CONCLUÍDO.');
-            console.log('>> AÇÃO NECESSÁRIA: Salve os tokens ABAIXO nas Variaveis de Ambiente do Vercel:');
-            console.log(`NOVO BLING_ACCESS_TOKEN: ${access_token}`);
-            console.log(`NOVO BLING_REFRESH_TOKEN: ${refresh_token}`);
-            console.log('Em seguida, REMOVA a variável BLING_AUTH_CODE.');
-            console.log('----------------------------------------------------');
-
-            return true;
-        } else {
-            console.error('Erro na troca de código (Bling):', data);
-            throw new Error(`Erro OAuth: ${data.error_description || JSON.stringify(data)}`);
-        }
-    } catch (error) {
-        throw new Error(`Falha na requisição de troca de tokens: ${error.message}`);
-    }
+  } catch (error) {
+    throw new Error(`Falha na requisição de troca de tokens: ${error.message}`);
+  }
 }
+
 
 /**
  * Renova o Access Token usando o Refresh Token.
  * Usado quando o Access Token de 6h expira.
  */
-async function refreshAccessToken() {
-    if (!refresh_token) {
-        throw new Error("REFRESH TOKEN AUSENTE: Por favor, execute a troca de código (getNewTokens) primeiro.");
-    }
+const response = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Basic ${auth}`,
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Accept': 'application/json'
+  },
+  body: new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: refresh_token
+  })
+});
 
-    console.log('Iniciando renovação do Access Token...');
-    const body = new URLSearchParams();
-    body.append('grant_type', 'refresh_token');
-    body.append('refresh_token', refresh_token);
-    body.append('client_id', CLIENT_ID);
-    body.append('client_secret', CLIENT_SECRET);
-
-    try {
-        const response = await fetch(BLING_OAUTH_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json'
-            },
-            body: body
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            access_token = data.access_token;
-            refresh_token = data.refresh_token; 
-            
-            console.log('----------------------------------------------------');
-            console.log('ACCESS TOKEN RENOVADO!');
-            console.log(`NOVO BLING_ACCESS_TOKEN: ${access_token}`);
-            console.log(`NOVO BLING_REFRESH_TOKEN: ${refresh_token}`); // Guarde este, ele pode ter mudado
-            console.log('----------------------------------------------------');
-            return true;
-        } else {
-            console.error('Erro na renovação:', data);
-            throw new Error(`Falha na renovação de token: ${data.error_description || JSON.stringify(data)}`);
-        }
-    } catch (error) {
-        throw new Error(`Falha na requisição de renovação: ${error.message}`);
-    }
-}
 
 
 // -------------------------------------------------------------

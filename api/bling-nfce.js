@@ -8,7 +8,14 @@ const CLIENT_SECRET = process.env.BLING_CLIENT_SECRET;
 let access_token = process.env.BLING_ACCESS_TOKEN;
 let refresh_token = process.env.BLING_REFRESH_TOKEN;
 
-// Cache de lojas (para não buscar várias vezes)
+// MAPEAMENTO MANUAL DE LOJAS (adicione os IDs que aparecerem)
+const MAPEAMENTO_LOJAS = {
+  205613392: 'Tapetes São Carlos PDV',
+  0: 'Meu Exagerado Cachoeiro',
+  // Adicione mais IDs conforme aparecerem
+};
+
+// Cache de lojas
 const cacheLojas = {};
 
 async function refreshAccessToken() {
@@ -37,6 +44,42 @@ async function refreshAccessToken() {
     return true;
   }
   throw new Error(`Falha ao renovar: ${data.error?.description}`);
+}
+
+/**
+ * Busca informações de uma loja pelo ID
+ */
+async function fetchLoja(lojaId) {
+  if (!lojaId || lojaId === 0) return 'Loja Principal';
+  
+  // Verifica cache
+  if (cacheLojas[lojaId]) return cacheLojas[lojaId];
+
+  try {
+    const url = `${BLING_API_BASE_URL}/depositos/${lojaId}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+    
+    if (response.ok && data.data) {
+      const nomeLoja = data.data.descricao || data.data.nome || `Loja ${lojaId}`;
+      cacheLojas[lojaId] = nomeLoja;
+      return nomeLoja;
+    }
+  } catch (error) {
+    console.error(`Erro ao buscar loja ${lojaId}:`, error.message);
+  }
+
+  // Fallback
+  const fallback = `Loja ID: ${lojaId}`;
+  cacheLojas[lojaId] = fallback;
+  return fallback;
 }
 
 async function fetchNFCe(filtro = null) {
@@ -107,9 +150,10 @@ function processarDadosAuditoria(notasDetalhadas) {
   };
 
   notasAutorizadas.forEach(nota => {
-    const valorNota = parseFloat(nota.total || 0);
+    // CORRIGIDO: usar valorNota ao invés de total
+    const valorNota = parseFloat(nota.valorNota || 0);
     const desconto = parseFloat(nota.desconto?.valor || 0);
-    const nomeLoja = nota.loja?.nome || 'Não informado';
+    const nomeLoja = nota.nomeLoja || 'Não informado';
     
     // Extrai data e hora
     const [dataParte, horaParte] = (nota.dataEmissao || '').split(' ');
@@ -221,16 +265,10 @@ function processarDadosAuditoria(notasDetalhadas) {
 
 function formatarNotasParaTabela(notasDetalhadas) {
   return notasDetalhadas.map(nota => {
-    // Busca nome da loja de várias formas possíveis
-    let nomeLoja = 'Não informado';
-    if (nota.loja) {
-      nomeLoja = nota.loja.nome || nota.loja.descricao || (nota.loja.id ? `Loja ID: ${nota.loja.id}` : 'Não informado');
-    }
-
-    // Calcula valor total correto
-    let valorTotalNota = parseFloat(nota.total || 0);
+    // CORRIGIDO: usar valorNota ao invés de total
+    let valorTotalNota = parseFloat(nota.valorNota || 0);
     
-    // Se total for 0, soma os itens
+    // Se valorNota for 0, soma os itens
     if (valorTotalNota === 0 && nota.itens && nota.itens.length > 0) {
       valorTotalNota = nota.itens.reduce((sum, item) => {
         return sum + parseFloat(item.valor || 0);
@@ -248,7 +286,7 @@ function formatarNotasParaTabela(notasDetalhadas) {
       uf: nota.contato?.endereco?.uf || '',
       serie: nota.serie || '1',
       tipoNota: nota.tipo === 0 ? 'NFC-e' : 'NF-e',
-      loja: nomeLoja,
+      loja: nota.nomeLoja || 'Não informado',
       lojaId: nota.loja?.id || 0,
       valorTotal: valorTotalNota,
       itens: (nota.itens || []).map(item => {
@@ -298,6 +336,7 @@ export default async function handler(req, res) {
     const notasDetalhadas = [];
     const batchSize = 10;
     
+    // Busca detalhes das notas
     for (let i = 0; i < notas.length; i += batchSize) {
       const batch = notas.slice(i, i + batchSize);
       const promises = batch.map(nota => 
@@ -319,14 +358,25 @@ export default async function handler(req, res) {
 
     console.log(`✅ ${notasDetalhadas.length} notas processadas`);
 
-    // DEBUG: Log de uma nota de exemplo para verificar estrutura
-    if (notasDetalhadas.length > 0) {
-      console.log('📋 Exemplo de nota (para debug):');
-      console.log('  - ID:', notasDetalhadas[0].id);
-      console.log('  - Loja:', JSON.stringify(notasDetalhadas[0].loja));
-      console.log('  - Total:', notasDetalhadas[0].total);
-      console.log('  - Itens:', notasDetalhadas[0].itens?.length || 0);
+    // Busca nomes das lojas únicas
+    const lojasIds = [...new Set(notasDetalhadas.map(n => n.loja?.id).filter(id => id))];
+    console.log(`🏪 Buscando nomes de ${lojasIds.length} lojas...`);
+    
+    for (const lojaId of lojasIds) {
+      await fetchLoja(lojaId);
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
+
+    // Adiciona nome da loja em cada nota
+    notasDetalhadas.forEach(nota => {
+      if (nota.loja?.id) {
+        nota.nomeLoja = cacheLojas[nota.loja.id] || `Loja ID: ${nota.loja.id}`;
+      } else {
+        nota.nomeLoja = 'Loja Principal';
+      }
+    });
+
+    console.log('✅ Nomes das lojas carregados');
 
     const auditoria = processarDadosAuditoria(notasDetalhadas);
     const notasTabela = formatarNotasParaTabela(notasDetalhadas);

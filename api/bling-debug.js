@@ -1,5 +1,5 @@
-// api/bling-debug.js
-// Endpoint para debugar estrutura dos dados do Bling
+// api/bling-listar-lojas.js
+// Endpoint para descobrir todos os IDs e nomes das lojas
 
 const BLING_API_BASE_URL = 'https://api.bling.com.br/Api/v3';
 const access_token = process.env.BLING_ACCESS_TOKEN;
@@ -10,79 +10,109 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Busca lista básica
-    console.log('1. Buscando lista de NFC-e...');
-    const responseList = await fetch(`${BLING_API_BASE_URL}/nfce`, {
+    // Busca algumas notas para pegar IDs de lojas
+    const responseNotas = await fetch(`${BLING_API_BASE_URL}/nfce`, {
       headers: {
         'Authorization': `Bearer ${access_token}`,
         'Accept': 'application/json'
       }
     });
-    const dataList = await responseList.json();
     
-    if (!responseList.ok) {
-      return res.status(500).json({ erro: 'Erro ao buscar lista', detalhes: dataList });
+    const dataNotas = await responseNotas.json();
+    
+    if (!responseNotas.ok) {
+      return res.status(500).json({ erro: 'Erro ao buscar notas', detalhes: dataNotas });
     }
 
-    const primeiroId = dataList.data[0]?.id;
-    
-    if (!primeiroId) {
-      return res.status(404).json({ erro: 'Nenhuma nota encontrada' });
+    // Busca detalhes de algumas notas para pegar IDs completos
+    const idsLojas = new Set();
+    const notasParaVerificar = dataNotas.data.slice(0, 50);
+
+    console.log(`Verificando ${notasParaVerificar.length} notas...`);
+
+    for (const nota of notasParaVerificar) {
+      try {
+        const responseDetalhe = await fetch(`${BLING_API_BASE_URL}/nfce/${nota.id}`, {
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        const dataDetalhe = await responseDetalhe.json();
+        
+        if (responseDetalhe.ok && dataDetalhe.data?.loja?.id) {
+          idsLojas.add(dataDetalhe.data.loja.id);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 150));
+      } catch (error) {
+        console.error(`Erro nota ${nota.id}:`, error.message);
+      }
     }
 
-    console.log(`2. Buscando detalhes da nota ID: ${primeiroId}...`);
+    const lojasInfo = [];
     
-    // Busca detalhes da primeira nota
-    const responseDetail = await fetch(`${BLING_API_BASE_URL}/nfce/${primeiroId}`, {
-      headers: {
-        'Authorization': `Bearer ${access_token}`,
-        'Accept': 'application/json'
+    // Tenta buscar informações de cada loja
+    for (const lojaId of idsLojas) {
+      try {
+        const responseDeposito = await fetch(`${BLING_API_BASE_URL}/depositos/${lojaId}`, {
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        const dataDeposito = await responseDeposito.json();
+        
+        if (responseDeposito.ok && dataDeposito.data) {
+          lojasInfo.push({
+            id: lojaId,
+            nome: dataDeposito.data.descricao || dataDeposito.data.nome,
+            situacao: dataDeposito.data.situacao,
+            dados: dataDeposito.data
+          });
+        } else {
+          lojasInfo.push({
+            id: lojaId,
+            nome: null,
+            erro: dataDeposito.error || 'Erro ao buscar',
+            status: responseDeposito.status
+          });
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
+        lojasInfo.push({
+          id: lojaId,
+          nome: null,
+          erro: error.message
+        });
+      }
+    }
+
+    // Gera código para copiar
+    const mapeamento = {};
+    lojasInfo.forEach(loja => {
+      if (loja.nome) {
+        mapeamento[loja.id] = loja.nome;
+      } else {
+        mapeamento[loja.id] = `Loja ${loja.id} (sem nome)`;
       }
     });
-    const dataDetail = await responseDetail.json();
 
-    if (!responseDetail.ok) {
-      return res.status(500).json({ erro: 'Erro ao buscar detalhes', detalhes: dataDetail });
-    }
+    const codigo = `
+// Cole este código no início do arquivo api/bling-nfce.js:
 
-    const nota = dataDetail.data;
+const MAPEAMENTO_LOJAS = ${JSON.stringify(mapeamento, null, 2)};
+    `.trim();
 
-    // Retorna estrutura completa para análise
     return res.status(200).json({
       status: 'success',
-      mensagem: 'Estrutura da nota para análise',
-      analise: {
-        id: nota.id,
-        numero: nota.numero,
-        
-        loja: {
-          estruturaCompleta: nota.loja,
-          id: nota.loja?.id,
-          nome: nota.loja?.nome,
-          descricao: nota.loja?.descricao,
-          tipo: typeof nota.loja
-        },
-        
-        total: {
-          valor: nota.total,
-          tipo: typeof nota.total
-        },
-        
-        itens: {
-          quantidade: nota.itens?.length || 0,
-          exemplo: nota.itens?.[0] ? {
-            codigo: nota.itens[0].codigo,
-            descricao: nota.itens[0].descricao,
-            valor: nota.itens[0].valor,
-            quantidade: nota.itens[0].quantidade,
-            estruturaCompleta: nota.itens[0]
-          } : null
-        },
-
-        todasChaves: Object.keys(nota),
-        
-        estruturaCompleta: nota
-      }
+      totalLojasEncontradas: lojasInfo.length,
+      lojas: lojasInfo,
+      mapeamento,
+      codigoParaCopiar: codigo
     });
 
   } catch (error) {

@@ -8,6 +8,9 @@ const CLIENT_SECRET = process.env.BLING_CLIENT_SECRET;
 let access_token = process.env.BLING_ACCESS_TOKEN;
 let refresh_token = process.env.BLING_REFRESH_TOKEN;
 
+// Cache de lojas (para não buscar várias vezes)
+const cacheLojas = {};
+
 async function refreshAccessToken() {
   if (!refresh_token) throw new Error("REFRESH TOKEN ausente");
 
@@ -315,6 +318,15 @@ export default async function handler(req, res) {
     }
 
     console.log(`✅ ${notasDetalhadas.length} notas processadas`);
+
+    // DEBUG: Log de uma nota de exemplo para verificar estrutura
+    if (notasDetalhadas.length > 0) {
+      console.log('📋 Exemplo de nota (para debug):');
+      console.log('  - ID:', notasDetalhadas[0].id);
+      console.log('  - Loja:', JSON.stringify(notasDetalhadas[0].loja));
+      console.log('  - Total:', notasDetalhadas[0].total);
+      console.log('  - Itens:', notasDetalhadas[0].itens?.length || 0);
+    }
 
     const auditoria = processarDadosAuditoria(notasDetalhadas);
     const notasTabela = formatarNotasParaTabela(notasDetalhadas);

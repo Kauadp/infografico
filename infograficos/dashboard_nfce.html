@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard NFC-e - Bling</title>
+    <title>Visão de NFC-e - Dashboard Bling</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -13,143 +13,156 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             min-height: 100vh;
             padding: 20px;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
         }
 
         .header {
             background: white;
             padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            text-align: center;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
         }
 
         .header h1 {
-            color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            color: #1e3c72;
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
         .header p {
             color: #666;
-            font-size: 1.1em;
+            font-size: 1em;
         }
 
         .filters {
             background: white;
             padding: 20px;
-            border-radius: 15px;
+            border-radius: 12px;
             margin-bottom: 20px;
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        .filters input, .filters button {
-            padding: 12px 20px;
+        .filters label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .filters input {
+            padding: 10px 15px;
             border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1em;
+            border-radius: 8px;
+            font-size: 0.95em;
         }
 
         .filters button {
-            background: #667eea;
+            padding: 10px 25px;
+            background: #1e3c72;
             color: white;
             border: none;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s;
         }
 
         .filters button:hover {
-            background: #5568d3;
+            background: #2a5298;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
         }
 
         .loading {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
             text-align: center;
-            padding: 50px;
-            color: white;
-            font-size: 1.5em;
+            color: #1e3c72;
+            font-size: 1.3em;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
         }
 
         .stat-card {
             background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             transition: transform 0.3s;
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
 
         .stat-card .icon {
-            font-size: 2.5em;
+            font-size: 2em;
             margin-bottom: 10px;
         }
 
         .stat-card .label {
             color: #666;
-            font-size: 0.9em;
-            margin-bottom: 5px;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
 
         .stat-card .value {
-            color: #333;
-            font-size: 2em;
+            color: #1e3c72;
+            font-size: 1.8em;
             font-weight: bold;
         }
 
-        .charts-grid {
+        .stat-card.positive .value {
+            color: #27ae60;
+        }
+
+        .stat-card.negative .value {
+            color: #e74c3c;
+        }
+
+        .content-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            grid-template-columns: 2fr 1fr;
             gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .chart-card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        }
-
-        .chart-card h3 {
-            color: #333;
             margin-bottom: 20px;
         }
 
-        .table-card {
+        .section {
             background: white;
             padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        .table-card h3 {
-            color: #333;
+        .section h3 {
+            color: #1e3c72;
             margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 3px solid #1e3c72;
+            padding-bottom: 10px;
         }
 
         table {
@@ -164,26 +177,52 @@
         }
 
         th {
-            background: #f5f5f5;
-            color: #333;
+            background: #f8f9fa;
+            color: #1e3c72;
             font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        td {
+            font-size: 0.95em;
         }
 
         tr:hover {
-            background: #f9f9f9;
+            background: #f8f9fa;
+        }
+
+        .valor {
+            font-weight: 600;
+            color: #27ae60;
+        }
+
+        .cfop-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
         }
 
         .error {
-            background: #ff6b6b;
+            background: #e74c3c;
             color: white;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 1200px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 768px) {
-            .charts-grid {
-                grid-template-columns: 1fr;
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -191,78 +230,131 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Dashboard NFC-e</h1>
-            <p>Visão em tempo real das suas Notas Fiscais de Consumidor</p>
+            <h1>📊 Visão de NFC-e</h1>
+            <p>Análise detalhada de saídas por CFOP, formas de pagamento e produtos</p>
         </div>
 
         <div class="filters">
-            <input type="date" id="dataInicio" placeholder="Data Início">
-            <input type="date" id="dataFim" placeholder="Data Fim">
+            <label>De:</label>
+            <input type="date" id="dataInicio">
+            
+            <label>Até:</label>
+            <input type="date" id="dataFim">
+            
+            <label>Limite:</label>
+            <select id="limite">
+                <option value="20">20 notas</option>
+                <option value="50" selected>50 notas</option>
+                <option value="100">100 notas</option>
+            </select>
+            
             <button onclick="carregarDados()">🔍 Buscar</button>
             <button onclick="carregarDados(true)">🔄 Atualizar</button>
         </div>
 
         <div id="loading" class="loading" style="display: none;">
-            ⏳ Carregando dados...
+            ⏳ Processando notas fiscais... Isso pode levar alguns segundos...
         </div>
 
         <div id="error" class="error" style="display: none;"></div>
 
         <div id="dashboard" style="display: none;">
+            <!-- Cards de Resumo -->
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card positive">
                     <div class="icon">💰</div>
                     <div class="label">Total de Vendas</div>
                     <div class="value" id="totalVendas">R$ 0,00</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">📄</div>
-                    <div class="label">Total de Notas</div>
+                    <div class="label">Notas Processadas</div>
                     <div class="value" id="totalNotas">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="icon">📦</div>
-                    <div class="label">Itens Vendidos</div>
-                    <div class="value" id="totalItens">0</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon">🎯</div>
                     <div class="label">Ticket Médio</div>
                     <div class="value" id="ticketMedio">R$ 0,00</div>
                 </div>
+                <div class="stat-card">
+                    <div class="icon">💵</div>
+                    <div class="label">Valor Líquido</div>
+                    <div class="value" id="valorLiquido">R$ 0,00</div>
+                </div>
+                <div class="stat-card negative">
+                    <div class="icon">🏷️</div>
+                    <div class="label">Descontos</div>
+                    <div class="value" id="totalDescontos">R$ 0,00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">🚚</div>
+                    <div class="label">Frete</div>
+                    <div class="value" id="totalFrete">R$ 0,00</div>
+                </div>
             </div>
 
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <h3>📈 Vendas por Dia</h3>
-                    <canvas id="chartVendasDia"></canvas>
+            <!-- Conteúdo Principal -->
+            <div class="content-grid">
+                <!-- Tabela de CFOPs -->
+                <div class="section">
+                    <h3>📋 Operações por CFOP</h3>
+                    <table id="tabelaCFOP">
+                        <thead>
+                            <tr>
+                                <th>CFOP</th>
+                                <th>Descrição</th>
+                                <th>Qtd. Notas</th>
+                                <th>Valor Total</th>
+                                <th>Valor Médio</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
-                <div class="chart-card">
-                    <h3>🏆 Top 10 Produtos</h3>
-                    <canvas id="chartTopProdutos"></canvas>
+
+                <!-- Formas de Pagamento -->
+                <div class="section">
+                    <h3>💳 Formas de Pagamento</h3>
+                    <table id="tabelaPagamento">
+                        <thead>
+                            <tr>
+                                <th>Forma</th>
+                                <th>Qtd.</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="table-card">
-                <h3>🕐 Últimas Vendas</h3>
-                <table id="tabelaVendas">
+            <!-- Produtos Mais Vendidos -->
+            <div class="section">
+                <h3>🏆 Top 20 Produtos Mais Vendidos</h3>
+                <table id="tabelaProdutos">
                     <thead>
                         <tr>
-                            <th>Número</th>
-                            <th>Data/Hora</th>
-                            <th>Cliente</th>
-                            <th>Valor</th>
+                            <th>Código</th>
+                            <th>Produto</th>
+                            <th>CFOP</th>
+                            <th>Quantidade</th>
+                            <th>Valor Total</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
+
+            <!-- Notas por Dia -->
+            <div class="section">
+                <h3>📅 Distribuição de Notas por Dia</h3>
+                <canvas id="chartNotasDia"></canvas>
+            </div>
         </div>
     </div>
 
     <script>
-        let chartVendas = null;
-        let chartProdutos = null;
+        let chartNotas = null;
 
         // Define datas padrão (últimos 7 dias)
         function setDefaultDates() {
@@ -277,6 +369,7 @@
         async function carregarDados(forceRefresh = false) {
             const dataInicio = document.getElementById('dataInicio').value;
             const dataFim = document.getElementById('dataFim').value;
+            const limite = document.getElementById('limite').value;
 
             if (!dataInicio || !dataFim) {
                 alert('Por favor, selecione as datas!');
@@ -289,9 +382,9 @@
             document.getElementById('error').style.display = 'none';
 
             try {
-                // Mude esta URL para o seu endpoint do Vercel
-                const url = `/api/bling-nfce?dataInicio=${dataInicio}&dataFim=${dataFim}&detalhes=true&limit=100`;
+                const url = `https://dashboardexagerado.vercel.app/api/bling-nfce?dataInicio=${dataInicio}&dataFim=${dataFim}&limit=${limite}`;
                 
+                console.log('🔗 Buscando:', url);
                 const response = await fetch(url);
                 const data = await response.json();
 
@@ -299,10 +392,11 @@
                     throw new Error(data.message);
                 }
 
-                // Atualiza dashboard
+                console.log('✅ Dados recebidos:', data);
                 atualizarDashboard(data);
 
             } catch (error) {
+                console.error('❌ Erro:', error);
                 document.getElementById('error').textContent = '❌ Erro ao carregar dados: ' + error.message;
                 document.getElementById('error').style.display = 'block';
             } finally {
@@ -311,67 +405,82 @@
         }
 
         function atualizarDashboard(data) {
-            const dash = data.dashboard;
+            const visao = data.visaoNFCe;
 
-            // Atualiza cards
-            document.getElementById('totalVendas').textContent = `R$ ${dash.resumo.totalVendas}`;
-            document.getElementById('totalNotas').textContent = dash.resumo.totalNotas;
-            document.getElementById('totalItens').textContent = dash.resumo.totalItens;
-            document.getElementById('ticketMedio').textContent = `R$ ${dash.resumo.ticketMedio}`;
+            // Atualiza cards de resumo
+            document.getElementById('totalVendas').textContent = `R$ ${parseFloat(visao.resumo.totalVendas).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('totalNotas').textContent = visao.resumo.quantidadeNotas;
+            document.getElementById('ticketMedio').textContent = `R$ ${parseFloat(visao.resumo.ticketMedio).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('valorLiquido').textContent = `R$ ${parseFloat(visao.resumo.valorLiquido).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('totalDescontos').textContent = `R$ ${parseFloat(visao.resumo.totalDescontos).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('totalFrete').textContent = `R$ ${parseFloat(visao.resumo.totalFrete).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
 
-            // Gráfico de vendas por dia
-            if (chartVendas) chartVendas.destroy();
-            const ctxVendas = document.getElementById('chartVendasDia').getContext('2d');
-            chartVendas = new Chart(ctxVendas, {
-                type: 'line',
-                data: {
-                    labels: dash.vendasPorDia.map(v => v.data),
-                    datasets: [{
-                        label: 'Vendas (R$)',
-                        data: dash.vendasPorDia.map(v => v.valor),
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true
-                }
+            // Tabela de CFOPs
+            const tbodyCFOP = document.querySelector('#tabelaCFOP tbody');
+            tbodyCFOP.innerHTML = '';
+            visao.cfops.forEach(cfop => {
+                const row = tbodyCFOP.insertRow();
+                row.innerHTML = `
+                    <td><span class="cfop-badge">${cfop.cfop}</span></td>
+                    <td>${cfop.descricao}</td>
+                    <td>${cfop.notas}</td>
+                    <td class="valor">R$ ${cfop.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td>R$ ${cfop.valorMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                `;
             });
 
-            // Gráfico de produtos
-            if (chartProdutos) chartProdutos.destroy();
-            const ctxProdutos = document.getElementById('chartTopProdutos').getContext('2d');
-            chartProdutos = new Chart(ctxProdutos, {
+            // Tabela de Formas de Pagamento
+            const tbodyPagamento = document.querySelector('#tabelaPagamento tbody');
+            tbodyPagamento.innerHTML = '';
+            visao.formasPagamento.forEach(forma => {
+                const row = tbodyPagamento.insertRow();
+                row.innerHTML = `
+                    <td>${forma.forma}</td>
+                    <td>${forma.quantidade}</td>
+                    <td class="valor">R$ ${forma.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                `;
+            });
+
+            // Tabela de Produtos
+            const tbodyProdutos = document.querySelector('#tabelaProdutos tbody');
+            tbodyProdutos.innerHTML = '';
+            visao.produtos.forEach((produto, index) => {
+                const row = tbodyProdutos.insertRow();
+                row.innerHTML = `
+                    <td>${produto.codigo || '-'}</td>
+                    <td>${produto.nome}</td>
+                    <td><span class="cfop-badge">${produto.cfop}</span></td>
+                    <td>${produto.quantidade}</td>
+                    <td class="valor">R$ ${produto.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                `;
+            });
+
+            // Gráfico de Notas por Dia
+            if (chartNotas) chartNotas.destroy();
+            const ctxNotas = document.getElementById('chartNotasDia').getContext('2d');
+            chartNotas = new Chart(ctxNotas, {
                 type: 'bar',
                 data: {
-                    labels: dash.topProdutos.map(p => p.nome.substring(0, 30)),
+                    labels: visao.notasPorDia.map(d => d.data),
                     datasets: [{
-                        label: 'Quantidade',
-                        data: dash.topProdutos.map(p => p.quantidade),
-                        backgroundColor: '#764ba2'
+                        label: 'Quantidade de Notas',
+                        data: visao.notasPorDia.map(d => d.quantidade),
+                        backgroundColor: '#1e3c72',
+                        borderRadius: 5
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    indexAxis: 'y'
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
                 }
-            });
-
-            // Tabela de últimas vendas
-            const tbody = document.querySelector('#tabelaVendas tbody');
-            tbody.innerHTML = '';
-            dash.ultimasVendas.forEach(venda => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${venda.numero}</td>
-                    <td>${venda.data}</td>
-                    <td>${venda.cliente}</td>
-                    <td>R$ ${venda.valor}</td>
-                `;
             });
 
             document.getElementById('dashboard').style.display = 'block';

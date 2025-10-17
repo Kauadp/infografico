@@ -1,5 +1,5 @@
 // api/bling-nfce.js
-// API para buscar dados das NFC-e com detalhes completos
+// API para buscar dados detalhados das NFC-e (Visão de NFC-e do Bling)
 
 const BLING_API_BASE_URL = 'https://api.bling.com.br/Api/v3';
 const CLIENT_ID = process.env.BLING_CLIENT_ID;
@@ -76,7 +76,8 @@ async function fetchNFCe(filtro = null) {
 }
 
 /**
- * Busca detalhes de uma NFC-e específica
+ * Busca detalhes COMPLETOS de uma NFC-e específica
+ * Inclui: itens, totais, CFOP, formas de pagamento, etc
  */
 async function fetchNFCeDetalhes(id) {
   const url = `${BLING_API_BASE_URL}/nfce/${id}`;
@@ -104,80 +105,165 @@ async function fetchNFCeDetalhes(id) {
 }
 
 /**
- * Processa e agrega dados para o dashboard
+ * Processa dados para a Visão de NFC-e (similar ao Bling)
  */
-function processarDadosDashboard(notas, notasDetalhadas) {
-  // Totalizadores
+function processarVisaoNFCe(notasDetalhadas) {
+  // Inicializa totalizadores
   let totalVendas = 0;
-  let totalItens = 0;
-  let vendasPorDia = {};
-  let produtosMaisVendidos = {};
-  let formasPagamento = {};
+  let totalDescontos = 0;
+  let totalFrete = 0;
+  let totalOutrasDespesas = 0;
+  let totalTributos = 0;
+  let quantidadeNotas = notasDetalhadas.length;
+
+  // Agrupa por CFOP
+  const porCFOP = {};
+  
+  // Agrupa por forma de pagamento
+  const formasPagamento = {};
+  
+  // Produtos vendidos
+  const produtos = {};
+  
+  // Notas por dia
+  const notasPorDia = {};
 
   notasDetalhadas.forEach(nota => {
-    // Total de vendas
-    const valor = parseFloat(nota.total || 0);
-    totalVendas += valor;
+    // Valores totais
+    const valorNota = parseFloat(nota.total || 0);
+    const desconto = parseFloat(nota.desconto?.valor || 0);
+    const frete = parseFloat(nota.transporte?.frete || 0);
+    const outrasDespesas = parseFloat(nota.informacoesAdicionais?.outrasDespesas || 0);
+    
+    totalVendas += valorNota;
+    totalDescontos += desconto;
+    totalFrete += frete;
+    totalOutrasDespesas += outrasDespesas;
 
-    // Vendas por dia
-    const data = nota.dataEmissao?.split(' ')[0];
-    if (data) {
-      vendasPorDia[data] = (vendasPorDia[data] || 0) + valor;
+    // Data
+    const dataEmissao = nota.dataEmissao?.split(' ')[0];
+    if (dataEmissao) {
+      notasPorDia[dataEmissao] = (notasPorDia[dataEmissao] || 0) + 1;
     }
 
-    // Produtos vendidos
-    if (nota.itens) {
+    // Processa itens
+    if (nota.itens && Array.isArray(nota.itens)) {
       nota.itens.forEach(item => {
-        totalItens += parseInt(item.quantidade || 0);
-        const nomeProduto = item.descricao || 'Sem descrição';
-        
-        if (!produtosMaisVendidos[nomeProduto]) {
-          produtosMaisVendidos[nomeProduto] = {
-            nome: nomeProduto,
+        const cfop = item.codigo_cfop || item.cfop || 'Não informado';
+        const valorItem = parseFloat(item.valor || 0);
+        const quantidade = parseFloat(item.quantidade || 0);
+        const valorUnitario = parseFloat(item.valorUnitario || 0);
+        const descontoItem = parseFloat(item.desconto || 0);
+
+        // Agrupa por CFOP
+        if (!porCFOP[cfop]) {
+          porCFOP[cfop] = {
+            cfop: cfop,
+            descricao: getCFOPDescricao(cfop),
             quantidade: 0,
-            valor: 0
+            valorTotal: 0,
+            valorMedio: 0,
+            notas: 0
           };
         }
         
-        produtosMaisVendidos[nomeProduto].quantidade += parseInt(item.quantidade || 0);
-        produtosMaisVendidos[nomeProduto].valor += parseFloat(item.valor || 0);
+        porCFOP[cfop].quantidade += quantidade;
+        porCFOP[cfop].valorTotal += valorItem;
+        porCFOP[cfop].notas++;
+
+        // Produtos vendidos
+        const nomeProduto = item.descricao || item.produto?.nome || 'Sem descrição';
+        if (!produtos[nomeProduto]) {
+          produtos[nomeProduto] = {
+            nome: nomeProduto,
+            codigo: item.codigo || item.produto?.codigo || '',
+            quantidade: 0,
+            valorTotal: 0,
+            cfop: cfop
+          };
+        }
+        
+        produtos[nomeProduto].quantidade += quantidade;
+        produtos[nomeProduto].valorTotal += valorItem;
+
+        // Tributos do item
+        if (item.tributos) {
+          totalTributos += parseFloat(item.tributos.valorTotal || 0);
+        }
       });
     }
 
     // Formas de pagamento
-    if (nota.transporte?.volumes) {
-      nota.transporte.volumes.forEach(vol => {
-        if (vol.transportadora?.nome) {
-          formasPagamento[vol.transportadora.nome] = 
-            (formasPagamento[vol.transportadora.nome] || 0) + 1;
+    if (nota.pagamento?.formas && Array.isArray(nota.pagamento.formas)) {
+      nota.pagamento.formas.forEach(forma => {
+        const tipoMeio = forma.tipo_meio || forma.forma || 'Não informado';
+        const valor = parseFloat(forma.valor || 0);
+        
+        if (!formasPagamento[tipoMeio]) {
+          formasPagamento[tipoMeio] = {
+            forma: tipoMeio,
+            quantidade: 0,
+            valorTotal: 0
+          };
         }
+        
+        formasPagamento[tipoMeio].quantidade++;
+        formasPagamento[tipoMeio].valorTotal += valor;
       });
     }
   });
 
-  // Ordena produtos mais vendidos
-  const topProdutos = Object.values(produtosMaisVendidos)
+  // Calcula valores médios para CFOPs
+  Object.values(porCFOP).forEach(cfop => {
+    cfop.valorMedio = cfop.notas > 0 ? cfop.valorTotal / cfop.notas : 0;
+  });
+
+  // Ordena dados
+  const cfopsOrdenados = Object.values(porCFOP)
+    .sort((a, b) => b.valorTotal - a.valorTotal);
+
+  const produtosOrdenados = Object.values(produtos)
     .sort((a, b) => b.quantidade - a.quantidade)
-    .slice(0, 10);
+    .slice(0, 20);
+
+  const formasPagamentoOrdenadas = Object.values(formasPagamento)
+    .sort((a, b) => b.valorTotal - a.valorTotal);
+
+  const diasOrdenados = Object.entries(notasPorDia)
+    .map(([data, qtd]) => ({ data, quantidade: qtd }))
+    .sort((a, b) => a.data.localeCompare(b.data));
 
   return {
     resumo: {
       totalVendas: totalVendas.toFixed(2),
-      totalNotas: notas.length,
-      totalItens,
-      ticketMedio: (totalVendas / notas.length).toFixed(2)
+      totalDescontos: totalDescontos.toFixed(2),
+      totalFrete: totalFrete.toFixed(2),
+      totalOutrasDespesas: totalOutrasDespesas.toFixed(2),
+      totalTributos: totalTributos.toFixed(2),
+      quantidadeNotas: quantidadeNotas,
+      ticketMedio: (totalVendas / quantidadeNotas).toFixed(2),
+      valorLiquido: (totalVendas - totalDescontos + totalFrete + totalOutrasDespesas).toFixed(2)
     },
-    vendasPorDia: Object.entries(vendasPorDia)
-      .map(([data, valor]) => ({ data, valor: valor.toFixed(2) }))
-      .sort((a, b) => a.data.localeCompare(b.data)),
-    topProdutos,
-    ultimasVendas: notasDetalhadas.slice(0, 10).map(n => ({
-      numero: n.numero,
-      data: n.dataEmissao,
-      valor: parseFloat(n.total || 0).toFixed(2),
-      cliente: n.contato?.nome || 'Consumidor Final'
-    }))
+    cfops: cfopsOrdenados,
+    formasPagamento: formasPagamentoOrdenadas,
+    produtos: produtosOrdenados,
+    notasPorDia: diasOrdenados
   };
+}
+
+/**
+ * Retorna descrição do CFOP
+ */
+function getCFOPDescricao(cfop) {
+  const cfops = {
+    '5102': 'Venda de mercadoria adquirida ou recebida de terceiros',
+    '5405': 'Venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária',
+    '5656': 'Venda de combustível ou lubrificante adquirido ou recebido de terceiros',
+    '5929': 'Lançamento efetuado em decorrência de emissão de documento fiscal relativo a operação ou prestação também registrada em equipamento Emissor de Cupom Fiscal - ECF',
+    '5403': 'Venda de mercadoria adquirida ou recebida de terceiros em operação com mercadoria sujeita ao regime de substituição tributária, na condição de contribuinte substituído'
+  };
+  
+  return cfops[cfop] || 'Operação de saída';
 }
 
 /**
@@ -192,7 +278,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { dataInicio, dataFim, limit, detalhes } = req.query;
+    const { dataInicio, dataFim, limit = 100 } = req.query;
 
     // Define filtro de data
     let filtro = null;
@@ -210,42 +296,47 @@ export default async function handler(req, res) {
       filtro = `dataEmissao[${dataInicioStr} TO ${dataFimStr}]`;
     }
 
-    console.log('📅 Buscando NFC-e com filtro:', filtro);
+    console.log('📅 Buscando NFC-e:', filtro);
 
     // Busca lista de notas
     const notas = await fetchNFCe(filtro);
-    const notasLimitadas = notas.slice(0, parseInt(limit) || 50);
+    const notasLimitadas = notas.slice(0, parseInt(limit));
 
-    // Se pediu detalhes completos, busca cada nota
-    let notasDetalhadas = [];
-    if (detalhes === 'true') {
-      console.log(`📦 Buscando detalhes de ${notasLimitadas.length} notas...`);
-      
-      for (const nota of notasLimitadas) {
-        try {
-          const detalhe = await fetchNFCeDetalhes(nota.id);
-          notasDetalhadas.push(detalhe);
-          
-          // Delay para não sobrecarregar a API
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
-          console.error(`Erro ao buscar nota ${nota.id}:`, error.message);
+    console.log(`📦 Buscando detalhes de ${notasLimitadas.length} notas...`);
+    
+    // Busca detalhes de cada nota
+    const notasDetalhadas = [];
+    for (const nota of notasLimitadas) {
+      try {
+        const detalhe = await fetchNFCeDetalhes(nota.id);
+        notasDetalhadas.push(detalhe);
+        
+        // Log de progresso
+        if (notasDetalhadas.length % 10 === 0) {
+          console.log(`   ✓ ${notasDetalhadas.length}/${notasLimitadas.length}`);
         }
+        
+        // Delay para não sobrecarregar a API
+        await new Promise(resolve => setTimeout(resolve, 150));
+      } catch (error) {
+        console.error(`Erro ao buscar nota ${nota.id}:`, error.message);
       }
     }
 
-    // Processa dados para dashboard
-    const dadosDashboard = detalhes === 'true' 
-      ? processarDadosDashboard(notas, notasDetalhadas)
-      : null;
+    console.log(`✅ ${notasDetalhadas.length} notas processadas com sucesso`);
+
+    // Processa dados no formato "Visão de NFC-e"
+    const visaoNFCe = processarVisaoNFCe(notasDetalhadas);
 
     return res.status(200).json({
       status: 'success',
-      filtro,
-      totalNotas: notas.length,
-      notasRetornadas: notasLimitadas.length,
-      dashboard: dadosDashboard,
-      notas: detalhes === 'true' ? notasDetalhadas : notasLimitadas
+      periodo: {
+        dataInicio: dataInicio || filtro.match(/\[(.*?) TO/)?.[1],
+        dataFim: dataFim || filtro.match(/TO (.*?)\]/)?.[1]
+      },
+      totalNotasEncontradas: notas.length,
+      notasProcessadas: notasDetalhadas.length,
+      visaoNFCe
     });
 
   } catch (error) {

@@ -1,5 +1,5 @@
 // api/bling-nfce.js
-// API para buscar dados das NFC-e no formato da listagem do Bling
+// API para auditoria completa de NFC-e
 
 const BLING_API_BASE_URL = 'https://api.bling.com.br/Api/v3';
 const CLIENT_ID = process.env.BLING_CLIENT_ID;
@@ -8,13 +8,8 @@ const CLIENT_SECRET = process.env.BLING_CLIENT_SECRET;
 let access_token = process.env.BLING_ACCESS_TOKEN;
 let refresh_token = process.env.BLING_REFRESH_TOKEN;
 
-/**
- * Renova o Access Token
- */
 async function refreshAccessToken() {
-  if (!refresh_token) {
-    throw new Error("REFRESH TOKEN ausente");
-  }
+  if (!refresh_token) throw new Error("REFRESH TOKEN ausente");
 
   const auth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
   const body = new URLSearchParams({
@@ -33,25 +28,17 @@ async function refreshAccessToken() {
   });
 
   const data = await response.json();
-
   if (response.ok) {
     access_token = data.access_token;
     refresh_token = data.refresh_token;
-    console.log('✅ Token renovado');
     return true;
-  } else {
-    throw new Error(`Falha ao renovar: ${data.error?.description}`);
   }
+  throw new Error(`Falha ao renovar: ${data.error?.description}`);
 }
 
-/**
- * Busca lista de NFC-e
- */
 async function fetchNFCe(filtro = null) {
   let url = `${BLING_API_BASE_URL}/nfce`;
-  if (filtro) {
-    url += `?filters=${encodeURIComponent(filtro)}`;
-  }
+  if (filtro) url += `?filters=${encodeURIComponent(filtro)}`;
 
   const response = await fetch(url, {
     method: 'GET',
@@ -62,25 +49,16 @@ async function fetchNFCe(filtro = null) {
   });
 
   const data = await response.json();
-
-  if (response.ok) {
-    return data.data || [];
-  }
-
+  if (response.ok) return data.data || [];
   if (data.error?.type === 'invalid_token') {
     await refreshAccessToken();
     return await fetchNFCe(filtro);
   }
-
   throw new Error(`API Error: ${JSON.stringify(data)}`);
 }
 
-/**
- * Busca detalhes COMPLETOS de uma NFC-e
- */
 async function fetchNFCeDetalhes(id) {
   const url = `${BLING_API_BASE_URL}/nfce/${id}`;
-
   const response = await fetch(url, {
     method: 'GET',
     headers: {
@@ -90,161 +68,179 @@ async function fetchNFCeDetalhes(id) {
   });
 
   const data = await response.json();
-
-  if (response.ok) {
-    return data.data;
-  }
-
+  if (response.ok) return data.data;
   if (data.error?.type === 'invalid_token') {
     await refreshAccessToken();
     return await fetchNFCeDetalhes(id);
   }
-
   throw new Error(`API Error: ${JSON.stringify(data)}`);
 }
 
-/**
- * Converte situação numérica para texto
- */
 function getSituacaoTexto(situacao) {
   const situacoes = {
-    0: 'Pendente',
-    1: 'Em processamento',
-    2: 'Processada com avisos',
-    3: 'Rejeitada',
-    4: 'Autorizada',
-    5: 'Autorizada',
-    6: 'Cancelada',
-    7: 'Inutilizada',
-    8: 'Denegada'
+    0: 'Pendente', 1: 'Em processamento', 2: 'Processada',
+    3: 'Rejeitada', 4: 'Autorizada', 5: 'Autorizada',
+    6: 'Cancelada', 7: 'Inutilizada', 8: 'Denegada'
   };
   return situacoes[situacao] || 'Desconhecida';
 }
 
-/**
- * Converte tipo numérico para texto
- */
-function getTipoTexto(tipo) {
-  const tipos = {
-    0: 'NFC-e',
-    1: 'NF-e'
-  };
-  return tipos[tipo] || 'Não definido';
-}
+function processarDadosAuditoria(notasDetalhadas) {
+  // Filtra apenas notas AUTORIZADAS (situacao 4 ou 5)
+  const notasAutorizadas = notasDetalhadas.filter(n => n.situacao === 4 || n.situacao === 5);
 
-/**
- * Formata os dados no estilo da listagem do Bling
- */
-function formatarDadosListagem(notasDetalhadas) {
-  return notasDetalhadas.map(nota => {
-    // Monta objeto com todos os campos da listagem
-    const notaFormatada = {
-      // Dados principais
-      id: nota.id,
-      nome: nota.contato?.nome || 'Consumidor Final',
-      dataEmissao: nota.dataEmissao,
-      numero: nota.numero,
-      situacao: getSituacaoTexto(nota.situacao),
-      cnpjCpf: nota.contato?.numeroDocumento || '',
-      uf: nota.contato?.endereco?.uf || '',
-      natureza: nota.naturezaOperacao?.naturezaOperacao || 'Venda de mercadoria a não contribuinte Cupom Fiscal',
-      serie: nota.serie || '1',
-      finalidade: 'NF-e normal',
-      tipoNota: getTipoTexto(nota.tipo),
-      ambiente: 'Produção',
-      chaveAcesso: nota.chaveAcesso || '',
-      
-      // Dados do vendedor
-      vendedor: {
-        codigo: nota.vendedor?.id || '-',
-        nome: nota.vendedor?.nome || '-',
-        email: nota.vendedor?.email || '-'
-      },
-      
-      // Dados da loja
-      loja: {
-        id: nota.loja?.id || 0,
-        nome: nota.loja?.nome || 'Não informado'
-      },
-      
-      // Totais
-      valorTotal: parseFloat(nota.total || 0),
-      desconto: parseFloat(nota.desconto?.valor || 0),
-      
-      // Itens (produtos)
-      itens: (nota.itens || []).map(item => ({
-        codigo: item.codigo || item.produto?.codigo || '',
-        descricao: item.descricao || item.produto?.nome || 'Sem descrição',
-        unidade: item.unidade || 'UN',
-        quantidade: parseFloat(item.quantidade || 0),
-        valorUnitario: parseFloat(item.valorUnitario || item.valor || 0),
-        valorTotal: parseFloat(item.valor || 0)
-      }))
-    };
-    
-    return notaFormatada;
-  });
-}
-
-/**
- * Gera estatísticas agregadas
- */
-function gerarEstatisticas(notasFormatadas) {
-  const stats = {
-    totalNotas: notasFormatadas.length,
-    totalVendas: 0,
-    totalItens: 0,
-    porSituacao: {},
+  const dados = {
+    geral: {
+      totalNotas: notasAutorizadas.length,
+      totalVendas: 0,
+      totalItens: 0,
+      totalDescontos: 0
+    },
     porLoja: {},
-    produtosMaisVendidos: {}
+    porDia: {},
+    porHora: {},
+    produtos: {},
+    formasPagamento: {}
   };
-  
-  notasFormatadas.forEach(nota => {
-    // Total de vendas
-    stats.totalVendas += nota.valorTotal;
+
+  notasAutorizadas.forEach(nota => {
+    const valorNota = parseFloat(nota.total || 0);
+    const desconto = parseFloat(nota.desconto?.valor || 0);
+    const nomeLoja = nota.loja?.nome || 'Não informado';
     
-    // Por situação
-    stats.porSituacao[nota.situacao] = (stats.porSituacao[nota.situacao] || 0) + 1;
-    
+    // Extrai data e hora
+    const [dataParte, horaParte] = (nota.dataEmissao || '').split(' ');
+    const hora = horaParte?.split(':')[0] || '00';
+
+    // Totais gerais
+    dados.geral.totalVendas += valorNota;
+    dados.geral.totalDescontos += desconto;
+
     // Por loja
-    const nomeLoja = nota.loja.nome || 'Não informado';
-    if (!stats.porLoja[nomeLoja]) {
-      stats.porLoja[nomeLoja] = { quantidade: 0, valor: 0 };
+    if (!dados.porLoja[nomeLoja]) {
+      dados.porLoja[nomeLoja] = {
+        nome: nomeLoja,
+        quantidadeNotas: 0,
+        valorTotal: 0,
+        itensVendidos: 0,
+        ticketMedio: 0
+      };
     }
-    stats.porLoja[nomeLoja].quantidade++;
-    stats.porLoja[nomeLoja].valor += nota.valorTotal;
-    
+    dados.porLoja[nomeLoja].quantidadeNotas++;
+    dados.porLoja[nomeLoja].valorTotal += valorNota;
+
+    // Por dia
+    if (!dados.porDia[dataParte]) {
+      dados.porDia[dataParte] = {
+        data: dataParte,
+        quantidadeNotas: 0,
+        valorTotal: 0,
+        itensVendidos: 0
+      };
+    }
+    dados.porDia[dataParte].quantidadeNotas++;
+    dados.porDia[dataParte].valorTotal += valorNota;
+
+    // Por hora
+    const chaveHora = `${dataParte} ${hora}:00`;
+    if (!dados.porHora[chaveHora]) {
+      dados.porHora[chaveHora] = {
+        hora: chaveHora,
+        quantidadeNotas: 0,
+        valorTotal: 0
+      };
+    }
+    dados.porHora[chaveHora].quantidadeNotas++;
+    dados.porHora[chaveHora].valorTotal += valorNota;
+
     // Produtos
-    nota.itens.forEach(item => {
-      stats.totalItens += item.quantidade;
-      
-      if (!stats.produtosMaisVendidos[item.codigo]) {
-        stats.produtosMaisVendidos[item.codigo] = {
-          codigo: item.codigo,
-          descricao: item.descricao,
-          quantidade: 0,
-          valor: 0
-        };
-      }
-      
-      stats.produtosMaisVendidos[item.codigo].quantidade += item.quantidade;
-      stats.produtosMaisVendidos[item.codigo].valor += item.valorTotal;
-    });
+    if (nota.itens && Array.isArray(nota.itens)) {
+      nota.itens.forEach(item => {
+        const qtd = parseFloat(item.quantidade || 0);
+        const valor = parseFloat(item.valor || 0);
+        const codigo = item.codigo || 'SEM_CODIGO';
+        const descricao = item.descricao || 'Sem descrição';
+
+        dados.geral.totalItens += qtd;
+        dados.porLoja[nomeLoja].itensVendidos += qtd;
+        dados.porDia[dataParte].itensVendidos += qtd;
+
+        if (!dados.produtos[codigo]) {
+          dados.produtos[codigo] = {
+            codigo,
+            descricao,
+            quantidade: 0,
+            valorTotal: 0
+          };
+        }
+        dados.produtos[codigo].quantidade += qtd;
+        dados.produtos[codigo].valorTotal += valor;
+      });
+    }
+
+    // Formas de pagamento
+    if (nota.pagamento?.formas) {
+      nota.pagamento.formas.forEach(forma => {
+        const tipo = forma.forma || forma.tipo || 'Não informado';
+        const valor = parseFloat(forma.valor || 0);
+        
+        if (!dados.formasPagamento[tipo]) {
+          dados.formasPagamento[tipo] = { forma: tipo, quantidade: 0, valor: 0 };
+        }
+        dados.formasPagamento[tipo].quantidade++;
+        dados.formasPagamento[tipo].valor += valor;
+      });
+    }
   });
-  
-  // Ordena produtos
-  stats.topProdutos = Object.values(stats.produtosMaisVendidos)
+
+  // Calcula ticket médio por loja
+  Object.values(dados.porLoja).forEach(loja => {
+    loja.ticketMedio = loja.quantidadeNotas > 0 ? loja.valorTotal / loja.quantidadeNotas : 0;
+  });
+
+  // Calcula ticket médio geral
+  dados.geral.ticketMedio = dados.geral.totalNotas > 0 
+    ? dados.geral.totalVendas / dados.geral.totalNotas 
+    : 0;
+
+  // Ordena arrays
+  dados.lojasArray = Object.values(dados.porLoja).sort((a, b) => b.valorTotal - a.valorTotal);
+  dados.diasArray = Object.values(dados.porDia).sort((a, b) => a.data.localeCompare(b.data));
+  dados.horasArray = Object.values(dados.porHora).sort((a, b) => a.hora.localeCompare(b.hora));
+  dados.produtosTop = Object.values(dados.produtos)
     .sort((a, b) => b.quantidade - a.quantidade)
     .slice(0, 20);
-  
-  delete stats.produtosMaisVendidos;
-  
-  return stats;
+  dados.pagamentosArray = Object.values(dados.formasPagamento)
+    .sort((a, b) => b.valor - a.valor);
+
+  return dados;
 }
 
-/**
- * Handler principal
- */
+function formatarNotasParaTabela(notasDetalhadas) {
+  return notasDetalhadas.map(nota => ({
+    id: nota.id,
+    nome: nota.contato?.nome || 'Consumidor Final',
+    dataEmissao: nota.dataEmissao,
+    numero: nota.numero,
+    situacao: getSituacaoTexto(nota.situacao),
+    situacaoNum: nota.situacao,
+    cnpjCpf: nota.contato?.numeroDocumento || '',
+    uf: nota.contato?.endereco?.uf || '',
+    serie: nota.serie || '1',
+    tipoNota: nota.tipo === 0 ? 'NFC-e' : 'NF-e',
+    loja: nota.loja?.nome || 'Não informado',
+    valorTotal: parseFloat(nota.total || 0),
+    itens: (nota.itens || []).map(item => ({
+      codigo: item.codigo || '',
+      descricao: item.descricao || 'Sem descrição',
+      unidade: item.unidade || 'UN',
+      quantidade: parseFloat(item.quantidade || 0),
+      valorUnitario: parseFloat(item.valorUnitario || item.valor || 0) / parseFloat(item.quantidade || 1),
+      valorTotal: parseFloat(item.valor || 0)
+    }))
+  }));
+}
+
 export default async function handler(req, res) {
   if (!access_token) {
     return res.status(401).json({
@@ -254,68 +250,49 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { dataInicio, dataFim, limit = 50, formato = 'completo' } = req.query;
+    const { dataInicio, dataFim } = req.query;
 
-    // Define filtro de data
     let filtro = null;
     if (dataInicio && dataFim) {
       filtro = `dataEmissao[${dataInicio} TO ${dataFim}]`;
     } else {
-      // Padrão: últimos 30 dias
       const hoje = new Date();
-      const mesPassado = new Date(hoje);
-      mesPassado.setDate(hoje.getDate() - 30);
-      
-      const dataFimStr = hoje.toISOString().split('T')[0];
-      const dataInicioStr = mesPassado.toISOString().split('T')[0];
-      
-      filtro = `dataEmissao[${dataInicioStr} TO ${dataFimStr}]`;
+      const semanaPassada = new Date(hoje);
+      semanaPassada.setDate(hoje.getDate() - 7);
+      filtro = `dataEmissao[${semanaPassada.toISOString().split('T')[0]} TO ${hoje.toISOString().split('T')[0]}]`;
     }
 
-    console.log('📅 Buscando NFC-e:', filtro);
+    console.log('📅 Buscando todas as NFC-e:', filtro);
 
-    // Busca lista de notas
     const notas = await fetchNFCe(filtro);
-    const notasLimitadas = notas.slice(0, parseInt(limit));
-
-    // Se formato='simples', retorna só a lista básica
-    if (formato === 'simples') {
-      return res.status(200).json({
-        status: 'success',
-        totalEncontrado: notas.length,
-        totalRetornado: notasLimitadas.length,
-        notas: notasLimitadas
-      });
-    }
-
-    // Se formato='completo', busca detalhes de cada nota
-    console.log(`📦 Buscando detalhes de ${notasLimitadas.length} notas...`);
+    console.log(`📦 ${notas.length} notas encontradas. Buscando detalhes...`);
     
     const notasDetalhadas = [];
-    for (let i = 0; i < notasLimitadas.length; i++) {
-      try {
-        const detalhe = await fetchNFCeDetalhes(notasLimitadas[i].id);
-        notasDetalhadas.push(detalhe);
-        
-        // Log de progresso a cada 10 notas
-        if ((i + 1) % 10 === 0) {
-          console.log(`   ✓ ${i + 1}/${notasLimitadas.length}`);
-        }
-        
-        // Delay para não sobrecarregar a API
-        await new Promise(resolve => setTimeout(resolve, 200));
-      } catch (error) {
-        console.error(`Erro ao buscar nota ${notasLimitadas[i].id}:`, error.message);
+    const batchSize = 10;
+    
+    for (let i = 0; i < notas.length; i += batchSize) {
+      const batch = notas.slice(i, i + batchSize);
+      const promises = batch.map(nota => 
+        fetchNFCeDetalhes(nota.id).catch(err => {
+          console.error(`Erro nota ${nota.id}:`, err.message);
+          return null;
+        })
+      );
+      
+      const results = await Promise.all(promises);
+      notasDetalhadas.push(...results.filter(r => r !== null));
+      
+      console.log(`   ✓ ${notasDetalhadas.length}/${notas.length}`);
+      
+      if (i + batchSize < notas.length) {
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
     console.log(`✅ ${notasDetalhadas.length} notas processadas`);
 
-    // Formata dados no estilo da listagem
-    const notasFormatadas = formatarDadosListagem(notasDetalhadas);
-    
-    // Gera estatísticas
-    const estatisticas = gerarEstatisticas(notasFormatadas);
+    const auditoria = processarDadosAuditoria(notasDetalhadas);
+    const notasTabela = formatarNotasParaTabela(notasDetalhadas);
 
     return res.status(200).json({
       status: 'success',
@@ -325,8 +302,8 @@ export default async function handler(req, res) {
       },
       totalEncontrado: notas.length,
       totalProcessado: notasDetalhadas.length,
-      estatisticas,
-      notas: notasFormatadas
+      auditoria,
+      notas: notasTabela
     });
 
   } catch (error) {

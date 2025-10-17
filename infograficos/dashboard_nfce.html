@@ -3,154 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Listagem de NFC-e - Bling</title>
+    <title>Auditoria NFC-e - Dashboard Executivo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
         }
 
-        .container {
-            max-width: 1800px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1800px; margin: 0 auto; }
 
         .header {
             background: white;
-            padding: 25px 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
         }
 
         .header h1 {
             color: #2c3e50;
-            font-size: 1.8em;
+            font-size: 2.2em;
             margin-bottom: 5px;
         }
 
-        .header p {
-            color: #7f8c8d;
-        }
+        .header p { color: #7f8c8d; }
 
         .controls {
             background: white;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             margin-bottom: 20px;
             display: flex;
             gap: 15px;
             align-items: center;
             flex-wrap: wrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
 
         .controls label {
             font-weight: 600;
             color: #2c3e50;
-            font-size: 0.9em;
         }
 
-        .controls input, .controls select {
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+        .controls input {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
             font-size: 0.95em;
         }
 
         .controls button {
-            padding: 10px 25px;
-            background: #3498db;
+            padding: 12px 25px;
+            background: #667eea;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s;
         }
 
         .controls button:hover {
-            background: #2980b9;
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .controls .export-btn {
-            background: #27ae60;
-        }
+        .controls .export-btn { background: #27ae60; }
+        .controls .export-btn:hover { background: #229954; }
+        .controls .report-btn { background: #e74c3c; }
+        .controls .report-btn:hover { background: #c0392b; }
 
-        .controls .export-btn:hover {
-            background: #229954;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
+        .loading {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 50px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
 
-        .stat-card .label {
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .kpi-card .icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .kpi-card .label {
             color: #7f8c8d;
-            font-size: 0.85em;
+            font-size: 0.9em;
             margin-bottom: 8px;
+            font-weight: 500;
         }
 
-        .stat-card .value {
+        .kpi-card .value {
             color: #2c3e50;
-            font-size: 1.8em;
+            font-size: 2em;
             font-weight: bold;
         }
 
-        .table-container {
+        .section {
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
-        .table-header {
-            padding: 20px;
-            border-bottom: 2px solid #ecf0f1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .table-header h2 {
+        .section h3 {
             color: #2c3e50;
-            font-size: 1.3em;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
         }
 
-        .search-box {
-            position: relative;
-        }
-
-        .search-box input {
-            padding: 8px 35px 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            width: 300px;
-        }
-
-        .search-box::after {
-            content: "🔍";
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
 
         table {
@@ -159,185 +169,163 @@
         }
 
         th, td {
-            padding: 12px 15px;
+            padding: 12px;
             text-align: left;
             border-bottom: 1px solid #ecf0f1;
-            font-size: 0.9em;
         }
 
         th {
             background: #f8f9fa;
             color: #2c3e50;
             font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
         }
 
-        tr:hover {
-            background: #f8f9fa;
-        }
+        tr:hover { background: #f8f9fa; }
+
+        .valor { font-weight: 600; color: #27ae60; }
 
         .badge {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .badge.autorizada {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge.cancelada {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .badge.pendente {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .valor {
-            font-weight: 600;
-            color: #27ae60;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 50px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #e74c3c;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .expandable {
-            cursor: pointer;
-        }
-
-        .items-detail {
-            background: #f8f9fa;
-            padding: 15px;
-            margin: 10px 0;
-        }
-
-        .items-detail table {
+            padding: 5px 12px;
+            border-radius: 15px;
             font-size: 0.85em;
+            font-weight: 600;
         }
 
-        @media (max-width: 1400px) {
-            table {
-                font-size: 0.85em;
-            }
-            
-            th, td {
-                padding: 10px 8px;
-            }
+        .badge.autorizada { background: #d4edda; color: #155724; }
+        .badge.cancelada { background: #f8d7da; color: #721c24; }
+
+        @media (max-width: 1200px) {
+            .grid-2 { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📋 Listagem de NFC-e</h1>
-            <p>Visualização completa das notas fiscais de consumidor</p>
+            <h1>📊 Auditoria de NFC-e - Dashboard Executivo</h1>
+            <p>Análise em tempo real das operações fiscais</p>
         </div>
 
         <div class="controls">
-            <label>De:</label>
+            <label>Data Início:</label>
             <input type="date" id="dataInicio">
             
-            <label>Até:</label>
+            <label>Data Fim:</label>
             <input type="date" id="dataFim">
             
-            <label>Limite:</label>
-            <select id="limite">
-                <option value="20">20</option>
-                <option value="50" selected>50</option>
-                <option value="100">100</option>
-            </select>
-            
-            <button onclick="carregarDados()">🔍 Buscar</button>
+            <button onclick="carregarDados()">🔍 Buscar Dados</button>
             <button onclick="exportarCSV()" class="export-btn">📥 Exportar CSV</button>
+            <button onclick="gerarRelatorio()" class="report-btn">📄 Gerar Relatório</button>
         </div>
 
         <div id="loading" class="loading" style="display: none;">
             <div class="loading-spinner"></div>
-            <p>Carregando dados das notas fiscais...</p>
-            <small>Isso pode levar alguns segundos</small>
+            <h3>Processando notas fiscais...</h3>
+            <p>Aguarde, isso pode levar alguns minutos dependendo do volume de dados.</p>
+            <p id="loadingProgress"></p>
         </div>
 
-        <div id="error" class="error" style="display: none;"></div>
+        <div id="error" style="display: none; background: #e74c3c; color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;"></div>
 
         <div id="dashboard" style="display: none;">
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="label">Total de Notas</div>
-                    <div class="value" id="totalNotas">0</div>
+            <!-- KPIs Gerais -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="icon">💰</div>
+                    <div class="label">Faturamento Total</div>
+                    <div class="value" id="kpiFaturamento">R$ 0,00</div>
                 </div>
-                <div class="stat-card">
-                    <div class="label">Valor Total</div>
-                    <div class="value" id="valorTotal">R$ 0,00</div>
+                <div class="kpi-card">
+                    <div class="icon">📄</div>
+                    <div class="label">Notas Autorizadas</div>
+                    <div class="value" id="kpiNotas">0</div>
                 </div>
-                <div class="stat-card">
-                    <div class="label">Itens Vendidos</div>
-                    <div class="value" id="totalItens">0</div>
-                </div>
-                <div class="stat-card">
+                <div class="kpi-card">
+                    <div class="icon">🎯</div>
                     <div class="label">Ticket Médio</div>
-                    <div class="value" id="ticketMedio">R$ 0,00</div>
+                    <div class="value" id="kpiTicket">R$ 0,00</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="icon">📦</div>
+                    <div class="label">Itens Vendidos</div>
+                    <div class="value" id="kpiItens">0</div>
                 </div>
             </div>
 
-            <div class="table-container">
-                <div class="table-header">
-                    <h2>📊 Notas Fiscais</h2>
-                    <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Buscar na tabela..." onkeyup="filtrarTabela()">
-                    </div>
+            <!-- Faturamento por Loja -->
+            <div class="section">
+                <h3>🏪 Faturamento por Loja</h3>
+                <table id="tabelaLojas">
+                    <thead>
+                        <tr>
+                            <th>Loja</th>
+                            <th>Qtd. Notas</th>
+                            <th>Itens Vendidos</th>
+                            <th>Faturamento</th>
+                            <th>Ticket Médio</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="grid-2">
+                <div class="section">
+                    <h3>📅 Faturamento por Dia</h3>
+                    <canvas id="chartDias"></canvas>
                 </div>
-                
+                <div class="section">
+                    <h3>⏰ Faturamento por Hora</h3>
+                    <canvas id="chartHoras"></canvas>
+                </div>
+            </div>
+
+            <!-- Produtos e Pagamentos -->
+            <div class="grid-2">
+                <div class="section">
+                    <h3>🏆 Top 10 Produtos</h3>
+                    <table id="tabelaProdutos">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Produto</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="section">
+                    <h3>💳 Formas de Pagamento</h3>
+                    <table id="tabelaPagamentos">
+                        <thead>
+                            <tr>
+                                <th>Forma</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabela Detalhada -->
+            <div class="section">
+                <h3>📋 Detalhamento de Notas Autorizadas</h3>
+                <input type="text" id="searchInput" placeholder="🔍 Buscar..." style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #e0e0e0; border-radius: 8px;" onkeyup="filtrarTabela()">
                 <div style="overflow-x: auto;">
                     <table id="tabelaNotas">
                         <thead>
                             <tr>
-                                <th>Nome</th>
-                                <th>Data de Emissão</th>
-                                <th>Número</th>
-                                <th>Situação</th>
-                                <th>CNPJ/CPF</th>
-                                <th>UF</th>
-                                <th>Série</th>
-                                <th>Tipo</th>
                                 <th>Loja</th>
+                                <th>Data/Hora</th>
+                                <th>Número</th>
+                                <th>Cliente</th>
                                 <th>Valor Total</th>
-                                <th>Itens</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -348,24 +336,24 @@
     </div>
 
     <script>
-        let dadosGlobais = [];
+        let dadosGlobais = null;
+        let chartDias = null;
+        let chartHoras = null;
 
         function setDefaultDates() {
             const hoje = new Date();
-            const mesAtras = new Date(hoje);
-            mesAtras.setDate(hoje.getDate() - 30);
-
+            const semanaAtras = new Date(hoje);
+            semanaAtras.setDate(hoje.getDate() - 7);
             document.getElementById('dataFim').value = hoje.toISOString().split('T')[0];
-            document.getElementById('dataInicio').value = mesAtras.toISOString().split('T')[0];
+            document.getElementById('dataInicio').value = semanaAtras.toISOString().split('T')[0];
         }
 
         async function carregarDados() {
             const dataInicio = document.getElementById('dataInicio').value;
             const dataFim = document.getElementById('dataFim').value;
-            const limite = document.getElementById('limite').value;
 
             if (!dataInicio || !dataFim) {
-                alert('Por favor, selecione as datas!');
+                alert('Selecione as datas!');
                 return;
             }
 
@@ -374,23 +362,18 @@
             document.getElementById('error').style.display = 'none';
 
             try {
-                const url = `https://dashboardexagerado.vercel.app/api/bling-nfce?dataInicio=${dataInicio}&dataFim=${dataFim}&limit=${limite}&formato=completo`;
+                const url = `https://dashboardexagerado.vercel.app/api/bling-nfce?dataInicio=${dataInicio}&dataFim=${dataFim}`;
                 
-                console.log('🔗 Buscando:', url);
                 const response = await fetch(url);
                 const data = await response.json();
 
-                if (data.status === 'error') {
-                    throw new Error(data.message);
-                }
+                if (data.status === 'error') throw new Error(data.message);
 
-                console.log('✅ Dados recebidos:', data);
                 dadosGlobais = data;
                 atualizarDashboard(data);
 
             } catch (error) {
-                console.error('❌ Erro:', error);
-                document.getElementById('error').textContent = '❌ Erro ao carregar: ' + error.message;
+                document.getElementById('error').textContent = '❌ ' + error.message;
                 document.getElementById('error').style.display = 'block';
             } finally {
                 document.getElementById('loading').style.display = 'none';
@@ -398,52 +381,124 @@
         }
 
         function atualizarDashboard(data) {
-            const stats = data.estatisticas;
+            const aud = data.auditoria;
 
-            // Atualiza cards
-            document.getElementById('totalNotas').textContent = stats.totalNotas;
-            document.getElementById('valorTotal').textContent = `R$ ${stats.totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('totalItens').textContent = stats.totalItens;
-            document.getElementById('ticketMedio').textContent = `R$ ${(stats.totalVendas / stats.totalNotas).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            // KPIs Gerais
+            document.getElementById('kpiFaturamento').textContent = `R$ ${aud.geral.totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiNotas').textContent = aud.geral.totalNotas;
+            document.getElementById('kpiTicket').textContent = `R$ ${aud.geral.ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiItens').textContent = aud.geral.totalItens;
 
-            // Preenche tabela
-            const tbody = document.querySelector('#tabelaNotas tbody');
-            tbody.innerHTML = '';
+            // Tabela de Lojas
+            const tbodyLojas = document.querySelector('#tabelaLojas tbody');
+            tbodyLojas.innerHTML = '';
+            aud.lojasArray.forEach(loja => {
+                tbodyLojas.innerHTML += `
+                    <tr>
+                        <td><strong>${loja.nome}</strong></td>
+                        <td>${loja.quantidadeNotas}</td>
+                        <td>${loja.itensVendidos}</td>
+                        <td class="valor">R$ ${loja.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td>R$ ${loja.ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
 
-            data.notas.forEach((nota, index) => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${nota.nome}</td>
-                    <td>${nota.dataEmissao}</td>
-                    <td><strong>${nota.numero}</strong></td>
-                    <td><span class="badge ${nota.situacao.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}">${nota.situacao}</span></td>
-                    <td>${nota.cnpjCpf || '-'}</td>
-                    <td>${nota.uf || '-'}</td>
-                    <td>${nota.serie}</td>
-                    <td>${nota.tipoNota}</td>
-                    <td>${nota.loja.nome}</td>
-                    <td class="valor">R$ ${nota.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td><button onclick="mostrarItens(${index})" style="padding: 5px 10px; border: none; background: #3498db; color: white; border-radius: 4px; cursor: pointer;">Ver ${nota.itens.length}</button></td>
+            // Gráfico de Dias
+            if (chartDias) chartDias.destroy();
+            chartDias = new Chart(document.getElementById('chartDias'), {
+                type: 'bar',
+                data: {
+                    labels: aud.diasArray.map(d => d.data),
+                    datasets: [{
+                        label: 'Faturamento (R$)',
+                        data: aud.diasArray.map(d => d.valorTotal),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+
+            // Gráfico de Horas
+            if (chartHoras) chartHoras.destroy();
+            chartHoras = new Chart(document.getElementById('chartHoras'), {
+                type: 'line',
+                data: {
+                    labels: aud.horasArray.map(h => h.hora),
+                    datasets: [{
+                        label: 'Faturamento (R$)',
+                        data: aud.horasArray.map(h => h.valorTotal),
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+
+            // Produtos
+            const tbodyProdutos = document.querySelector('#tabelaProdutos tbody');
+            tbodyProdutos.innerHTML = '';
+            aud.produtosTop.slice(0, 10).forEach(prod => {
+                tbodyProdutos.innerHTML += `
+                    <tr>
+                        <td>${prod.codigo}</td>
+                        <td>${prod.descricao}</td>
+                        <td>${prod.quantidade}</td>
+                        <td class="valor">R$ ${prod.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+
+            // Pagamentos
+            const tbodyPagamentos = document.querySelector('#tabelaPagamentos tbody');
+            tbodyPagamentos.innerHTML = '';
+            aud.pagamentosArray.forEach(pag => {
+                tbodyPagamentos.innerHTML += `
+                    <tr>
+                        <td>${pag.forma}</td>
+                        <td>${pag.quantidade}</td>
+                        <td class="valor">R$ ${pag.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+
+            // Tabela de Notas
+            const tbodyNotas = document.querySelector('#tabelaNotas tbody');
+            tbodyNotas.innerHTML = '';
+            data.notas.filter(n => n.situacaoNum === 4 || n.situacaoNum === 5).forEach((nota, idx) => {
+                tbodyNotas.innerHTML += `
+                    <tr>
+                        <td>${nota.loja}</td>
+                        <td>${nota.dataEmissao}</td>
+                        <td><strong>${nota.numero}</strong></td>
+                        <td>${nota.nome}</td>
+                        <td class="valor">R$ ${nota.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td><button onclick="verItens(${idx})" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">Ver ${nota.itens.length} itens</button></td>
+                    </tr>
                 `;
             });
 
             document.getElementById('dashboard').style.display = 'block';
         }
 
-        function mostrarItens(index) {
-            const nota = dadosGlobais.notas[index];
+        function verItens(index) {
+            const notasAutorizadas = dadosGlobais.notas.filter(n => n.situacaoNum === 4 || n.situacaoNum === 5);
+            const nota = notasAutorizadas[index];
+            
             let html = `
-                <div style="padding: 20px; background: white; border-radius: 10px; max-width: 800px; margin: 20px auto;">
-                    <h3 style="margin-bottom: 15px;">Itens da Nota ${nota.numero}</h3>
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 900px; margin: 0 auto;">
+                    <h2 style="color: #2c3e50; margin-bottom: 20px;">Itens da Nota ${nota.numero}</h2>
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #f8f9fa;">
-                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Código</th>
-                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Descrição</th>
-                                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Un.</th>
-                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #dee2e6;">Qtd</th>
-                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #dee2e6;">Valor Unit.</th>
-                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #dee2e6;">Valor Total</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Código</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Descrição</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Unidade</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Quantidade</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Valor Unit.</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Valor Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -452,12 +507,12 @@
             nota.itens.forEach(item => {
                 html += `
                     <tr style="border-bottom: 1px solid #e9ecef;">
-                        <td style="padding: 10px;">${item.codigo}</td>
-                        <td style="padding: 10px;">${item.descricao}</td>
-                        <td style="padding: 10px;">${item.unidade}</td>
-                        <td style="padding: 10px; text-align: right;">${item.quantidade.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td style="padding: 10px; text-align: right;">R$ ${item.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td style="padding: 10px; text-align: right; font-weight: 600; color: #27ae60;">R$ ${item.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 12px;">${item.codigo}</td>
+                        <td style="padding: 12px;">${item.descricao}</td>
+                        <td style="padding: 12px; text-align: center;">${item.unidade}</td>
+                        <td style="padding: 12px; text-align: right;">${item.quantidade.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 12px; text-align: right;">R$ ${item.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td style="padding: 12px; text-align: right; font-weight: 600; color: #27ae60;">R$ ${item.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     </tr>
                 `;
             });
@@ -465,92 +520,203 @@
             html += `
                         </tbody>
                     </table>
-                    <div style="margin-top: 20px; text-align: right;">
-                        <button onclick="this.parentElement.parentElement.remove()" style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer;">Fechar</button>
+                    <div style="margin-top: 30px; text-align: right;">
+                        <button onclick="this.closest('.modal-overlay').remove()" style="padding: 12px 30px; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Fechar</button>
                     </div>
                 </div>
             `;
 
             const modal = document.createElement('div');
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto; display: flex; align-items: center; justify-content: center;';
+            modal.className = 'modal-overlay';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; overflow-y: auto; display: flex; align-items: center; padding: 20px;';
             modal.innerHTML = html;
-            modal.onclick = (e) => {
-                if (e.target === modal) modal.remove();
-            };
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
             document.body.appendChild(modal);
         }
 
         function filtrarTabela() {
-            const input = document.getElementById('searchInput');
-            const filter = input.value.toUpperCase();
+            const input = document.getElementById('searchInput').value.toUpperCase();
             const table = document.getElementById('tabelaNotas');
             const tr = table.getElementsByTagName('tr');
-
             for (let i = 1; i < tr.length; i++) {
-                let txtValue = tr[i].textContent || tr[i].innerText;
-                if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                    tr[i].style.display = '';
-                } else {
-                    tr[i].style.display = 'none';
-                }
+                const txtValue = tr[i].textContent || tr[i].innerText;
+                tr[i].style.display = txtValue.toUpperCase().indexOf(input) > -1 ? '' : 'none';
             }
         }
 
         function exportarCSV() {
-            if (!dadosGlobais.notas || dadosGlobais.notas.length === 0) {
-                alert('Nenhum dado para exportar!');
+            if (!dadosGlobais) {
+                alert('Carregue os dados primeiro!');
                 return;
             }
 
-            let csv = 'Nome;Data de Emissão;Número;Situação;CNPJ/CPF;UF;Natureza;Série;Finalidade;Tipo de Nota;Ambiente;Loja;Valor Total;Código Vendedor;Nome Vendedor;Email Vendedor\n';
+            const notasAutorizadas = dadosGlobais.notas.filter(n => n.situacaoNum === 4 || n.situacaoNum === 5);
 
-            dadosGlobais.notas.forEach(nota => {
-                csv += `"${nota.nome}";`;
-                csv += `"${nota.dataEmissao}";`;
-                csv += `"${nota.numero}";`;
-                csv += `"${nota.situacao}";`;
-                csv += `"${nota.cnpjCpf}";`;
-                csv += `"${nota.uf}";`;
-                csv += `"${nota.natureza}";`;
-                csv += `"${nota.serie}";`;
-                csv += `"${nota.finalidade}";`;
-                csv += `"${nota.tipoNota}";`;
-                csv += `"${nota.ambiente}";`;
-                csv += `"${nota.loja.nome}";`;
-                csv += `"${nota.valorTotal}";`;
-                csv += `"${nota.vendedor.codigo}";`;
-                csv += `"${nota.vendedor.nome}";`;
-                csv += `"${nota.vendedor.email}"\n`;
+            let csv = 'Loja;Data/Hora;Número;Cliente;CNPJ/CPF;UF;Valor Total;Código Item;Descrição;Unidade;Quantidade;Valor Unitário;Valor Total Item\n';
 
-                // Adiciona itens da nota
-                nota.itens.forEach(item => {
-                    csv += `"";"";"";"";"";"";"";"";"";"";"";"";"";`;
-                    csv += `"${item.codigo}";`;
-                    csv += `"${item.descricao}";`;
-                    csv += `"${item.unidade}";`;
-                    csv += `"${item.quantidade}";`;
-                    csv += `"${item.valorUnitario}";`;
-                    csv += `"${item.valorTotal}"\n`;
+            notasAutorizadas.forEach(nota => {
+                nota.itens.forEach((item, idx) => {
+                    if (idx === 0) {
+                        csv += `"${nota.loja}";"${nota.dataEmissao}";"${nota.numero}";"${nota.nome}";"${nota.cnpjCpf}";"${nota.uf}";"${nota.valorTotal}";`;
+                    } else {
+                        csv += ';;;;;;;"';
+                    }
+                    csv += `"${item.codigo}";"${item.descricao}";"${item.unidade}";"${item.quantidade}";"${item.valorUnitario}";"${item.valorTotal}"\n`;
                 });
             });
 
-            // Download do arquivo
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            
-            link.setAttribute('href', url);
-            link.setAttribute('download', `nfce_${dadosGlobais.periodo.dataInicio}_${dadosGlobais.periodo.dataFim}.csv`);
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
+            link.href = URL.createObjectURL(blob);
+            link.download = `auditoria_nfce_${dadosGlobais.periodo.dataInicio}_${dadosGlobais.periodo.dataFim}.csv`;
             link.click();
-            document.body.removeChild(link);
+        }
+
+        async function gerarRelatorio() {
+            if (!dadosGlobais) {
+                alert('Carregue os dados primeiro!');
+                return;
+            }
+
+            // METAS DAS LOJAS (você pode editar aqui)
+            const metasLojas = {
+                'Meu Exagerado Cachoeiro': 50000,
+                'Tapetes São Carlos PDV': 30000,
+                // Adicione mais lojas conforme necessário
+            };
+
+            const aud = dadosGlobais.auditoria;
+            
+            // Cria HTML do relatório
+            const relatorioHTML = `
+                <div id="relatorio" style="width: 1200px; background: white; padding: 50px; font-family: Arial;">
+                    <div style="text-align: center; margin-bottom: 40px; border-bottom: 4px solid #667eea; padding-bottom: 20px;">
+                        <h1 style="color: #2c3e50; font-size: 2.5em; margin-bottom: 10px;">RELATÓRIO DE AUDITORIA NFC-e</h1>
+                        <p style="color: #7f8c8d; font-size: 1.2em;">Período: ${dadosGlobais.periodo.dataInicio} a ${dadosGlobais.periodo.dataFim}</p>
+                        <p style="color: #7f8c8d;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 10px; color: white; text-align: center;">
+                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">FATURAMENTO TOTAL</div>
+                            <div style="font-size: 2em; font-weight: bold;">R$ ${aud.geral.totalVendas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 25px; border-radius: 10px; color: white; text-align: center;">
+                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">NOTAS AUTORIZADAS</div>
+                            <div style="font-size: 2em; font-weight: bold;">${aud.geral.totalNotas}</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 25px; border-radius: 10px; color: white; text-align: center;">
+                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">TICKET MÉDIO</div>
+                            <div style="font-size: 2em; font-weight: bold;">R$ ${aud.geral.ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 25px; border-radius: 10px; color: white; text-align: center;">
+                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">ITENS VENDIDOS</div>
+                            <div style="font-size: 2em; font-weight: bold;">${aud.geral.totalItens}</div>
+                        </div>
+                    </div>
+
+                    <h2 style="color: #2c3e50; margin: 30px 0 20px; border-left: 4px solid #667eea; padding-left: 15px;">PERFORMANCE POR LOJA</h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6;">Loja</th>
+                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Faturamento</th>
+                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Meta</th>
+                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Atingimento</th>
+                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Risco</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${aud.lojasArray.map(loja => {
+                                const meta = metasLojas[loja.nome] || 0;
+                                const atingimento = meta > 0 ? (loja.valorTotal / meta * 100) : 0;
+                                let nivelRisco = '';
+                                let corRisco = '';
+                                
+                                if (atingimento >= 100) {
+                                    nivelRisco = '✅ BAIXO';
+                                    corRisco = '#27ae60';
+                                } else if (atingimento >= 80) {
+                                    nivelRisco = '⚠️ MÉDIO';
+                                    corRisco = '#f39c12';
+                                } else if (atingimento >= 50) {
+                                    nivelRisco = '🔶 ALTO';
+                                    corRisco = '#e67e22';
+                                } else {
+                                    nivelRisco = '🔴 CRÍTICO';
+                                    corRisco = '#e74c3c';
+                                }
+
+                                return `
+                                    <tr style="border-bottom: 1px solid #e9ecef;">
+                                        <td style="padding: 15px; font-weight: 600;">${loja.nome}</td>
+                                        <td style="padding: 15px; text-align: center; color: #27ae60; font-weight: 600;">R$ ${loja.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                                        <td style="padding: 15px; text-align: center;">R$ ${meta.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                                        <td style="padding: 15px; text-align: center; font-weight: 600;">${atingimento.toFixed(1)}%</td>
+                                        <td style="padding: 15px; text-align: center; font-weight: 600; color: ${corRisco};">${nivelRisco}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+
+                    <h2 style="color: #2c3e50; margin: 30px 0 20px; border-left: 4px solid #667eea; padding-left: 15px;">TOP 10 PRODUTOS MAIS VENDIDOS</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Código</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Produto</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Quantidade</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${aud.produtosTop.slice(0, 10).map(prod => `
+                                <tr style="border-bottom: 1px solid #e9ecef;">
+                                    <td style="padding: 12px;">${prod.codigo}</td>
+                                    <td style="padding: 12px;">${prod.descricao}</td>
+                                    <td style="padding: 12px; text-align: center;">${prod.quantidade}</td>
+                                    <td style="padding: 12px; text-align: right; color: #27ae60; font-weight: 600;">R$ ${prod.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top: 50px; padding: 20px; background: #f8f9fa; border-radius: 10px; text-align: center;">
+                        <p style="color: #7f8c8d; font-size: 0.9em;">Este relatório foi gerado automaticamente pelo sistema de auditoria NFC-e</p>
+                    </div>
+                </div>
+            `;
+
+            // Adiciona ao DOM temporariamente
+            const div = document.createElement('div');
+            div.innerHTML = relatorioHTML;
+            div.style.position = 'absolute';
+            div.style.left = '-9999px';
+            document.body.appendChild(div);
+
+            // Captura como imagem
+            try {
+                const canvas = await html2canvas(div.querySelector('#relatorio'), {
+                    scale: 2,
+                    backgroundColor: '#ffffff'
+                });
+                
+                const link = document.createElement('a');
+                link.download = `relatorio_auditoria_${dadosGlobais.periodo.dataInicio}_${dadosGlobais.periodo.dataFim}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                alert('✅ Relatório gerado com sucesso!');
+            } catch (error) {
+                alert('❌ Erro ao gerar relatório: ' + error.message);
+            } finally {
+                document.body.removeChild(div);
+            }
         }
 
         // Inicializa
         setDefaultDates();
-        carregarDados();
     </script>
 </body>
 </html>

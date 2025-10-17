@@ -82,18 +82,51 @@ async function getNewTokens(code) {
  * Renova o Access Token usando o Refresh Token.
  * Usado quando o Access Token de 6h expira.
  */
-const response = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Basic ${auth}`,
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Accept': 'application/json'
-  },
-  body: new URLSearchParams({
-    grant_type: 'refresh_token',
-    refresh_token: refresh_token
-  })
-});
+async function refreshAccessToken() {
+  if (!refresh_token) {
+    throw new Error("REFRESH TOKEN AUSENTE: Por favor, execute a troca de código (getNewTokens) primeiro.");
+  }
+
+  console.log('Iniciando renovação do Access Token...');
+
+  const auth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64'); // ✅ ADICIONE ESTA LINHA
+
+  const body = new URLSearchParams();
+  body.append('grant_type', 'refresh_token');
+  body.append('refresh_token', refresh_token);
+
+  try {
+    const response = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`, // ✅ usa o auth aqui
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: body
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      access_token = data.access_token;
+      refresh_token = data.refresh_token;
+
+      console.log('----------------------------------------------------');
+      console.log('ACCESS TOKEN RENOVADO!');
+      console.log(`NOVO BLING_ACCESS_TOKEN: ${access_token}`);
+      console.log(`NOVO BLING_REFRESH_TOKEN: ${refresh_token}`);
+      console.log('----------------------------------------------------');
+
+      return true;
+    } else {
+      console.error('Erro na renovação:', data);
+      throw new Error(`Falha na renovação de token: ${data.error_description || JSON.stringify(data)}`);
+    }
+  } catch (error) {
+    throw new Error(`Falha na requisição de renovação: ${error.message}`);
+  }
+}
 
 
 

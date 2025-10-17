@@ -217,28 +217,53 @@ function processarDadosAuditoria(notasDetalhadas) {
 }
 
 function formatarNotasParaTabela(notasDetalhadas) {
-  return notasDetalhadas.map(nota => ({
-    id: nota.id,
-    nome: nota.contato?.nome || 'Consumidor Final',
-    dataEmissao: nota.dataEmissao,
-    numero: nota.numero,
-    situacao: getSituacaoTexto(nota.situacao),
-    situacaoNum: nota.situacao,
-    cnpjCpf: nota.contato?.numeroDocumento || '',
-    uf: nota.contato?.endereco?.uf || '',
-    serie: nota.serie || '1',
-    tipoNota: nota.tipo === 0 ? 'NFC-e' : 'NF-e',
-    loja: nota.loja?.nome || 'Não informado',
-    valorTotal: parseFloat(nota.total || 0),
-    itens: (nota.itens || []).map(item => ({
-      codigo: item.codigo || '',
-      descricao: item.descricao || 'Sem descrição',
-      unidade: item.unidade || 'UN',
-      quantidade: parseFloat(item.quantidade || 0),
-      valorUnitario: parseFloat(item.valorUnitario || item.valor || 0) / parseFloat(item.quantidade || 1),
-      valorTotal: parseFloat(item.valor || 0)
-    }))
-  }));
+  return notasDetalhadas.map(nota => {
+    // Busca nome da loja de várias formas possíveis
+    let nomeLoja = 'Não informado';
+    if (nota.loja) {
+      nomeLoja = nota.loja.nome || nota.loja.descricao || (nota.loja.id ? `Loja ID: ${nota.loja.id}` : 'Não informado');
+    }
+
+    // Calcula valor total correto
+    let valorTotalNota = parseFloat(nota.total || 0);
+    
+    // Se total for 0, soma os itens
+    if (valorTotalNota === 0 && nota.itens && nota.itens.length > 0) {
+      valorTotalNota = nota.itens.reduce((sum, item) => {
+        return sum + parseFloat(item.valor || 0);
+      }, 0);
+    }
+
+    return {
+      id: nota.id,
+      nome: nota.contato?.nome || 'Consumidor Final',
+      dataEmissao: nota.dataEmissao,
+      numero: nota.numero,
+      situacao: getSituacaoTexto(nota.situacao),
+      situacaoNum: nota.situacao,
+      cnpjCpf: nota.contato?.numeroDocumento || '',
+      uf: nota.contato?.endereco?.uf || '',
+      serie: nota.serie || '1',
+      tipoNota: nota.tipo === 0 ? 'NFC-e' : 'NF-e',
+      loja: nomeLoja,
+      lojaId: nota.loja?.id || 0,
+      valorTotal: valorTotalNota,
+      itens: (nota.itens || []).map(item => {
+        const qtd = parseFloat(item.quantidade || 1);
+        const valorItem = parseFloat(item.valor || 0);
+        const valorUnit = qtd > 0 ? valorItem / qtd : 0;
+        
+        return {
+          codigo: item.codigo || '',
+          descricao: item.descricao || 'Sem descrição',
+          unidade: item.unidade || 'UN',
+          quantidade: qtd,
+          valorUnitario: valorUnit,
+          valorTotal: valorItem
+        };
+      })
+    };
+  });
 }
 
 export default async function handler(req, res) {

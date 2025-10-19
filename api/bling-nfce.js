@@ -102,12 +102,12 @@ async function buscarNotas(dataInicio, dataFim, limite = 100) {
 
   console.log(`📡 Buscando notas: ${dataInicio} a ${dataFim}`);
 
-  while (hasMore) {
+  while (hasMore && allNotas.length < limite) { // Enforce the limit
     const url = `${BLING_API_BASE}/nfce?page=${page}&limite=${limite}&filters=${encodeURIComponent(filtro)}`;
     const data = await fazerRequisicao(url);
     const notasPage = data.data || [];
-    allNotas = [...allNotas, ...notasPage];
-    hasMore = notasPage.length === limite;
+    allNotas = [...allNotas, ...notasPage.slice(0, limite - allNotas.length)]; // Cap at requested limit
+    hasMore = notasPage.length === limite && allNotas.length < limite;
     page++;
     if (page > 10) break; // Safety limit
   }
@@ -117,7 +117,7 @@ async function buscarNotas(dataInicio, dataFim, limite = 100) {
 
 async function buscarDetalhesNota(idNotaFiscalConsumidor) {
   try {
-    const url = `${BLING_API_BASE}/nfce/${idNotaFiscalConsumidor}`; // Alinhado com idNotaFiscalConsumidor
+    const url = `${BLING_API_BASE}/nfce/${idNotaFiscalConsumidor}`;
     const data = await fazerRequisicao(url);
     return data.data;
   } catch (error) {
@@ -302,7 +302,7 @@ export default async function handler(req, res) {
 
   try {
     const { dataInicio, dataFim, limit = '100', detalhado = 'false' } = req.query;
-    const maxLimit = Math.min(parseInt(limit) || 100, 100);
+    const maxLimit = Math.min(parseInt(limit) || 100, 100); // Cap at 100
     const incluirClientes = detalhado === 'true';
 
     const hoje = new Date().toISOString().split('T')[0];
@@ -324,8 +324,8 @@ export default async function handler(req, res) {
     }
 
     const notasDetalhadas = [];
-    const batchSize = 3; // Limit to 3 concurrent requests per second
-    const delayBetweenBatches = 1000; // 1 second delay to respect 3 req/s limit
+    const batchSize = 9; // Increased to 9 to stay within 3 req/s with 333ms delay
+    const delayBetweenBatches = 333; // Adjusted delay for 3 req/s limit
 
     for (let i = 0; i < notas.length; i += batchSize) {
       const batch = notas.slice(i, i + batchSize);

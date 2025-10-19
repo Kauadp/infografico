@@ -95,23 +95,28 @@ async function fazerRequisicao(url, maxRetries = 3, retryDelay = 1000) {
 // ==================== BUSCAR DADOS ====================
 
 async function buscarNotas(dataInicio, dataFim, limite = 100) {
-  const filtro = `dataEmissao[${dataInicio} TO ${dataFim}];situacao[5]`; // Apenas notas autorizadas
+  const dataInicioFmt = `${dataInicio} 00:00:00`; // Adiciona horário inicial
+  const dataFimFmt = `${dataFim} 23:59:59`;     // Adiciona horário final
+  const filtro = `dataEmissao[${dataInicioFmt} TO ${dataFimFmt}];situacao[5]`; // Apenas notas autorizadas
   let page = 1;
   let allNotas = [];
   let hasMore = true;
 
-  console.log(`📡 Buscando notas: ${dataInicio} a ${dataFim}`);
+  console.log(`📡 Buscando notas: Filtro aplicado - ${filtro}`);
 
-  while (hasMore && allNotas.length < limite) { // Enforce the limit
+  while (hasMore && allNotas.length < limite) {
     const url = `${BLING_API_BASE}/nfce?page=${page}&limite=${limite}&filters=${encodeURIComponent(filtro)}`;
+    console.log(`🔍 Requisição para URL: ${url}`);
     const data = await fazerRequisicao(url);
     const notasPage = data.data || [];
-    allNotas = [...allNotas, ...notasPage.slice(0, limite - allNotas.length)]; // Cap at requested limit
+    console.log(`📋 Notas retornadas na página ${page}: ${notasPage.length} | Primeira data: ${notasPage[0]?.dataEmissao || 'N/A'}`);
+    allNotas = [...allNotas, ...notasPage.slice(0, limite - allNotas.length)];
     hasMore = notasPage.length === limite && allNotas.length < limite;
     page++;
     if (page > 10) break; // Safety limit
   }
 
+  console.log(`📦 ${allNotas.length} notas encontradas`);
   return allNotas;
 }
 
@@ -302,7 +307,7 @@ export default async function handler(req, res) {
 
   try {
     const { dataInicio, dataFim, limit = '100', detalhado = 'false' } = req.query;
-    const maxLimit = Math.min(parseInt(limit) || 100, 100); // Cap at 100
+    const maxLimit = Math.min(parseInt(limit) || 100, 100);
     const incluirClientes = detalhado === 'true';
 
     const hoje = new Date().toISOString().split('T')[0];
@@ -324,8 +329,8 @@ export default async function handler(req, res) {
     }
 
     const notasDetalhadas = [];
-    const batchSize = 9; // Increased to 9 to stay within 3 req/s with 333ms delay
-    const delayBetweenBatches = 333; // Adjusted delay for 3 req/s limit
+    const batchSize = 9;
+    const delayBetweenBatches = 333;
 
     for (let i = 0; i < notas.length; i += batchSize) {
       const batch = notas.slice(i, i + batchSize);

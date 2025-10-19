@@ -1,14 +1,16 @@
 // api/bling-nfce.js
-// API OTIMIZADA - Foco: Loja, Produto, Data, Valor
+// API OTIMIZADA - Dashboard de Vendas com dados essenciais
 
-const BLING_API_BASE_URL = 'https://api.bling.com.br/Api/v3';
-const CLIENT_ID = process.env.BLING_CLIENT_ID;
-const CLIENT_SECRET = process.env.BLING_CLIENT_SECRET;
+const BLING_API_BASE = 'https://api.bling.com.br/Api/v3';
 
-let access_token = process.env.BLING_ACCESS_TOKEN;
-let refresh_token = process.env.BLING_REFRESH_TOKEN;
+// Configuração via variáveis de ambiente
+let accessToken = process.env.BLING_ACCESS_TOKEN;
+let refreshToken = process.env.BLING_REFRESH_TOKEN;
+const clientId = process.env.BLING_CLIENT_ID;
+const clientSecret = process.env.BLING_CLIENT_SECRET;
 
-const MAPEAMENTO_LOJAS = {
+// Mapeamento de lojas
+const LOJAS = {
   205613392: 'TAPETES SÃO CARLOS',
   205613394: 'ROJEMA IMPORTAÇÃO',
   205613399: 'MEU EXAGERADO', 
@@ -16,76 +18,125 @@ const MAPEAMENTO_LOJAS = {
   0: 'Loja Principal',
 };
 
-async function refreshAccessToken() {
-  const auth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
-  const response = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
-    method: 'POST',
-    headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token })
-  });
-  const data = await response.json();
-  if (response.ok) {
-    access_token = data.access_token;
-    refresh_token = data.refresh_token;
-    return true;
-  }
-  throw new Error(`Falha ao renovar`);
-}
+// ==================== AUTENTICAÇÃO ====================
 
-async function fetchNFCe(filtro, limit = 100) {
-  let url = `${BLING_API_BASE_URL}/nfce?limite=${limit}`;
-  if (filtro) url += `&filters=${encodeURIComponent(filtro)}`;
-  const response = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${access_token}`, 'Accept': 'application/json' }
-  });
-  const data = await response.json();
-  if (response.ok) return data.data || [];
-  if (data.error?.type === 'invalid_token') {
-    await refreshAccessToken();
-    return await fetchNFCe(filtro, limit);
-  }
-  throw new Error(`API Error: ${JSON.stringify(data)}`);
-}
-
-async function fetchNFCeDetalhes(id) {
-  const response = await fetch(`${BLING_API_BASE_URL}/nfce/${id}`, {
-    headers: { 'Authorization': `Bearer ${access_token}`, 'Accept': 'application/json' }
-  });
-  const data = await response.json();
-  if (response.ok) return data.data;
-  if (data.error?.type === 'invalid_token') {
-    await refreshAccessToken();
-    return await fetchNFCeDetalhes(id);
-  }
-  return null;
-}
-
-async function fetchContato(contatoId) {
-  if (!contatoId || contatoId === 16408306243) return null; // Consumidor Final
+async function renovarToken() {
   try {
-    const response = await fetch(`${BLING_API_BASE_URL}/contatos/${contatoId}`, {
-      headers: { 'Authorization': `Bearer ${access_token}`, 'Accept': 'application/json' }
+    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const res = await fetch('https://www.bling.com.br/Api/v3/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken
+      })
     });
-    const data = await response.json();
-    return response.ok ? data.data : null;
-  } catch { return null; }
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`Falha na renovação: ${res.status} - ${error}`);
+    }
+
+    const data = await res.json();
+    accessToken = data.access_token;
+    refreshToken = data.refresh_token;
+    
+    console.log('✅ Token renovado com sucesso');
+    return true;
+  } catch (error) {
+    console.error('❌ Erro ao renovar token:', error.message);
+    throw error;
+  }
 }
+
+async function fazerRequisicao(url, tentativa = 1) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (res.status === 401 && tentativa === 1) {
+      console.log('🔄 Token expirado, renovando...');
+      await renovarToken();
+      return fazerRequisicao(url, 2);
+    }
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`API Error ${res.status}: ${error}`);
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error(`❌ Erro na requisição (tentativa ${tentativa}):`, error.message);
+    throw error;
+  }
+}
+
+// ==================== BUSCAR DADOS ====================
+
+async function buscarNotas(dataInicio, dataFim, limite = 100) {
+  const filtro = `dataEmissao[${dataInicio} TO ${dataFim}];situacao[4,5]`; // 4=Autorizada, 5=Autorizada com cancelamento
+  const url = `${BLING_API_BASE}/nfce?limite=${limite}&filters=${encodeURIComponent(filtro)}`;
+  
+  console.log(`📡 Buscando notas: ${dataInicio} a ${dataFim}`);
+  const data = await fazerRequisicao(url);
+  return data.data || [];
+}
+
+async function buscarDetalhesNota(id) {
+  try {
+    const url = `${BLING_API_BASE}/nfce/${id}`;
+    const data = await fazerRequisicao(url);
+    return data.data;
+  } catch (error) {
+    console.error(`⚠️ Erro ao buscar nota ${id}:`, error.message);
+    return null;
+  }
+}
+
+async function buscarContato(contatoId) {
+  if (!contatoId || contatoId === 16408306243) return null; // Consumidor Final
+  
+  try {
+    const url = `${BLING_API_BASE}/contatos/${contatoId}`;
+    const data = await fazerRequisicao(url);
+    return data.data;
+  } catch (error) {
+    console.error(`⚠️ Erro ao buscar contato ${contatoId}`);
+    return null;
+  }
+}
+
+// ==================== PROCESSAMENTO ====================
 
 function extrairMarca(descricao) {
-  if (!descricao) return 'Não informado';
-  const desc = descricao.toUpperCase();
+  if (!descricao) return 'NÃO INFORMADO';
   
-  // Marcas conhecidas
-  const marcas = ['NIKE', 'ADIDAS', 'ARAMIS', 'ACOSTAMENTO', 'POLO', 'CALVIN KLEIN', 
-                  'LACOSTE', 'TOMMY', 'ZARA', 'H&M', 'PUMA', 'OAKLEY'];
+  const desc = descricao.toUpperCase();
+  const marcas = [
+    'NIKE', 'ADIDAS', 'PUMA', 'REEBOK', 'NEW BALANCE',
+    'ARAMIS', 'ACOSTAMENTO', 'POLO', 'CALVIN KLEIN', 'LACOSTE',
+    'TOMMY', 'ZARA', 'H&M', 'OAKLEY', 'RAY-BAN',
+    'MIZUNO', 'ASICS', 'FILA', 'VANS', 'CONVERSE'
+  ];
   
   for (const marca of marcas) {
     if (desc.includes(marca)) return marca;
   }
   
-  // Tenta extrair primeira palavra (geralmente é a marca)
-  const primeiraPalavra = descricao.split(' ')[0];
-  if (primeiraPalavra.length > 2) return primeiraPalavra.toUpperCase();
+  // Primeira palavra se tiver mais de 2 caracteres
+  const primeira = descricao.split(/[\s\-]/)[0];
+  if (primeira && primeira.length > 2) {
+    return primeira.toUpperCase();
+  }
   
   return 'GENÉRICO';
 }
@@ -93,15 +144,15 @@ function extrairMarca(descricao) {
 function calcularIdade(dataNascimento) {
   if (!dataNascimento) return null;
   const hoje = new Date();
-  const nascimento = new Date(dataNascimento);
-  let idade = hoje.getFullYear() - nascimento.getFullYear();
-  const m = hoje.getMonth() - nascimento.getMonth();
-  if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) idade--;
-  return idade;
+  const nasc = new Date(dataNascimento);
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade > 0 ? idade : null;
 }
 
 function getFaixaEtaria(idade) {
-  if (!idade) return 'Não informado';
+  if (!idade || idade < 0) return 'NÃO INFORMADO';
   if (idade < 18) return '0-17';
   if (idade < 25) return '18-24';
   if (idade < 35) return '25-34';
@@ -110,37 +161,43 @@ function getFaixaEtaria(idade) {
   return '55+';
 }
 
-function processarDados(notasDetalhadas) {
-  const autorizadas = notasDetalhadas.filter(n => n.situacao === 4 || n.situacao === 5);
-  
+function processarDados(notas, incluirClientes = false) {
   const dados = {
+    // Dados essenciais
     resumo: {
       totalVendas: 0,
-      totalNotas: autorizadas.length,
+      totalNotas: 0,
       totalItens: 0,
       ticketMedio: 0
     },
+    vendas: [], // [{ data, hora, loja, produto, marca, quantidade, valor }]
+    
+    // Agregações
     porLoja: {},
     porDia: {},
     porHora: {},
     porMarca: {},
-    produtos: {},
-    clientes: {
+    topProdutos: {},
+    
+    // Clientes (opcional)
+    clientes: incluirClientes ? {
       porGenero: { Masculino: 0, Feminino: 0, 'Não informado': 0 },
-      porFaixaEtaria: {},
+      porIdade: {},
       porMarcaGenero: {},
       porMarcaIdade: {}
-    },
-    vendasRealTime: [] // Para dashboard em tempo real
+    } : null
   };
 
-  autorizadas.forEach(nota => {
-    const valorNota = parseFloat(nota.valorNota || 0);
-    const nomeLoja = MAPEAMENTO_LOJAS[nota.loja?.id] || 'Não informado';
-    const [data, hora] = (nota.dataEmissao || '').split(' ');
-    const horaFormatada = hora?.substring(0, 5) || '00:00';
+  notas.forEach(nota => {
+    if (!nota || (nota.situacao !== 4 && nota.situacao !== 5)) return;
     
-    // Resumo
+    const valorNota = parseFloat(nota.valorNota || 0);
+    const nomeLoja = LOJAS[nota.loja?.id] || 'NÃO INFORMADO';
+    const dataHora = nota.dataEmissao || '';
+    const [data, horaCompleta] = dataHora.split(' ');
+    const hora = horaCompleta ? horaCompleta.substring(0, 2) + ':00' : '00:00';
+    
+    dados.resumo.totalNotas++;
     dados.resumo.totalVendas += valorNota;
 
     // Por Loja
@@ -158,15 +215,25 @@ function processarDados(notasDetalhadas) {
     dados.porDia[data].notas++;
 
     // Por Hora
-    const chaveHora = `${data} ${hora?.split(':')[0] || '00'}:00`;
-    if (!dados.porHora[chaveHora]) {
-      dados.porHora[chaveHora] = { vendas: 0, notas: 0 };
+    if (!dados.porHora[hora]) {
+      dados.porHora[hora] = { vendas: 0, notas: 0 };
     }
-    dados.porHora[chaveHora].vendas += valorNota;
-    dados.porHora[chaveHora].notas++;
+    dados.porHora[hora].vendas += valorNota;
+    dados.porHora[hora].notas++;
 
-    // Produtos e Marcas
-    if (nota.itens) {
+    // Cliente Info
+    let clienteInfo = null;
+    if (incluirClientes && nota.clienteInfo) {
+      clienteInfo = nota.clienteInfo;
+      const genero = clienteInfo.genero || 'Não informado';
+      const faixa = clienteInfo.faixaEtaria || 'Não informado';
+      
+      dados.clientes.porGenero[genero]++;
+      dados.clientes.porIdade[faixa] = (dados.clientes.porIdade[faixa] || 0) + 1;
+    }
+
+    // Produtos
+    if (nota.itens && Array.isArray(nota.itens)) {
       nota.itens.forEach(item => {
         const qtd = parseFloat(item.quantidade || 0);
         const valor = parseFloat(item.valor || 0);
@@ -177,9 +244,21 @@ function processarDados(notasDetalhadas) {
         dados.resumo.totalItens += qtd;
         dados.porLoja[nomeLoja].itens += qtd;
 
-        // Produtos
-        if (!dados.produtos[codigo]) {
-          dados.produtos[codigo] = {
+        // Registro individual de venda
+        dados.vendas.push({
+          data,
+          hora,
+          loja: nomeLoja,
+          produto: descricao,
+          marca,
+          quantidade: qtd,
+          valor,
+          numeroNota: nota.numero
+        });
+
+        // Top Produtos
+        if (!dados.topProdutos[codigo]) {
+          dados.topProdutos[codigo] = {
             codigo,
             descricao,
             marca,
@@ -187,24 +266,20 @@ function processarDados(notasDetalhadas) {
             valorTotal: 0
           };
         }
-        dados.produtos[codigo].quantidade += qtd;
-        dados.produtos[codigo].valorTotal += valor;
+        dados.topProdutos[codigo].quantidade += qtd;
+        dados.topProdutos[codigo].valorTotal += valor;
 
-        // Marcas
+        // Por Marca
         if (!dados.porMarca[marca]) {
-          dados.porMarca[marca] = {
-            vendas: 0,
-            quantidade: 0,
-            notas: 0
-          };
+          dados.porMarca[marca] = { vendas: 0, quantidade: 0, notas: 0 };
         }
         dados.porMarca[marca].vendas += valor;
         dados.porMarca[marca].quantidade += qtd;
-        
+
         // Clientes por Marca
-        if (nota.clienteInfo) {
-          const genero = nota.clienteInfo.genero || 'Não informado';
-          const faixa = nota.clienteInfo.faixaEtaria || 'Não informado';
+        if (incluirClientes && clienteInfo) {
+          const genero = clienteInfo.genero;
+          const faixa = clienteInfo.faixaEtaria;
 
           if (!dados.clientes.porMarcaGenero[marca]) {
             dados.clientes.porMarcaGenero[marca] = { Masculino: 0, Feminino: 0, 'Não informado': 0 };
@@ -217,139 +292,168 @@ function processarDados(notasDetalhadas) {
           dados.clientes.porMarcaIdade[marca][faixa] = (dados.clientes.porMarcaIdade[marca][faixa] || 0) + 1;
         }
       });
-      
-      dados.porMarca[marca].notas++; // Conta nota uma vez por marca
     }
-
-    // Clientes Geral
-    if (nota.clienteInfo) {
-      const genero = nota.clienteInfo.genero || 'Não informado';
-      const faixa = nota.clienteInfo.faixaEtaria || 'Não informado';
-      
-      dados.clientes.porGenero[genero]++;
-      dados.clientes.porFaixaEtaria[faixa] = (dados.clientes.porFaixaEtaria[faixa] || 0) + 1;
-    }
-
-    // Vendas em Tempo Real
-    dados.vendasRealTime.push({
-      hora: `${data} ${horaFormatada}`,
-      loja: nomeLoja,
-      valor: valorNota,
-      numero: nota.numero
-    });
   });
 
   dados.resumo.ticketMedio = dados.resumo.totalNotas > 0 
     ? dados.resumo.totalVendas / dados.resumo.totalNotas 
     : 0;
 
-  // Ordena e formata arrays
+  // Formatar arrays para dashboard
   return {
-    ...dados,
-    lojasArray: Object.entries(dados.porLoja).map(([nome, info]) => ({ nome, ...info }))
+    resumo: dados.resumo,
+    vendas: dados.vendas.slice(-100), // Últimas 100 vendas
+    lojasArray: Object.entries(dados.porLoja)
+      .map(([nome, info]) => ({ nome, ...info }))
       .sort((a, b) => b.vendas - a.vendas),
-    diasArray: Object.entries(dados.porDia).map(([data, info]) => ({ data, ...info }))
+    diasArray: Object.entries(dados.porDia)
+      .map(([data, info]) => ({ data, ...info }))
       .sort((a, b) => a.data.localeCompare(b.data)),
-    horasArray: Object.entries(dados.porHora).map(([hora, info]) => ({ hora, ...info }))
+    horasArray: Object.entries(dados.porHora)
+      .map(([hora, info]) => ({ hora, ...info }))
       .sort((a, b) => a.hora.localeCompare(b.hora)),
-    marcasArray: Object.entries(dados.porMarca).map(([marca, info]) => ({ marca, ...info }))
+    marcasArray: Object.entries(dados.porMarca)
+      .map(([marca, info]) => ({ marca, ...info }))
       .sort((a, b) => b.vendas - a.vendas),
-    produtosTop: Object.values(dados.produtos)
+    produtosTop: Object.values(dados.topProdutos)
       .sort((a, b) => b.quantidade - a.quantidade)
       .slice(0, 20),
-    clientesGeneroArray: Object.entries(dados.clientes.porGenero)
-      .map(([genero, count]) => ({ genero, count })),
-    clientesFaixaArray: Object.entries(dados.clientes.porFaixaEtaria)
-      .map(([faixa, count]) => ({ faixa, count }))
-      .sort((a, b) => a.faixa.localeCompare(b.faixa)),
-    vendasRealTime: dados.vendasRealTime.slice(-50).reverse() // Últimas 50
+    vendasRealTime: dados.vendas.slice(-50).reverse(),
+    clientes: incluirClientes ? {
+      generoArray: Object.entries(dados.clientes.porGenero)
+        .map(([genero, count]) => ({ genero, count })),
+      idadeArray: Object.entries(dados.clientes.porIdade)
+        .map(([faixa, count]) => ({ faixa, count }))
+        .sort((a, b) => a.faixa.localeCompare(b.faixa)),
+      porMarcaGenero: dados.clientes.porMarcaGenero,
+      porMarcaIdade: dados.clientes.porMarcaIdade
+    } : null
   };
 }
 
+// ==================== HANDLER PRINCIPAL ====================
+
 export default async function handler(req, res) {
-  if (!access_token) {
-    return res.status(401).json({ erro: 'Não autorizado' });
+  const inicio = Date.now();
+
+  // Validação
+  if (!accessToken || !clientId || !clientSecret) {
+    return res.status(401).json({
+      status: 'error',
+      message: 'Credenciais não configuradas. Configure BLING_ACCESS_TOKEN, BLING_CLIENT_ID e BLING_CLIENT_SECRET'
+    });
   }
 
   try {
-    const { dataInicio, dataFim, limit = '100', detalhado = 'false' } = req.query;
+    // Parâmetros
+    const { 
+      dataInicio, 
+      dataFim, 
+      limit = '100', 
+      detalhado = 'false' 
+    } = req.query;
+
     const maxLimit = Math.min(parseInt(limit) || 100, 100);
+    const incluirClientes = detalhado === 'true';
 
-    let dataInicioFormatada = dataInicio || new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    let dataFimFormatada = dataFim || new Date().toISOString().split('T')[0];
+    const hoje = new Date().toISOString().split('T')[0];
+    const dataInicioFmt = dataInicio || hoje;
+    const dataFimFmt = dataFim || hoje;
 
-    const filtro = `dataEmissao[${dataInicioFormatada} TO ${dataFimFormatada}]`;
-    console.log('📅 Filtro:', filtro, '| Limite:', maxLimit);
+    console.log(`\n🚀 Iniciando busca: ${dataInicioFmt} a ${dataFimFmt} | Limite: ${maxLimit} | Clientes: ${incluirClientes}`);
 
-    const notas = await fetchNFCe(filtro, maxLimit);
+    // 1. Buscar lista de notas
+    const notas = await buscarNotas(dataInicioFmt, dataFimFmt, maxLimit);
     console.log(`📦 ${notas.length} notas encontradas`);
 
     if (notas.length === 0) {
       return res.status(200).json({
         status: 'success',
-        mensagem: 'Nenhuma nota encontrada',
-        periodo: { dataInicio: dataInicioFormatada, dataFim: dataFimFormatada },
-        dados: {
-          resumo: { totalVendas: 0, totalNotas: 0, totalItens: 0, ticketMedio: 0 },
-          lojasArray: [], diasArray: [], horasArray: [], marcasArray: [], produtosTop: []
-        }
+        message: 'Nenhuma nota encontrada no período',
+        periodo: { dataInicio: dataInicioFmt, dataFim: dataFimFmt },
+        dados: processarDados([])
       });
     }
 
-    // Busca detalhes em paralelo (10 por vez)
+    // 2. Buscar detalhes em lotes (10 por vez para evitar rate limit)
     const notasDetalhadas = [];
     const batchSize = 10;
-    
+
     for (let i = 0; i < notas.length; i += batchSize) {
       const batch = notas.slice(i, i + batchSize);
-      const promises = batch.map(nota => fetchNFCeDetalhes(nota.id));
+      const promises = batch.map(n => buscarDetalhesNota(n.id));
       const results = await Promise.all(promises);
       notasDetalhadas.push(...results.filter(r => r !== null));
       
       if (i + batchSize < notas.length) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(r => setTimeout(r, 300)); // Pausa entre lotes
       }
     }
 
-    // Enriquece com dados de cliente (se detalhado = true)
-    if (detalhado === 'true') {
-      console.log('🔍 Buscando dados de clientes...');
-      const contatosUnicos = [...new Set(notasDetalhadas.map(n => n.contato?.id).filter(id => id && id !== 16408306243))];
-      const contatosCache = {};
-      
-      // Busca em paralelo
-      const contatosPromises = contatosUnicos.slice(0, 20).map(id => // Limite 20 para não demorar
-        fetchContato(id).then(c => c ? (contatosCache[id] = c) : null)
-      );
-      await Promise.all(contatosPromises);
+    console.log(`✅ ${notasDetalhadas.length} notas detalhadas`);
 
-      // Adiciona info de cliente nas notas
+    // 3. Enriquecer com dados de cliente (se solicitado)
+    if (incluirClientes) {
+      console.log('👥 Buscando dados de clientes...');
+      
+      const contatosUnicos = [...new Set(
+        notasDetalhadas
+          .map(n => n.contato?.id)
+          .filter(id => id && id !== 16408306243)
+      )];
+
+      const contatosCache = {};
+      const contatosLimite = contatosUnicos.slice(0, 30); // Limite para não demorar
+
+      for (let i = 0; i < contatosLimite.length; i += 5) {
+        const batch = contatosLimite.slice(i, i + 5);
+        const promises = batch.map(id => 
+          buscarContato(id).then(c => c ? (contatosCache[id] = c) : null)
+        );
+        await Promise.all(promises);
+        
+        if (i + 5 < contatosLimite.length) {
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+
+      // Adicionar info nas notas
       notasDetalhadas.forEach(nota => {
         const contatoId = nota.contato?.id;
         if (contatoId && contatosCache[contatoId]) {
-          const contato = contatosCache[contatoId];
+          const c = contatosCache[contatoId];
+          const idade = calcularIdade(c.dataNascimento);
           nota.clienteInfo = {
-            genero: contato.sexo === 'M' ? 'Masculino' : contato.sexo === 'F' ? 'Feminino' : 'Não informado',
-            idade: calcularIdade(contato.dataNascimento),
-            faixaEtaria: getFaixaEtaria(calcularIdade(contato.dataNascimento))
+            genero: c.sexo === 'M' ? 'Masculino' : c.sexo === 'F' ? 'Feminino' : 'Não informado',
+            idade,
+            faixaEtaria: getFaixaEtaria(idade)
           };
         }
       });
+
+      console.log(`✅ ${Object.keys(contatosCache).length} clientes processados`);
     }
 
-    console.log(`✅ ${notasDetalhadas.length} notas processadas`);
+    // 4. Processar dados
+    const dados = processarDados(notasDetalhadas, incluirClientes);
 
-    const dados = processarDados(notasDetalhadas);
+    const tempoTotal = ((Date.now() - inicio) / 1000).toFixed(2);
+    console.log(`⏱️ Processamento concluído em ${tempoTotal}s\n`);
 
     return res.status(200).json({
       status: 'success',
-      periodo: { dataInicio: dataInicioFormatada, dataFim: dataFimFormatada },
+      periodo: { dataInicio: dataInicioFmt, dataFim: dataFimFmt },
       totalProcessado: notasDetalhadas.length,
+      tempoProcessamento: `${tempoTotal}s`,
       dados
     });
 
   } catch (error) {
-    console.error('❌ Erro:', error);
-    return res.status(500).json({ status: 'error', message: error.message });
+    console.error('❌ ERRO:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 }

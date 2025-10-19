@@ -16,9 +16,6 @@ const MAPEAMENTO_LOJAS = {
   14888497580: 'Acostamento SP',
   14888497574: 'Aramis SP',
   0: 'Loja Principal',
-  // IDs de lojas que aparecem nas notas:
-  // 205613392 -> já mapeado
-  // Adicione mais conforme aparecerem
 };
 
 // Cache de lojas
@@ -58,13 +55,11 @@ async function refreshAccessToken() {
 async function fetchLoja(lojaId) {
   if (!lojaId || lojaId === 0) return MAPEAMENTO_LOJAS[0] || 'Loja Principal';
   
-  // Verifica mapeamento manual primeiro
   if (MAPEAMENTO_LOJAS[lojaId]) {
     cacheLojas[lojaId] = MAPEAMENTO_LOJAS[lojaId];
     return MAPEAMENTO_LOJAS[lojaId];
   }
   
-  // Verifica cache
   if (cacheLojas[lojaId]) return cacheLojas[lojaId];
 
   try {
@@ -88,16 +83,17 @@ async function fetchLoja(lojaId) {
     console.error(`Erro ao buscar loja ${lojaId}:`, error.message);
   }
 
-  // Fallback
   const fallback = `Loja ID: ${lojaId}`;
   cacheLojas[lojaId] = fallback;
   return fallback;
 }
 
-async function fetchNFCe(filtro = null) {
-  let url = `${BLING_API_BASE_URL}/nfce`;
-  if (filtro) url += `?filters=${encodeURIComponent(filtro)}`;
-
+/**
+ * Busca informações de um contato pelo ID
+ */
+async function fetchContato(contatoId) {
+  if (!contatoId) return null;
+  const url = `${BLING_API_BASE_URL}/contatos/${contatoId}`;
   const response = await fetch(url, {
     method: 'GET',
     headers: {
@@ -105,14 +101,66 @@ async function fetchNFCe(filtro = null) {
       'Accept': 'application/json'
     }
   });
-
   const data = await response.json();
-  if (response.ok) return data.data || [];
-  if (data.error?.type === 'invalid_token') {
-    await refreshAccessToken();
-    return await fetchNFCe(filtro);
+  if (response.ok && data.data) {
+    return data.data; // Campos: sexo ('M'/'F'), dataNascimento, etc.
   }
-  throw new Error(`API Error: ${JSON.stringify(data)}`);
+  return null;
+}
+
+/**
+ * Busca informações de um produto pelo ID
+ */
+async function fetchProduto(produtoId) {
+  if (!produtoId) return null;
+  const url = `${BLING_API_BASE_URL}/produtos/${produtoId}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${access_token}`,
+      'Accept': 'application/json'
+    }
+  });
+  const data = await response.json();
+  if (response.ok && data.data) {
+    return data.data; // Campo: marca
+  }
+  return null;
+}
+
+async function fetchNFCe(filtro = null) {
+  let page = 1;
+  let allNotas = [];
+  let hasMore = true;
+
+  while (hasMore) {
+    let url = `${BLING_API_BASE_URL}/nfce?page=${page}&limite=100`;
+    if (filtro) url += `&filters=${encodeURIComponent(filtro)}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      if (data.error?.type === 'invalid_token') {
+        await refreshAccessToken();
+        return await fetchNFCe(filtro); // Retry
+      }
+      throw new Error(`API Error: ${JSON.stringify(data)}`);
+    }
+
+    const notasPage = data.data || [];
+    allNotas = [...allNotas, ...notasPage];
+    hasMore = notasPage.length === 100; // Continua se página cheia
+    page++;
+  }
+
+  return allNotas;
 }
 
 async function fetchNFCeDetalhes(id) {
@@ -143,8 +191,31 @@ function getSituacaoTexto(situacao) {
   return situacoes[situacao] || 'Desconhecida';
 }
 
+function calculateAge(dataNascimento) {
+  const birth = new Date(dataNascimento);
+  const today = new Date('2025-10-19');
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+function getGrupoIdade(idade) {
+  if (idade <= 18) return '0-18';
+  if (idade <= 30) return '19-30';
+  if (idade <= 50) return '31-50';
+  return '51+';
+}
+
+function extractMarcaFromDescricao(descricao) {
+  const marcasConhecidas = ['Nike', 'Adidas', 'Aramis', 'Acostamento'];
+  for (let marca of marcasConhecidas) {
+    if (descricao?.toLowerCase().includes(marca.toLowerCase())) return marca;
+  }
+  return 'Não informado';
+}
+
 function processarDadosAuditoria(notasDetalhadas) {
-  // Filtra apenas notas AUTORIZADAS (situacao 4 ou 5)
   const notasAutorizadas = notasDetalhadas.filter(n => n.situacao === 4 || n.situacao === 5);
 
   const dados = {
@@ -152,30 +223,34 @@ function processarDadosAuditoria(notasDetalhadas) {
       totalNotas: notasAutorizadas.length,
       totalVendas: 0,
       totalItens: 0,
-      totalDescontos: 0
+      totalDescontos: 0,
+      ticketMedio: 0
     },
     porLoja: {},
     porDia: {},
     porHora: {},
     produtos: {},
-    formasPagamento: {}
+    formasPagamento: {},
+    porMarca: {},
+    clientes: {
+      porGenero: { M: 0, F: 0, Outros: 0 },
+      porIdadeGrupo: { '0-18': 0, '19-30': 0, '31-50': 0, '51+': 0 },
+      porMarcaGenero: {},
+      porMarcaIdadeGrupo: {}
+    }
   };
 
   notasAutorizadas.forEach(nota => {
-    // CORRIGIDO: usar valorNota ao invés de total
     const valorNota = parseFloat(nota.valorNota || 0);
     const desconto = parseFloat(nota.desconto?.valor || 0);
     const nomeLoja = nota.nomeLoja || 'Não informado';
     
-    // Extrai data e hora
     const [dataParte, horaParte] = (nota.dataEmissao || '').split(' ');
     const hora = horaParte?.split(':')[0] || '00';
 
-    // Totais gerais
     dados.geral.totalVendas += valorNota;
     dados.geral.totalDescontos += desconto;
 
-    // Por loja
     if (!dados.porLoja[nomeLoja]) {
       dados.porLoja[nomeLoja] = {
         nome: nomeLoja,
@@ -188,7 +263,6 @@ function processarDadosAuditoria(notasDetalhadas) {
     dados.porLoja[nomeLoja].quantidadeNotas++;
     dados.porLoja[nomeLoja].valorTotal += valorNota;
 
-    // Por dia
     if (!dados.porDia[dataParte]) {
       dados.porDia[dataParte] = {
         data: dataParte,
@@ -200,7 +274,6 @@ function processarDadosAuditoria(notasDetalhadas) {
     dados.porDia[dataParte].quantidadeNotas++;
     dados.porDia[dataParte].valorTotal += valorNota;
 
-    // Por hora
     const chaveHora = `${dataParte} ${hora}:00`;
     if (!dados.porHora[chaveHora]) {
       dados.porHora[chaveHora] = {
@@ -212,13 +285,13 @@ function processarDadosAuditoria(notasDetalhadas) {
     dados.porHora[chaveHora].quantidadeNotas++;
     dados.porHora[chaveHora].valorTotal += valorNota;
 
-    // Produtos
     if (nota.itens && Array.isArray(nota.itens)) {
       nota.itens.forEach(item => {
         const qtd = parseFloat(item.quantidade || 0);
         const valor = parseFloat(item.valor || 0);
         const codigo = item.codigo || 'SEM_CODIGO';
         const descricao = item.descricao || 'Sem descrição';
+        const marca = item.marca || extractMarcaFromDescricao(descricao);
 
         dados.geral.totalItens += qtd;
         dados.porLoja[nomeLoja].itensVendidos += qtd;
@@ -229,15 +302,21 @@ function processarDadosAuditoria(notasDetalhadas) {
             codigo,
             descricao,
             quantidade: 0,
-            valorTotal: 0
+            valorTotal: 0,
+            marca
           };
         }
         dados.produtos[codigo].quantidade += qtd;
         dados.produtos[codigo].valorTotal += valor;
+
+        if (!dados.porMarca[marca]) {
+          dados.porMarca[marca] = { valorTotal: 0, quantidade: 0 };
+        }
+        dados.porMarca[marca].valorTotal += valor;
+        dados.porMarca[marca].quantidade += qtd;
       });
     }
 
-    // Formas de pagamento
     if (nota.pagamento?.formas) {
       nota.pagamento.formas.forEach(forma => {
         const tipo = forma.forma || forma.tipo || 'Não informado';
@@ -250,19 +329,38 @@ function processarDadosAuditoria(notasDetalhadas) {
         dados.formasPagamento[tipo].valor += valor;
       });
     }
+
+    if (nota.contatoDetalhes) {
+      const genero = nota.contatoDetalhes.sexo || 'Outros';
+      const idade = nota.contatoDetalhes.idade;
+      const grupoIdade = idade ? getGrupoIdade(idade) : null;
+
+      dados.clientes.porGenero[genero] = (dados.clientes.porGenero[genero] || 0) + 1;
+      if (grupoIdade) dados.clientes.porIdadeGrupo[grupoIdade] = (dados.clientes.porIdadeGrupo[grupoIdade] || 0) + 1;
+
+      nota.itens.forEach(item => {
+        const marca = item.marca || extractMarcaFromDescricao(item.descricao);
+        if (marca) {
+          if (!dados.clientes.porMarcaGenero[marca]) dados.clientes.porMarcaGenero[marca] = { M: 0, F: 0, Outros: 0 };
+          dados.clientes.porMarcaGenero[marca][genero] += 1;
+
+          if (grupoIdade) {
+            if (!dados.clientes.porMarcaIdadeGrupo[marca]) dados.clientes.porMarcaIdadeGrupo[marca] = { '0-18': 0, '19-30': 0, '31-50': 0, '51+': 0 };
+            dados.clientes.porMarcaIdadeGrupo[marca][grupoIdade] += 1;
+          }
+        }
+      });
+    }
   });
 
-  // Calcula ticket médio por loja
   Object.values(dados.porLoja).forEach(loja => {
     loja.ticketMedio = loja.quantidadeNotas > 0 ? loja.valorTotal / loja.quantidadeNotas : 0;
   });
 
-  // Calcula ticket médio geral
   dados.geral.ticketMedio = dados.geral.totalNotas > 0 
     ? dados.geral.totalVendas / dados.geral.totalNotas 
     : 0;
 
-  // Ordena arrays
   dados.lojasArray = Object.values(dados.porLoja).sort((a, b) => b.valorTotal - a.valorTotal);
   dados.diasArray = Object.values(dados.porDia).sort((a, b) => a.data.localeCompare(b.data));
   dados.horasArray = Object.values(dados.porHora).sort((a, b) => a.hora.localeCompare(b.hora));
@@ -271,16 +369,25 @@ function processarDadosAuditoria(notasDetalhadas) {
     .slice(0, 20);
   dados.pagamentosArray = Object.values(dados.formasPagamento)
     .sort((a, b) => b.valor - a.valor);
+  dados.marcasArray = Object.entries(dados.porMarca)
+    .map(([marca, info]) => ({ marca, ...info }))
+    .sort((a, b) => b.valorTotal - a.valorTotal);
+  dados.clientesGeneroArray = Object.entries(dados.clientes.porGenero)
+    .map(([genero, count]) => ({ genero, count }));
+  dados.clientesIdadeArray = Object.entries(dados.clientes.porIdadeGrupo)
+    .map(([grupo, count]) => ({ grupo, count }));
+  dados.clientesMarcaGeneroArray = Object.entries(dados.clientes.porMarcaGenero)
+    .map(([marca, generos]) => ({ marca, ...generos }));
+  dados.clientesMarcaIdadeArray = Object.entries(dados.clientes.porMarcaIdadeGrupo)
+    .map(([marca, grupos]) => ({ marca, ...grupos }));
 
   return dados;
 }
 
 function formatarNotasParaTabela(notasDetalhadas) {
   return notasDetalhadas.map(nota => {
-    // CORRIGIDO: usar valorNota ao invés de total
     let valorTotalNota = parseFloat(nota.valorNota || 0);
     
-    // Se valorNota for 0, soma os itens
     if (valorTotalNota === 0 && nota.itens && nota.itens.length > 0) {
       valorTotalNota = nota.itens.reduce((sum, item) => {
         return sum + parseFloat(item.valor || 0);
@@ -301,6 +408,8 @@ function formatarNotasParaTabela(notasDetalhadas) {
       loja: nota.nomeLoja || 'Não informado',
       lojaId: nota.loja?.id || 0,
       valorTotal: valorTotalNota,
+      genero: nota.contatoDetalhes?.sexo || 'Não informado',
+      idade: nota.contatoDetalhes?.idade || null,
       itens: (nota.itens || []).map(item => {
         const qtd = parseFloat(item.quantidade || 1);
         const valorItem = parseFloat(item.valor || 0);
@@ -312,7 +421,8 @@ function formatarNotasParaTabela(notasDetalhadas) {
           unidade: item.unidade || 'UN',
           quantidade: qtd,
           valorUnitario: valorUnit,
-          valorTotal: valorItem
+          valorTotal: valorItem,
+          marca: item.marca || extractMarcaFromDescricao(item.descricao)
         };
       })
     };
@@ -330,16 +440,12 @@ export default async function handler(req, res) {
   try {
     const { dataInicio, dataFim } = req.query;
 
-    // Valida e formata datas
     let dataInicioFormatada, dataFimFormatada;
     
     if (dataInicio && dataFim) {
-      // Formato esperado: YYYY-MM-DD
-      // Converte para o formato do Bling se necessário
       dataInicioFormatada = dataInicio;
       dataFimFormatada = dataFim;
     } else {
-      // Padrão: últimos 7 dias
       const hoje = new Date();
       const semanaPassada = new Date(hoje);
       semanaPassada.setDate(hoje.getDate() - 7);
@@ -347,11 +453,8 @@ export default async function handler(req, res) {
       dataFimFormatada = hoje.toISOString().split('T')[0];
     }
 
-    const filtro = `dataEmissao[${dataInicioFormatada} TO ${dataFimFormatada}]`;
+    const filtro = `dataEmissao[${dataInicioFormatada} 00:00:00 TO ${dataFimFormatada} 23:59:59]`;
     
-    console.log('📅 Filtro aplicado:', filtro);
-    console.log('📅 Datas:', { inicio: dataInicioFormatada, fim: dataFimFormatada });
-
     console.log('📅 Filtro aplicado:', filtro);
     console.log('📅 Datas:', { inicio: dataInicioFormatada, fim: dataFimFormatada });
 
@@ -370,7 +473,14 @@ export default async function handler(req, res) {
           diasArray: [],
           horasArray: [],
           produtosTop: [],
-          pagamentosArray: []
+          pagamentosArray: [],
+          marcasArray: [],
+          clientes: {
+            porGenero: { M: 0, F: 0, Outros: 0 },
+            porIdadeGrupo: { '0-18': 0, '19-30': 0, '31-50': 0, '51+': 0 },
+            porMarcaGenero: {},
+            porMarcaIdadeGrupo: {}
+          }
         },
         notas: []
       });
@@ -381,7 +491,6 @@ export default async function handler(req, res) {
     const notasDetalhadas = [];
     const batchSize = 10;
     
-    // Busca detalhes das notas
     for (let i = 0; i < notas.length; i += batchSize) {
       const batch = notas.slice(i, i + batchSize);
       const promises = batch.map(nota => 
@@ -403,18 +512,42 @@ export default async function handler(req, res) {
 
     console.log(`✅ ${notasDetalhadas.length} notas processadas`);
 
-    // Busca nomes das lojas únicas
+    // Enriquecer com contatos e produtos
+    for (let nota of notasDetalhadas) {
+      if (nota.contato?.id) {
+        const contato = await fetchContato(nota.contato.id);
+        if (contato) {
+          nota.contatoDetalhes = {
+            sexo: contato.sexo || 'Não informado',
+            dataNascimento: contato.dataNascimento || null,
+            idade: contato.dataNascimento ? calculateAge(contato.dataNascimento) : null
+          };
+        }
+      }
+      if (nota.itens) {
+        for (let item of nota.itens) {
+          if (item.produto?.id) {
+            const produto = await fetchProduto(item.produto.id);
+            if (produto) {
+              item.marca = produto.marca || extractMarcaFromDescricao(item.descricao);
+            }
+          } else {
+            item.marca = extractMarcaFromDescricao(item.descricao);
+          }
+        }
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
     const lojasIds = [...new Set(notasDetalhadas.map(n => n.loja?.id).filter(id => id))];
     console.log(`🏪 ${lojasIds.length} lojas únicas encontradas:`, lojasIds);
     
-    // Carrega nomes das lojas
     for (const lojaId of lojasIds) {
       const nomeLoja = await fetchLoja(lojaId);
       console.log(`   Loja ${lojaId}: ${nomeLoja}`);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // Adiciona nome da loja em cada nota
     notasDetalhadas.forEach(nota => {
       if (nota.loja?.id) {
         nota.nomeLoja = cacheLojas[nota.loja.id] || MAPEAMENTO_LOJAS[nota.loja.id] || `Loja ID: ${nota.loja.id}`;

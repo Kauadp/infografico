@@ -467,14 +467,18 @@
             // Tabela de Notas
             const tbodyNotas = document.querySelector('#tabelaNotas tbody');
             tbodyNotas.innerHTML = '';
-            data.notas.filter(n => n.situacaoNum === 4 || n.situacaoNum === 5).forEach((nota, idx) => {
+            const notasAutorizadas = data.notas.filter(n => n.situacaoNum === 4 || n.situacaoNum === 5);
+            
+            console.log('Exemplo de nota:', notasAutorizadas[0]); // DEBUG
+            
+            notasAutorizadas.forEach((nota, idx) => {
                 tbodyNotas.innerHTML += `
                     <tr>
                         <td>${nota.loja}</td>
                         <td>${nota.dataEmissao}</td>
                         <td><strong>${nota.numero}</strong></td>
                         <td>${nota.nome}</td>
-                        <td class="valor">R$ ${nota.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td class="valor">R$ ${parseFloat(nota.valorTotal).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                         <td><button onclick="verItens(${idx})" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">Ver ${nota.itens.length} itens</button></td>
                     </tr>
                 `;

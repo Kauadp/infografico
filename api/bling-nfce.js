@@ -8,11 +8,17 @@ const CLIENT_SECRET = process.env.BLING_CLIENT_SECRET;
 let access_token = process.env.BLING_ACCESS_TOKEN;
 let refresh_token = process.env.BLING_REFRESH_TOKEN;
 
-// MAPEAMENTO MANUAL DE LOJAS (adicione os IDs que aparecerem)
+// ⚠️ MAPEAMENTO MANUAL DE LOJAS (baseado nos depósitos do Bling)
 const MAPEAMENTO_LOJAS = {
   205613392: 'Tapetes São Carlos PDV',
-  0: 'Meu Exagerado Cachoeiro',
-  // Adicione mais IDs conforme aparecerem
+  204860835: 'Acostamento SP',
+  205371255: 'Aramis SP',
+  14888497580: 'Acostamento SP',
+  14888497574: 'Aramis SP',
+  0: 'Loja Principal',
+  // IDs de lojas que aparecem nas notas:
+  // 205613392 -> já mapeado
+  // Adicione mais conforme aparecerem
 };
 
 // Cache de lojas
@@ -50,7 +56,13 @@ async function refreshAccessToken() {
  * Busca informações de uma loja pelo ID
  */
 async function fetchLoja(lojaId) {
-  if (!lojaId || lojaId === 0) return 'Loja Principal';
+  if (!lojaId || lojaId === 0) return MAPEAMENTO_LOJAS[0] || 'Loja Principal';
+  
+  // Verifica mapeamento manual primeiro
+  if (MAPEAMENTO_LOJAS[lojaId]) {
+    cacheLojas[lojaId] = MAPEAMENTO_LOJAS[lojaId];
+    return MAPEAMENTO_LOJAS[lojaId];
+  }
   
   // Verifica cache
   if (cacheLojas[lojaId]) return cacheLojas[lojaId];
@@ -318,20 +330,53 @@ export default async function handler(req, res) {
   try {
     const { dataInicio, dataFim } = req.query;
 
-    let filtro = null;
+    // Valida e formata datas
+    let dataInicioFormatada, dataFimFormatada;
+    
     if (dataInicio && dataFim) {
-      filtro = `dataEmissao[${dataInicio} TO ${dataFim}]`;
+      // Formato esperado: YYYY-MM-DD
+      // Converte para o formato do Bling se necessário
+      dataInicioFormatada = dataInicio;
+      dataFimFormatada = dataFim;
     } else {
+      // Padrão: últimos 7 dias
       const hoje = new Date();
       const semanaPassada = new Date(hoje);
       semanaPassada.setDate(hoje.getDate() - 7);
-      filtro = `dataEmissao[${semanaPassada.toISOString().split('T')[0]} TO ${hoje.toISOString().split('T')[0]}]`;
+      dataInicioFormatada = semanaPassada.toISOString().split('T')[0];
+      dataFimFormatada = hoje.toISOString().split('T')[0];
     }
 
-    console.log('📅 Buscando todas as NFC-e:', filtro);
+    const filtro = `dataEmissao[${dataInicioFormatada} TO ${dataFimFormatada}]`;
+    
+    console.log('📅 Filtro aplicado:', filtro);
+    console.log('📅 Datas:', { inicio: dataInicioFormatada, fim: dataFimFormatada });
+
+    console.log('📅 Filtro aplicado:', filtro);
+    console.log('📅 Datas:', { inicio: dataInicioFormatada, fim: dataFimFormatada });
 
     const notas = await fetchNFCe(filtro);
-    console.log(`📦 ${notas.length} notas encontradas. Buscando detalhes...`);
+    console.log(`📦 ${notas.length} notas encontradas no período`);
+    
+    if (notas.length === 0) {
+      return res.status(200).json({
+        status: 'success',
+        mensagem: 'Nenhuma nota encontrada no período selecionado',
+        periodo: { dataInicio: dataInicioFormatada, dataFim: dataFimFormatada },
+        totalEncontrado: 0,
+        auditoria: {
+          geral: { totalNotas: 0, totalVendas: 0, totalItens: 0, ticketMedio: 0 },
+          lojasArray: [],
+          diasArray: [],
+          horasArray: [],
+          produtosTop: [],
+          pagamentosArray: []
+        },
+        notas: []
+      });
+    }
+
+    console.log(`🔄 Buscando detalhes...`);
     
     const notasDetalhadas = [];
     const batchSize = 10;
@@ -360,23 +405,25 @@ export default async function handler(req, res) {
 
     // Busca nomes das lojas únicas
     const lojasIds = [...new Set(notasDetalhadas.map(n => n.loja?.id).filter(id => id))];
-    console.log(`🏪 Buscando nomes de ${lojasIds.length} lojas...`);
+    console.log(`🏪 ${lojasIds.length} lojas únicas encontradas:`, lojasIds);
     
+    // Carrega nomes das lojas
     for (const lojaId of lojasIds) {
-      await fetchLoja(lojaId);
-      await new Promise(resolve => setTimeout(resolve, 200));
+      const nomeLoja = await fetchLoja(lojaId);
+      console.log(`   Loja ${lojaId}: ${nomeLoja}`);
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     // Adiciona nome da loja em cada nota
     notasDetalhadas.forEach(nota => {
       if (nota.loja?.id) {
-        nota.nomeLoja = cacheLojas[nota.loja.id] || `Loja ID: ${nota.loja.id}`;
+        nota.nomeLoja = cacheLojas[nota.loja.id] || MAPEAMENTO_LOJAS[nota.loja.id] || `Loja ID: ${nota.loja.id}`;
       } else {
-        nota.nomeLoja = 'Loja Principal';
+        nota.nomeLoja = MAPEAMENTO_LOJAS[0] || 'Loja Principal';
       }
     });
 
-    console.log('✅ Nomes das lojas carregados');
+    console.log('✅ Processamento concluído');
 
     const auditoria = processarDadosAuditoria(notasDetalhadas);
     const notasTabela = formatarNotasParaTabela(notasDetalhadas);
@@ -384,8 +431,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       status: 'success',
       periodo: {
-        dataInicio: dataInicio || filtro.match(/\[(.*?) TO/)?.[1],
-        dataFim: dataFim || filtro.match(/TO (.*?)\]/)?.[1]
+        dataInicio: dataInicioFormatada,
+        dataFim: dataFimFormatada
       },
       totalEncontrado: notas.length,
       totalProcessado: notasDetalhadas.length,

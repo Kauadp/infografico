@@ -95,7 +95,7 @@ async function fazerRequisicao(url, maxRetries = 3, retryDelay = 1000) {
 // ==================== BUSCAR DADOS ====================
 
 async function buscarNotas(dataInicio, dataFim, limite = 100) {
-  const filtro = `dataEmissao[${dataInicio} TO ${dataFim}];situacao[5]`; // Correção: Apenas notas autorizadas (situacao 5)
+  const filtro = `dataEmissao[${dataInicio} TO ${dataFim}];situacao[5]`; // Apenas notas autorizadas
   let page = 1;
   let allNotas = [];
   let hasMore = true;
@@ -115,13 +115,13 @@ async function buscarNotas(dataInicio, dataFim, limite = 100) {
   return allNotas;
 }
 
-async function buscarDetalhesNota(id) {
+async function buscarDetalhesNota(idNotaFiscalConsumidor) {
   try {
-    const url = `${BLING_API_BASE}/nfce/${id}`;
+    const url = `${BLING_API_BASE}/nfce/${idNotaFiscalConsumidor}`; // Alinhado com idNotaFiscalConsumidor
     const data = await fazerRequisicao(url);
     return data.data;
   } catch (error) {
-    console.error(`⚠️ Erro ao buscar nota ${id}:`, error.message);
+    console.error(`⚠️ Erro ao buscar nota ${idNotaFiscalConsumidor}:`, error.message);
     return null;
   }
 }
@@ -195,7 +195,7 @@ function processarDados(notas, incluirClientes = false) {
   };
 
   notas.forEach(nota => {
-    if (!nota || nota.situacao !== 5) return; // Correção: Apenas notas autorizadas (situacao 5)
+    if (!nota || nota.situacao !== 5) return; // Apenas notas autorizadas
     const valorNota = parseFloat(nota.valorNota || 0);
     const nomeLoja = LOJAS[nota.loja?.id] || 'NÃO INFORMADO';
     const dataHora = nota.dataEmissao || '';

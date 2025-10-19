@@ -9,13 +9,14 @@ let refreshToken = process.env.BLING_REFRESH_TOKEN;
 const clientId = process.env.BLING_CLIENT_ID;
 const clientSecret = process.env.BLING_CLIENT_SECRET;
 
-// Mapeamento de lojas
+// Mapeamento de lojas (ajustado para incluir nomes de fornecedores)
 const LOJAS = {
   205613392: 'TAPETES SÃO CARLOS',
   205613394: 'ROJEMA IMPORTAÇÃO',
   205613399: 'MEU EXAGERADO', 
   205613401: 'ACOSTAMENTO SP',
   0: 'Loja Principal',
+  'TAPETES SAO CARLOS LTDA.': 'TAPETES SÃO CARLOS' // Mapeamento baseado em nome do fornecedor
 };
 
 // ==================== AUTENTICAÇÃO ====================
@@ -182,23 +183,13 @@ function getFaixaEtaria(idade) {
 
 function processarDados(notas, incluirClientes = false) {
   const dados = {
-    // Dados essenciais
-    resumo: {
-      totalVendas: 0,
-      totalNotas: 0,
-      totalItens: 0,
-      ticketMedio: 0
-    },
-    vendas: [], // [{ data, hora, loja, produto, marca, quantidade, valor }]
-    
-    // Agregações
+    resumo: { totalVendas: 0, totalNotas: 0, totalItens: 0, ticketMedio: 0 },
+    vendas: [],
     porLoja: {},
     porDia: {},
     porHora: {},
     porMarca: {},
     topProdutos: {},
-    
-    // Clientes (opcional)
     clientes: incluirClientes ? {
       porGenero: { Masculino: 0, Feminino: 0, 'Não informado': 0 },
       porIdade: {},
@@ -211,7 +202,16 @@ function processarDados(notas, incluirClientes = false) {
     if (!nota || nota.situacao !== 5) return; // Apenas notas autorizadas
     
     const valorNota = parseFloat(nota.valorNota || 0);
-    const nomeLoja = LOJAS[nota.loja?.id] || 'NÃO INFORMADO';
+    let nomeLoja = LOJAS[nota.loja?.id] || 'NÃO INFORMADO';
+
+    // Mapeamento baseado em fornecedor do item, se disponível
+    if (nota.itens && nota.itens.length > 0) {
+      const fornecedor = nota.itens[0].fornecedor; // Assumindo o primeiro item
+      if (fornecedor && LOJAS[fornecedor]) {
+        nomeLoja = LOJAS[fornecedor]; // Sobrescreve com mapeamento do fornecedor
+      }
+    }
+
     const dataHora = nota.dataEmissao || '';
     const [dataParte, horaParte] = dataHora.split(' ');
     const hora = horaParte ? horaParte.substring(0, 2) + ':00' : '00:00';
@@ -372,17 +372,15 @@ export default async function handler(req, res) {
       detalhado = 'false' 
     } = req.query;
 
-    const maxLimit = Math.min(parseInt(limit) || 100, 100);
     const incluirClientes = detalhado === 'true';
 
     const hoje = new Date().toISOString().split('T')[0];
     const dataInicioFmt = dataInicio || hoje;
     const dataFimFmt = dataFim || hoje;
 
-    console.log(`\n🚀 Iniciando busca: ${dataInicioFmt} a ${dataFimFmt} | Limite: ${maxLimit} | Clientes: ${incluirClientes}`);
+    console.log(`\n🚀 Iniciando busca: ${dataInicioFmt} a ${dataFimFmt} | Limite por página: ${limit} | Clientes: ${incluirClientes}`);
 
-    // 1. Buscar lista de notas
-    const notas = await buscarNotas(dataInicioFmt, dataFimFmt, maxLimit);
+    const notas = await buscarNotas(dataInicioFmt, dataFimFmt, parseInt(limit));
     console.log(`📦 ${notas.length} notas encontradas`);
 
     if (notas.length === 0) {
@@ -394,7 +392,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Buscar detalhes em lotes (10 por vez para evitar rate limit)
     const notasDetalhadas = [];
     const batchSize = 10;
 
@@ -411,7 +408,6 @@ export default async function handler(req, res) {
 
     console.log(`✅ ${notasDetalhadas.length} notas detalhadas`);
 
-    // 3. Enriquecer com dados de cliente (se solicitado)
     if (incluirClientes) {
       console.log('👥 Buscando dados de clientes...');
       
@@ -453,7 +449,6 @@ export default async function handler(req, res) {
       console.log(`✅ ${Object.keys(contatosCache).length} clientes processados`);
     }
 
-    // 4. Processar dados
     const dados = processarDados(notasDetalhadas, incluirClientes);
 
     const tempoTotal = ((Date.now() - inicio) / 1000).toFixed(2);

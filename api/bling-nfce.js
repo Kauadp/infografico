@@ -1,4 +1,6 @@
-// api/bling-nfce.js (updated)
+// api/bling-nfce.js
+// API OTIMIZADA - Dashboard de Vendas com dados essenciais
+
 const BLING_API_BASE = 'https://api.bling.com.br/Api/v3';
 
 // Configuração via variáveis de ambiente
@@ -11,7 +13,7 @@ const clientSecret = process.env.BLING_CLIENT_SECRET;
 const LOJAS = {
   205613392: 'TAPETES SÃO CARLOS',
   205613394: 'ROJEMA IMPORTAÇÃO',
-  205613399: 'MEU EXAGERADO',
+  205613399: 'MEU EXAGERADO', 
   205613401: 'ACOSTAMENTO SP',
   0: 'Loja Principal',
 };
@@ -42,6 +44,7 @@ async function renovarToken() {
     const data = await res.json();
     accessToken = data.access_token;
     refreshToken = data.refresh_token;
+    
     console.log('✅ Token renovado com sucesso');
     return true;
   } catch (error) {
@@ -50,89 +53,70 @@ async function renovarToken() {
   }
 }
 
-async function fazerRequisicao(url, maxRetries = 3, retryDelay = 1000) {
-  for (let tentativa = 1; tentativa <= maxRetries; tentativa++) {
-    try {
-      const res = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (res.status === 401 && tentativa === 1) {
-        console.log('🔄 Token expirado, renovando...');
-        await renovarToken();
-        return fazerRequisicao(url, maxRetries, retryDelay);
+async function fazerRequisicao(url, tentativa = 1) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
       }
+    });
 
-      if (res.status === 429) {
-        const error = await res.json();
-        const waitTime = retryDelay * Math.pow(2, tentativa - 1);
-        console.log(`⚠️ 429 - Limite atingido. Aguardando ${waitTime}ms antes de retry ${tentativa}/${maxRetries}`);
-        await new Promise(r => setTimeout(r, waitTime));
-        continue;
-      }
-
-      if (!res.ok) {
-        const error = await res.text();
-        throw new Error(`API Error ${res.status}: ${error}`);
-      }
-
-      return await res.json();
-    } catch (error) {
-      if (tentativa === maxRetries) {
-        console.error(`❌ Erro na requisição (tentativa ${tentativa}):`, error.message);
-        throw error;
-      }
-      const waitTime = retryDelay * Math.pow(2, tentativa - 1);
-      console.log(`⚠️ Retry ${tentativa}/${maxRetries} após ${waitTime}ms`);
-      await new Promise(r => setTimeout(r, waitTime));
+    if (res.status === 401 && tentativa === 1) {
+      console.log('🔄 Token expirado, renovando...');
+      await renovarToken();
+      return fazerRequisicao(url, 2);
     }
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(`API Error ${res.status}: ${error}`);
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error(`❌ Erro na requisição (tentativa ${tentativa}):`, error.message);
+    throw error;
   }
 }
 
 // ==================== BUSCAR DADOS ====================
 
 async function buscarNotas(dataInicio, dataFim, limite = 100) {
-  const dataInicioFmt = `${dataInicio} 00:00:00`; // Adiciona horário inicial
-  const dataFimFmt = `${dataFim} 23:59:59`;     // Adiciona horário final
-  const filtro = `dataEmissao[${dataInicioFmt} TO ${dataFimFmt}];situacao[5]`; // Apenas notas autorizadas
+  const dataInicioFmt = `${dataInicio} 00:00:00`;
+  const dataFimFmt = `${dataFim} 23:59:59`;
   let page = 1;
   let allNotas = [];
   let hasMore = true;
 
-  console.log(`📡 Buscando notas: Filtro aplicado - ${filtro}`);
+  console.log(`📡 Buscando notas: ${dataInicioFmt} a ${dataFimFmt}`);
 
-  while (hasMore && allNotas.length < limite) {
-    const url = `${BLING_API_BASE}/nfce?page=${page}&limite=${limite}&filters=${encodeURIComponent(filtro)}`;
-    console.log(`🔍 Requisição para URL: ${url}`);
+  while (hasMore) {
+    const url = `${BLING_API_BASE}/nfce?page=${page}&limite=${limite}&dataEmissaoInicial=${encodeURIComponent(dataInicioFmt)}&dataEmissaoFinal=${encodeURIComponent(dataFimFmt)}&situacao=5`;
     const data = await fazerRequisicao(url);
     const notasPage = data.data || [];
-    console.log(`📋 Notas retornadas na página ${page}: ${notasPage.length} | Primeira data: ${notasPage[0]?.dataEmissao || 'N/A'}`);
-    allNotas = [...allNotas, ...notasPage.slice(0, limite - allNotas.length)];
-    hasMore = notasPage.length === limite && allNotas.length < limite;
+    allNotas = [...allNotas, ...notasPage];
+    hasMore = notasPage.length === limite;
     page++;
-    if (page > 10) break; // Safety limit
   }
 
-  console.log(`📦 ${allNotas.length} notas encontradas`);
   return allNotas;
 }
 
-async function buscarDetalhesNota(idNotaFiscalConsumidor) {
+async function buscarDetalhesNota(id) {
   try {
-    const url = `${BLING_API_BASE}/nfce/${idNotaFiscalConsumidor}`;
+    const url = `${BLING_API_BASE}/nfce/${id}`;
     const data = await fazerRequisicao(url);
     return data.data;
   } catch (error) {
-    console.error(`⚠️ Erro ao buscar nota ${idNotaFiscalConsumidor}:`, error.message);
+    console.error(`⚠️ Erro ao buscar nota ${id}:`, error.message);
     return null;
   }
 }
 
 async function buscarContato(contatoId) {
-  if (!contatoId || contatoId === 16408306243) return null;
+  if (!contatoId || contatoId === 16408306243) return null; // Consumidor Final
+  
   try {
     const url = `${BLING_API_BASE}/contatos/${contatoId}`;
     const data = await fazerRequisicao(url);
@@ -147,6 +131,7 @@ async function buscarContato(contatoId) {
 
 function extrairMarca(descricao) {
   if (!descricao) return 'NÃO INFORMADO';
+  
   const desc = descricao.toUpperCase();
   const marcas = [
     'NIKE', 'ADIDAS', 'PUMA', 'REEBOK', 'NEW BALANCE',
@@ -154,11 +139,17 @@ function extrairMarca(descricao) {
     'TOMMY', 'ZARA', 'H&M', 'OAKLEY', 'RAY-BAN',
     'MIZUNO', 'ASICS', 'FILA', 'VANS', 'CONVERSE'
   ];
+  
   for (const marca of marcas) {
     if (desc.includes(marca)) return marca;
   }
+  
+  // Primeira palavra se tiver mais de 2 caracteres
   const primeira = descricao.split(/[\s\-]/)[0];
-  if (primeira && primeira.length > 2) return primeira.toUpperCase();
+  if (primeira && primeira.length > 2) {
+    return primeira.toUpperCase();
+  }
+  
   return 'GENÉRICO';
 }
 
@@ -184,13 +175,23 @@ function getFaixaEtaria(idade) {
 
 function processarDados(notas, incluirClientes = false) {
   const dados = {
-    resumo: { totalVendas: 0, totalNotas: 0, totalItens: 0, ticketMedio: 0 },
-    vendas: [],
+    // Dados essenciais
+    resumo: {
+      totalVendas: 0,
+      totalNotas: 0,
+      totalItens: 0,
+      ticketMedio: 0
+    },
+    vendas: [], // [{ data, hora, loja, produto, marca, quantidade, valor }]
+    
+    // Agregações
     porLoja: {},
     porDia: {},
     porHora: {},
     porMarca: {},
     topProdutos: {},
+    
+    // Clientes (opcional)
     clientes: incluirClientes ? {
       porGenero: { Masculino: 0, Feminino: 0, 'Não informado': 0 },
       porIdade: {},
@@ -201,41 +202,49 @@ function processarDados(notas, incluirClientes = false) {
 
   notas.forEach(nota => {
     if (!nota || nota.situacao !== 5) return; // Apenas notas autorizadas
+    
     const valorNota = parseFloat(nota.valorNota || 0);
     const nomeLoja = LOJAS[nota.loja?.id] || 'NÃO INFORMADO';
     const dataHora = nota.dataEmissao || '';
-    const [data, horaCompleta] = dataHora.split(' ');
-    const hora = horaCompleta ? horaCompleta.substring(0, 2) + ':00' : '00:00';
-
+    const [dataParte, horaParte] = dataHora.split(' ');
+    const hora = horaParte ? horaParte.substring(0, 2) + ':00' : '00:00';
+    
     dados.resumo.totalNotas++;
     dados.resumo.totalVendas += valorNota;
 
-    if (!dados.porLoja[nomeLoja]) dados.porLoja[nomeLoja] = { vendas: 0, notas: 0, itens: 0 };
+    // Por Loja
+    if (!dados.porLoja[nomeLoja]) {
+      dados.porLoja[nomeLoja] = { vendas: 0, notas: 0, itens: 0 };
+    }
     dados.porLoja[nomeLoja].vendas += valorNota;
     dados.porLoja[nomeLoja].notas++;
 
-    if (!dados.porDia[data]) dados.porDia[data] = { vendas: 0, notas: 0 };
-    dados.porDia[data].vendas += valorNota;
-    dados.porDia[data].notas++;
+    // Por Dia
+    if (!dados.porDia[dataParte]) {
+      dados.porDia[dataParte] = { vendas: 0, notas: 0 };
+    }
+    dados.porDia[dataParte].vendas += valorNota;
+    dados.porDia[dataParte].notas++;
 
-    if (!dados.porHora[hora]) dados.porHora[hora] = { vendas: 0, notas: 0 };
+    // Por Hora
+    if (!dados.porHora[hora]) {
+      dados.porHora[hora] = { vendas: 0, notas: 0 };
+    }
     dados.porHora[hora].vendas += valorNota;
     dados.porHora[hora].notas++;
 
+    // Cliente Info
     let clienteInfo = null;
-    if (incluirClientes && nota.contato) {
-      const contatoId = nota.contato.id;
-      if (contatoId && contatosCache[contatoId]) {
-        const c = contatosCache[contatoId];
-        const idade = calcularIdade(c.dataNascimento);
-        clienteInfo = {
-          genero: c.sexo === 'M' ? 'Masculino' : c.sexo === 'F' ? 'Feminino' : 'Não informado',
-          idade,
-          faixaEtaria: getFaixaEtaria(idade)
-        };
-      }
+    if (incluirClientes && nota.clienteInfo) {
+      clienteInfo = nota.clienteInfo;
+      const genero = clienteInfo.genero || 'Não informado';
+      const faixa = clienteInfo.faixaEtaria || 'Não informado';
+      
+      dados.clientes.porGenero[genero]++;
+      dados.clientes.porIdade[faixa] = (dados.clientes.porIdade[faixa] || 0) + 1;
     }
 
+    // Produtos
     if (nota.itens && Array.isArray(nota.itens)) {
       nota.itens.forEach(item => {
         const qtd = parseFloat(item.quantidade || 0);
@@ -247,46 +256,87 @@ function processarDados(notas, incluirClientes = false) {
         dados.resumo.totalItens += qtd;
         dados.porLoja[nomeLoja].itens += qtd;
 
-        dados.vendas.push({ data, hora, loja: nomeLoja, produto: descricao, marca, quantidade: qtd, valor, numeroNota: nota.numero });
+        // Registro individual de venda
+        dados.vendas.push({
+          data: dataParte,
+          hora,
+          loja: nomeLoja,
+          produto: descricao,
+          marca,
+          quantidade: qtd,
+          valor,
+          numeroNota: nota.numero
+        });
 
+        // Top Produtos
         if (!dados.topProdutos[codigo]) {
-          dados.topProdutos[codigo] = { codigo, descricao, marca, quantidade: 0, valorTotal: 0 };
+          dados.topProdutos[codigo] = {
+            codigo,
+            descricao,
+            marca,
+            quantidade: 0,
+            valorTotal: 0
+          };
         }
         dados.topProdutos[codigo].quantidade += qtd;
         dados.topProdutos[codigo].valorTotal += valor;
 
-        if (!dados.porMarca[marca]) dados.porMarca[marca] = { vendas: 0, quantidade: 0, notas: 0 };
+        // Por Marca
+        if (!dados.porMarca[marca]) {
+          dados.porMarca[marca] = { vendas: 0, quantidade: 0, notas: 0 };
+        }
         dados.porMarca[marca].vendas += valor;
         dados.porMarca[marca].quantidade += qtd;
 
+        // Clientes por Marca
         if (incluirClientes && clienteInfo) {
           const genero = clienteInfo.genero;
           const faixa = clienteInfo.faixaEtaria;
-          if (!dados.clientes.porMarcaGenero[marca]) dados.clientes.porMarcaGenero[marca] = { Masculino: 0, Feminino: 0, 'Não informado': 0 };
+
+          if (!dados.clientes.porMarcaGenero[marca]) {
+            dados.clientes.porMarcaGenero[marca] = { Masculino: 0, Feminino: 0, 'Não informado': 0 };
+          }
           dados.clientes.porMarcaGenero[marca][genero]++;
-          if (!dados.clientes.porMarcaIdade[marca]) dados.clientes.porMarcaIdade[marca] = {};
+
+          if (!dados.clientes.porMarcaIdade[marca]) {
+            dados.clientes.porMarcaIdade[marca] = {};
+          }
           dados.clientes.porMarcaIdade[marca][faixa] = (dados.clientes.porMarcaIdade[marca][faixa] || 0) + 1;
-          dados.clientes.porGenero[genero]++;
-          dados.clientes.porIdade[faixa] = (dados.clientes.porIdade[faixa] || 0) + 1;
         }
       });
     }
   });
 
-  dados.resumo.ticketMedio = dados.resumo.totalNotas > 0 ? dados.resumo.totalVendas / dados.resumo.totalNotas : 0;
+  dados.resumo.ticketMedio = dados.resumo.totalNotas > 0 
+    ? dados.resumo.totalVendas / dados.resumo.totalNotas 
+    : 0;
 
+  // Formatar arrays para dashboard
   return {
     resumo: dados.resumo,
-    vendas: dados.vendas.slice(-100),
-    lojasArray: Object.entries(dados.porLoja).map(([nome, info]) => ({ nome, ...info })).sort((a, b) => b.vendas - a.vendas),
-    diasArray: Object.entries(dados.porDia).map(([data, info]) => ({ data, ...info })).sort((a, b) => a.data.localeCompare(b.data)),
-    horasArray: Object.entries(dados.porHora).map(([hora, info]) => ({ hora, ...info })).sort((a, b) => a.hora.localeCompare(b.hora)),
-    marcasArray: Object.entries(dados.porMarca).map(([marca, info]) => ({ marca, ...info })).sort((a, b) => b.vendas - a.vendas),
-    produtosTop: Object.values(dados.topProdutos).sort((a, b) => b.quantidade - a.quantidade).slice(0, 20),
+    vendas: dados.vendas.slice(-100), // Últimas 100 vendas
+    lojasArray: Object.entries(dados.porLoja)
+      .map(([nome, info]) => ({ nome, ...info }))
+      .sort((a, b) => b.vendas - a.vendas),
+    diasArray: Object.entries(dados.porDia)
+      .map(([data, info]) => ({ data, ...info }))
+      .sort((a, b) => a.data.localeCompare(b.data)),
+    horasArray: Object.entries(dados.porHora)
+      .map(([hora, info]) => ({ hora, ...info }))
+      .sort((a, b) => a.hora.localeCompare(b.hora)),
+    marcasArray: Object.entries(dados.porMarca)
+      .map(([marca, info]) => ({ marca, ...info }))
+      .sort((a, b) => b.vendas - a.vendas),
+    produtosTop: Object.values(dados.topProdutos)
+      .sort((a, b) => b.quantidade - a.quantidade)
+      .slice(0, 20),
     vendasRealTime: dados.vendas.slice(-50).reverse(),
     clientes: incluirClientes ? {
-      generoArray: Object.entries(dados.clientes.porGenero).map(([genero, count]) => ({ genero, count })),
-      idadeArray: Object.entries(dados.clientes.porIdade).map(([faixa, count]) => ({ faixa, count })).sort((a, b) => a.faixa.localeCompare(b.faixa)),
+      generoArray: Object.entries(dados.clientes.porGenero)
+        .map(([genero, count]) => ({ genero, count })),
+      idadeArray: Object.entries(dados.clientes.porIdade)
+        .map(([faixa, count]) => ({ faixa, count }))
+        .sort((a, b) => a.faixa.localeCompare(b.faixa)),
       porMarcaGenero: dados.clientes.porMarcaGenero,
       porMarcaIdade: dados.clientes.porMarcaIdade
     } : null
@@ -298,6 +348,7 @@ function processarDados(notas, incluirClientes = false) {
 export default async function handler(req, res) {
   const inicio = Date.now();
 
+  // Validação
   if (!accessToken || !clientId || !clientSecret) {
     return res.status(401).json({
       status: 'error',
@@ -306,7 +357,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { dataInicio, dataFim, limit = '100', detalhado = 'false' } = req.query;
+    // Parâmetros
+    const { 
+      dataInicio, 
+      dataFim, 
+      limit = '100', 
+      detalhado = 'false' 
+    } = req.query;
+
     const maxLimit = Math.min(parseInt(limit) || 100, 100);
     const incluirClientes = detalhado === 'true';
 
@@ -316,9 +374,10 @@ export default async function handler(req, res) {
 
     console.log(`\n🚀 Iniciando busca: ${dataInicioFmt} a ${dataFimFmt} | Limite: ${maxLimit} | Clientes: ${incluirClientes}`);
 
+    // 1. Buscar lista de notas
     const notas = await buscarNotas(dataInicioFmt, dataFimFmt, maxLimit);
     console.log(`📦 ${notas.length} notas encontradas`);
-
+    
     if (notas.length === 0) {
       return res.status(200).json({
         status: 'success',
@@ -328,35 +387,49 @@ export default async function handler(req, res) {
       });
     }
 
+    // 2. Buscar detalhes em lotes (10 por vez para evitar rate limit)
     const notasDetalhadas = [];
-    const batchSize = 9;
-    const delayBetweenBatches = 333;
+    const batchSize = 10;
 
     for (let i = 0; i < notas.length; i += batchSize) {
       const batch = notas.slice(i, i + batchSize);
       const promises = batch.map(n => buscarDetalhesNota(n.id));
       const results = await Promise.all(promises);
       notasDetalhadas.push(...results.filter(r => r !== null));
+      
       if (i + batchSize < notas.length) {
-        await new Promise(r => setTimeout(r, delayBetweenBatches));
+        await new Promise(r => setTimeout(r, 300)); // Pausa entre lotes
       }
     }
 
     console.log(`✅ ${notasDetalhadas.length} notas detalhadas`);
 
+    // 3. Enriquecer com dados de cliente (se solicitado)
     if (incluirClientes) {
       console.log('👥 Buscando dados de clientes...');
-      const contatosUnicos = [...new Set(notasDetalhadas.map(n => n.contato?.id).filter(id => id && id !== 16408306243))];
+      
+      const contatosUnicos = [...new Set(
+        notasDetalhadas
+          .map(n => n.contato?.id)
+          .filter(id => id && id !== 16408306243)
+      )];
+
       const contatosCache = {};
-      const contatosLimite = contatosUnicos.slice(0, 30);
+      const contatosLimite = contatosUnicos.slice(0, 30); // Limite para não demorar
 
       for (let i = 0; i < contatosLimite.length; i += 5) {
         const batch = contatosLimite.slice(i, i + 5);
-        const promises = batch.map(id => buscarContato(id).then(c => c ? (contatosCache[id] = c) : null));
+        const promises = batch.map(id => 
+          buscarContato(id).then(c => c ? (contatosCache[id] = c) : null)
+        );
         await Promise.all(promises);
-        if (i + 5 < contatosLimite.length) await new Promise(r => setTimeout(r, 300));
+        
+        if (i + 5 < contatosLimite.length) {
+          await new Promise(r => setTimeout(r, 300));
+        }
       }
 
+      // Adicionar info nas notas
       notasDetalhadas.forEach(nota => {
         const contatoId = nota.contato?.id;
         if (contatoId && contatosCache[contatoId]) {
@@ -369,10 +442,13 @@ export default async function handler(req, res) {
           };
         }
       });
+
       console.log(`✅ ${Object.keys(contatosCache).length} clientes processados`);
     }
 
+    // 4. Processar dados
     const dados = processarDados(notasDetalhadas, incluirClientes);
+
     const tempoTotal = ((Date.now() - inicio) / 1000).toFixed(2);
     console.log(`⏱️ Processamento concluído em ${tempoTotal}s\n`);
 
@@ -383,6 +459,7 @@ export default async function handler(req, res) {
       tempoProcessamento: `${tempoTotal}s`,
       dados
     });
+
   } catch (error) {
     console.error('❌ ERRO:', error);
     return res.status(500).json({

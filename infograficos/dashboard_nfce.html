@@ -3,37 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditoria NFC-e - Dashboard Executivo</title>
+    <title>Dashboard NFC-e - Tempo Real</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-
         .container { max-width: 1800px; margin: 0 auto; }
-
         .header {
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-            margin-bottom: 25px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-
-        .header h1 {
-            color: #2c3e50;
-            font-size: 2.2em;
-            margin-bottom: 5px;
+        .header h1 { color: #2c3e50; font-size: 2em; }
+        .auto-refresh {
+            background: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
         }
-
-        .header p { color: #7f8c8d; }
-
+        .auto-refresh.active { background: #e74c3c; }
         .controls {
             background: white;
             padding: 20px;
@@ -41,194 +42,97 @@
             margin-bottom: 20px;
             display: flex;
             gap: 15px;
-            align-items: center;
             flex-wrap: wrap;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            align-items: center;
         }
-
-        .controls label {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .controls input {
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 0.95em;
-        }
-
+        .controls input, .controls select { padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; }
         .controls button {
-            padding: 12px 25px;
+            padding: 10px 20px;
             background: #667eea;
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s;
         }
-
-        .controls button:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .controls .export-btn { background: #27ae60; }
-        .controls .export-btn:hover { background: #229954; }
-        .controls .report-btn { background: #e74c3c; }
-        .controls .report-btn:hover { background: #c0392b; }
-
-        .loading {
-            background: white;
-            padding: 50px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        }
-
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
+            gap: 15px;
+            margin-bottom: 20px;
         }
-
         .kpi-card {
             background: white;
-            padding: 25px;
+            padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
         }
-
-        .kpi-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-        }
-
-        .kpi-card .icon {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .kpi-card .label {
-            color: #7f8c8d;
-            font-size: 0.9em;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .kpi-card .value {
-            color: #2c3e50;
-            font-size: 2em;
-            font-weight: bold;
-        }
-
+        .kpi-card .icon { font-size: 2em; margin-bottom: 10px; }
+        .kpi-card .label { color: #7f8c8d; font-size: 0.9em; margin-bottom: 5px; }
+        .kpi-card .value { color: #2c3e50; font-size: 2em; font-weight: bold; }
         .section {
             background: white;
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
         }
-
         .section h3 {
             color: #2c3e50;
             margin-bottom: 20px;
-            font-size: 1.4em;
             border-bottom: 3px solid #667eea;
             padding-bottom: 10px;
         }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ecf0f1;
-        }
-
-        th {
-            background: #f8f9fa;
-            color: #2c3e50;
-            font-weight: 600;
-        }
-
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ecf0f1; }
+        th { background: #f8f9fa; font-weight: 600; }
         tr:hover { background: #f8f9fa; }
-
         .valor { font-weight: 600; color: #27ae60; }
-
-        .badge {
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.85em;
-            font-weight: 600;
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
         }
-
-        .badge.autorizada { background: #d4edda; color: #155724; }
-        .badge.cancelada { background: #f8d7da; color: #721c24; }
-
-        @media (max-width: 1200px) {
-            .grid-2 { grid-template-columns: 1fr; }
-        }
+        .loading.show { display: block; }
+        @media (max-width: 1200px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
+    <div class="loading" id="loading">⏳ Carregando dados...</div>
+    
     <div class="container">
         <div class="header">
-            <h1>📊 Auditoria de NFC-e - Dashboard Executivo</h1>
-            <p>Análise em tempo real das operações fiscais</p>
+            <div>
+                <h1>📊 Dashboard NFC-e - Tempo Real</h1>
+                <small id="lastUpdate">Última atualização: --:--</small>
+            </div>
+            <button class="auto-refresh" onclick="toggleAutoRefresh()">🔄 Auto-Atualizar</button>
         </div>
 
         <div class="controls">
             <label>Data Início:</label>
             <input type="date" id="dataInicio">
-            
             <label>Data Fim:</label>
             <input type="date" id="dataFim">
-            
-            <button onclick="carregarDados()">🔍 Buscar Dados</button>
-            <button onclick="exportarCSV()" class="export-btn">📥 Exportar CSV</button>
-            <button onclick="gerarRelatorio()" class="report-btn">📄 Gerar Relatório</button>
+            <label>Máx. Notas:</label>
+            <select id="limit">
+                <option value="50">50</option>
+                <option value="100" selected>100</option>
+            </select>
+            <label><input type="checkbox" id="detalhado"> Dados de Cliente (lento)</label>
+            <button onclick="carregarDados()">🔍 Buscar</button>
+            <button onclick="exportarCSV()" style="background: #27ae60;">📥 CSV</button>
         </div>
 
-        <div id="loading" class="loading" style="display: none;">
-            <div class="loading-spinner"></div>
-            <h3>Processando notas fiscais...</h3>
-            <p>Aguarde, isso pode levar alguns minutos dependendo do volume de dados.</p>
-            <p id="loadingProgress"></p>
-        </div>
-
-        <div id="error" style="display: none; background: #e74c3c; color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;"></div>
-
-        <div id="dashboard" style="display: none;">
-            <!-- KPIs Gerais -->
+        <div id="dashboard">
             <div class="kpi-grid">
                 <div class="kpi-card">
                     <div class="icon">💰</div>
@@ -252,110 +156,59 @@
                 </div>
             </div>
 
-            <!-- Faturamento por Loja -->
             <div class="section">
-                <h3>🏪 Faturamento por Loja</h3>
+                <h3>🏪 Performance por Loja</h3>
                 <table id="tabelaLojas">
-                    <thead>
-                        <tr>
-                            <th>Loja</th>
-                            <th>Qtd. Notas</th>
-                            <th>Itens Vendidos</th>
-                            <th>Faturamento</th>
-                            <th>Ticket Médio</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Loja</th><th>Notas</th><th>Itens</th><th>Faturamento</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
 
-            <!-- Gráficos -->
             <div class="grid-2">
                 <div class="section">
-                    <h3>📅 Faturamento por Dia</h3>
+                    <h3>📅 Vendas por Dia</h3>
                     <canvas id="chartDias"></canvas>
                 </div>
                 <div class="section">
-                    <h3>⏰ Faturamento por Hora</h3>
+                    <h3>⏰ Vendas por Hora</h3>
                     <canvas id="chartHoras"></canvas>
                 </div>
             </div>
 
-            <!-- Produtos e Pagamentos -->
             <div class="grid-2">
                 <div class="section">
-                    <h3>🏆 Top 10 Produtos</h3>
+                    <h3>🏷️ Top Marcas</h3>
+                    <table id="tabelaMarcas">
+                        <thead><tr><th>Marca</th><th>Quantidade</th><th>Vendas</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="section">
+                    <h3>🏆 Top Produtos</h3>
                     <table id="tabelaProdutos">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Produto</th>
-                                <th>Quantidade</th>
-                                <th>Valor Total</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-                <div class="section">
-                    <h3>💳 Formas de Pagamento</h3>
-                    <table id="tabelaPagamentos">
-                        <thead>
-                            <tr>
-                                <th>Forma</th>
-                                <th>Quantidade</th>
-                                <th>Valor Total</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Produto</th><th>Marca</th><th>Quantidade</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Marcas -->
-            <div class="section">
-                <h3>🏷️ Desempenho por Marca</h3>
-                <table id="tabelaMarcas">
-                    <thead>
-                        <tr>
-                            <th>Marca</th>
-                            <th>Quantidade Vendida</th>
-                            <th>Valor Total</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
-            <!-- Clientes -->
-            <div class="grid-2">
-                <div class="section">
-                    <h3>👥 Clientes por Gênero</h3>
-                    <canvas id="chartGenero"></canvas>
-                </div>
-                <div class="section">
-                    <h3>🎂 Clientes por Faixa Etária</h3>
-                    <canvas id="chartIdade"></canvas>
+            <div id="clientesSection" style="display: none;">
+                <div class="grid-2">
+                    <div class="section">
+                        <h3>👥 Clientes por Gênero</h3>
+                        <canvas id="chartGenero"></canvas>
+                    </div>
+                    <div class="section">
+                        <h3>🎂 Clientes por Idade</h3>
+                        <canvas id="chartIdade"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tabela Detalhada -->
             <div class="section">
-                <h3>📋 Detalhamento de Notas Autorizadas</h3>
-                <table id="tabelaNotas">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Número</th>
-                            <th>Cliente</th>
-                            <th>Gênero</th>
-                            <th>Idade</th>
-                            <th>Data</th>
-                            <th>Loja</th>
-                            <th>Situação</th>
-                            <th>Valor Total</th>
-                        </tr>
-                    </thead>
+                <h3>⚡ Vendas em Tempo Real (Últimas 50)</h3>
+                <table id="tabelaRealTime">
+                    <thead><tr><th>Hora</th><th>Loja</th><th>Nota</th><th>Valor</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -364,399 +217,198 @@
 
     <script>
         let dadosGlobais = null;
-        let chartDias, chartHoras, chartGenero, chartIdade;
+        let autoRefreshInterval = null;
+        let charts = {};
 
-        function formatarValor(valor) {
-            return 'R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        function fmt(valor) {
+            return 'R$ ' + valor.toLocaleString('pt-BR', {minimumFractionDigits: 2});
         }
 
         function setDefaultDates() {
             const hoje = new Date();
-            const semanaPassada = new Date(hoje);
-            semanaPassada.setDate(hoje.getDate() - 7);
-
-            document.getElementById('dataInicio').value = semanaPassada.toISOString().split('T')[0];
             document.getElementById('dataFim').value = hoje.toISOString().split('T')[0];
+            document.getElementById('dataInicio').value = hoje.toISOString().split('T')[0];
         }
 
         async function carregarDados() {
             const dataInicio = document.getElementById('dataInicio').value;
             const dataFim = document.getElementById('dataFim').value;
+            const limit = document.getElementById('limit').value;
+            const detalhado = document.getElementById('detalhado').checked;
 
-            if (!dataInicio || !dataFim) {
-                alert('Por favor, selecione as datas de início e fim.');
-                return;
-            }
-
-            // Verificar se período é muito longo
-            const start = new Date(dataInicio);
-            const end = new Date(dataFim);
-            const diffDays = (end - start) / (1000 * 60 * 60 * 24);
-            if (diffDays > 7) {
-                alert('Períodos acima de 7 dias podem causar timeout. Considere reduzir o intervalo ou consultar por dia.');
-            }
-
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('error').style.display = 'none';
+            document.getElementById('loading').classList.add('show');
 
             try {
-                document.getElementById('loadingProgress').textContent = 'Buscando notas fiscais...';
-                const response = await fetch(`/api/bling-nfce?dataInicio=${dataInicio}&dataFim=${dataFim}`);
+                const url = `/api/bling-nfce?dataInicio=${dataInicio}&dataFim=${dataFim}&limit=${limit}&detalhado=${detalhado}`;
+                const response = await fetch(url);
                 const data = await response.json();
 
-                if (!response.ok || data.status === 'error') {
-                    throw new Error(data.message || 'Erro ao buscar dados');
-                }
+                if (data.status === 'error') throw new Error(data.message);
 
-                dadosGlobais = data;
-
-                document.getElementById('loadingProgress').textContent = 'Processando dados...';
-
-                const aud = data.auditoria;
-
-                // Atualizar KPIs
-                document.getElementById('kpiFaturamento').textContent = formatarValor(aud.geral.totalVendas);
-                document.getElementById('kpiNotas').textContent = aud.geral.totalNotas;
-                document.getElementById('kpiTicket').textContent = formatarValor(aud.geral.ticketMedio);
-                document.getElementById('kpiItens').textContent = aud.geral.totalItens;
-
-                // Tabela de Lojas
-                const tbodyLojas = document.getElementById('tabelaLojas').querySelector('tbody');
-                tbodyLojas.innerHTML = aud.lojasArray.map(loja => `
-                    <tr>
-                        <td>${loja.nome}</td>
-                        <td>${loja.quantidadeNotas}</td>
-                        <td>${loja.itensVendidos}</td>
-                        <td class="valor">${formatarValor(loja.valorTotal)}</td>
-                        <td class="valor">${formatarValor(loja.ticketMedio)}</td>
-                    </tr>
-                `).join('');
-
-                // Tabela de Produtos
-                const tbodyProdutos = document.getElementById('tabelaProdutos').querySelector('tbody');
-                tbodyProdutos.innerHTML = aud.produtosTop.map(prod => `
-                    <tr>
-                        <td>${prod.codigo}</td>
-                        <td>${prod.descricao}</td>
-                        <td>${prod.quantidade}</td>
-                        <td class="valor">${formatarValor(prod.valorTotal)}</td>
-                    </tr>
-                `).join('');
-
-                // Tabela de Pagamentos
-                const tbodyPagamentos = document.getElementById('tabelaPagamentos').querySelector('tbody');
-                tbodyPagamentos.innerHTML = aud.pagamentosArray.map(pag => `
-                    <tr>
-                        <td>${pag.forma}</td>
-                        <td>${pag.quantidade}</td>
-                        <td class="valor">${formatarValor(pag.valor)}</td>
-                    </tr>
-                `).join('');
-
-                // Tabela de Marcas
-                const tbodyMarcas = document.getElementById('tabelaMarcas').querySelector('tbody');
-                tbodyMarcas.innerHTML = aud.marcasArray.map(marca => `
-                    <tr>
-                        <td>${marca.marca}</td>
-                        <td>${marca.quantidade}</td>
-                        <td class="valor">${formatarValor(marca.valorTotal)}</td>
-                    </tr>
-                `).join('');
-
-                // Tabela de Notas
-                const tbodyNotas = document.getElementById('tabelaNotas').querySelector('tbody');
-                tbodyNotas.innerHTML = data.notas.map(nota => `
-                    <tr>
-                        <td>${nota.id}</td>
-                        <td>${nota.numero}</td>
-                        <td>${nota.nome}</td>
-                        <td>${nota.genero}</td>
-                        <td>${nota.idade || 'N/A'}</td>
-                        <td>${nota.dataEmissao}</td>
-                        <td>${nota.loja}</td>
-                        <td><span class="badge ${nota.situacao.toLowerCase()}">${nota.situacao}</span></td>
-                        <td class="valor">${formatarValor(nota.valorTotal)}</td>
-                    </tr>
-                `).join('');
-
-                // Gráfico de Dias
-                if (chartDias) chartDias.destroy();
-                chartDias = new Chart(document.getElementById('chartDias'), {
-                    type: 'bar',
-                    data: {
-                        labels: aud.diasArray.map(d => d.data),
-                        datasets: [{
-                            label: 'Faturamento por Dia',
-                            data: aud.diasArray.map(d => d.valorTotal),
-                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'Faturamento (R$)' } },
-                            x: { title: { display: true, text: 'Data' } }
-                        }
-                    }
-                });
-
-                // Gráfico de Horas
-                if (chartHoras) chartHoras.destroy();
-                chartHoras = new Chart(document.getElementById('chartHoras'), {
-                    type: 'line',
-                    data: {
-                        labels: aud.horasArray.map(h => h.hora),
-                        datasets: [{
-                            label: 'Faturamento por Hora',
-                            data: aud.horasArray.map(h => h.valorTotal),
-                            backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            borderWidth: 2,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'Faturamento (R$)' } },
-                            x: { title: { display: true, text: 'Hora' } }
-                        }
-                    }
-                });
-
-                // Gráfico de Gênero
-                if (chartGenero) chartGenero.destroy();
-                chartGenero = new Chart(document.getElementById('chartGenero'), {
-                    type: 'pie',
-                    data: {
-                        labels: aud.clientesGeneroArray.map(g => g.genero),
-                        datasets: [{
-                            label: 'Clientes por Gênero',
-                            data: aud.clientesGeneroArray.map(g => g.count),
-                            backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56']
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            legend: { position: 'bottom' }
-                        }
-                    }
-                });
-
-                // Gráfico de Idade
-                if (chartIdade) chartIdade.destroy();
-                chartIdade = new Chart(document.getElementById('chartIdade'), {
-                    type: 'bar',
-                    data: {
-                        labels: aud.clientesIdadeArray.map(i => i.grupo),
-                        datasets: [{
-                            label: 'Clientes por Faixa Etária',
-                            data: aud.clientesIdadeArray.map(i => i.count),
-                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'Número de Clientes' } },
-                            x: { title: { display: true, text: 'Faixa Etária' } }
-                        }
-                    }
-                });
-
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
+                dadosGlobais = data.dados;
+                atualizarDashboard(data.dados);
+                document.getElementById('lastUpdate').textContent = `Última atualização: ${new Date().toLocaleTimeString()}`;
             } catch (error) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = 'Erro: ' + error.message + '. Tente um período menor (ex.: 1-3 dias).';
+                alert('Erro ao carregar dados: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('show');
             }
         }
 
-        async function exportarCSV() {
-            if (!dadosGlobais) {
-                alert('Carregue os dados primeiro!');
-                return;
-            }
+        function atualizarDashboard(d) {
+            // KPIs
+            document.getElementById('kpiFaturamento').textContent = fmt(d.resumo.totalVendas);
+            document.getElementById('kpiNotas').textContent = d.resumo.totalNotas;
+            document.getElementById('kpiTicket').textContent = fmt(d.resumo.ticketMedio);
+            document.getElementById('kpiItens').textContent = d.resumo.totalItens;
 
-            const data = dadosGlobais;
-            let csv = '"ID";"Número";"Cliente";"Gênero";"Idade";"Data";"Loja";"Situação";"Valor Total";"Código Item";"Descrição Item";"Unidade";"Quantidade";"Valor Unitário";"Valor Total Item";"Marca"\n';
+            // Lojas
+            document.querySelector('#tabelaLojas tbody').innerHTML = d.lojasArray.map(l => `
+                <tr><td>${l.nome}</td><td>${l.notas}</td><td>${l.itens}</td><td class="valor">${fmt(l.vendas)}</td></tr>
+            `).join('');
 
-            data.notas.forEach(nota => {
-                nota.itens.forEach(item => {
-                    csv += `"${nota.id}";"${nota.numero}";"${nota.nome}";"${nota.genero}";"${nota.idade || 'N/A'}";"${nota.dataEmissao}";"${nota.loja}";"${nota.situacao}";"${nota.valorTotal}";"${item.codigo}";"${item.descricao}";"${item.unidade}";"${item.quantidade}";"${item.valorUnitario}";"${item.valorTotal}";"${item.marca}"\n`;
-                });
+            // Marcas
+            document.querySelector('#tabelaMarcas tbody').innerHTML = d.marcasArray.slice(0, 10).map(m => `
+                <tr><td>${m.marca}</td><td>${m.quantidade}</td><td class="valor">${fmt(m.vendas)}</td></tr>
+            `).join('');
+
+            // Produtos
+            document.querySelector('#tabelaProdutos tbody').innerHTML = d.produtosTop.slice(0, 10).map(p => `
+                <tr><td>${p.descricao.substring(0, 40)}...</td><td>${p.marca}</td><td>${p.quantidade}</td></tr>
+            `).join('');
+
+            // Real Time
+            document.querySelector('#tabelaRealTime tbody').innerHTML = d.vendasRealTime.map(v => `
+                <tr><td>${v.hora}</td><td>${v.loja}</td><td>${v.numero}</td><td class="valor">${fmt(v.valor)}</td></tr>
+            `).join('');
+
+            // Gráfico: Vendas por Dia
+            if (charts.dias) charts.dias.destroy();
+            charts.dias = new Chart(document.getElementById('chartDias'), {
+                type: 'bar',
+                data: {
+                    labels: d.diasArray.map(x => x.data),
+                    datasets: [{
+                        label: 'Vendas (R$)',
+                        data: d.diasArray.map(x => x.vendas),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } }
+                }
             });
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `auditoria_nfce_${data.periodo.dataInicio}_${data.periodo.dataFim}.csv`;
-            link.click();
+            // Gráfico: Vendas por Hora
+            if (charts.horas) charts.horas.destroy();
+            charts.horas = new Chart(document.getElementById('chartHoras'), {
+                type: 'line',
+                data: {
+                    labels: d.horasArray.map(x => x.hora.split(' ')[1] || x.hora),
+                    datasets: [{
+                        label: 'Vendas (R$)',
+                        data: d.horasArray.map(x => x.vendas),
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Clientes (se detalhado)
+            if (d.clientesGeneroArray && d.clientesGeneroArray.some(x => x.count > 0)) {
+                document.getElementById('clientesSection').style.display = 'block';
+
+                // Gráfico: Gênero
+                if (charts.genero) charts.genero.destroy();
+                charts.genero = new Chart(document.getElementById('chartGenero'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: d.clientesGeneroArray.map(x => x.genero),
+                        datasets: [{
+                            data: d.clientesGeneroArray.map(x => x.count),
+                            backgroundColor: ['#3498db', '#e91e63', '#95a5a6']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true
+                    }
+                });
+
+                // Gráfico: Faixa Etária
+                if (charts.idade) charts.idade.destroy();
+                charts.idade = new Chart(document.getElementById('chartIdade'), {
+                    type: 'bar',
+                    data: {
+                        labels: d.clientesFaixaArray.map(x => x.faixa),
+                        datasets: [{
+                            label: 'Clientes',
+                            data: d.clientesFaixaArray.map(x => x.count),
+                            backgroundColor: '#9b59b6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } else {
+                document.getElementById('clientesSection').style.display = 'none';
+            }
         }
 
-        async function gerarRelatorio() {
+        function toggleAutoRefresh() {
+            const btn = document.querySelector('.auto-refresh');
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                btn.classList.remove('active');
+                btn.textContent = '🔄 Auto-Atualizar';
+            } else {
+                carregarDados();
+                autoRefreshInterval = setInterval(carregarDados, 60000); // 1 minuto
+                btn.classList.add('active');
+                btn.textContent = '⏸️ Pausar';
+            }
+        }
+
+        function exportarCSV() {
             if (!dadosGlobais) {
                 alert('Carregue os dados primeiro!');
                 return;
             }
 
-            const metasLojas = {
-                'Tapetes São Carlos PDV': 30000,
-                'Acostamento SP': 50000,
-                'Aramis SP': 50000
-            };
+            let csv = 'Loja,Notas,Itens,Faturamento\n';
+            dadosGlobais.lojasArray.forEach(l => {
+                csv += `${l.nome},${l.notas},${l.itens},${l.vendas.toFixed(2)}\n`;
+            });
 
-            const aud = dadosGlobais.auditoria;
-            
-            const relatorioHTML = `
-                <div id="relatorio" style="width: 1200px; background: white; padding: 50px; font-family: Arial;">
-                    <div style="text-align: center; margin-bottom: 40px; border-bottom: 4px solid #667eea; padding-bottom: 20px;">
-                        <h1 style="color: #2c3e50; font-size: 2.5em; margin-bottom: 10px;">RELATÓRIO DE AUDITORIA NFC-e</h1>
-                        <p style="color: #7f8c8d; font-size: 1.2em;">Período: ${dadosGlobais.periodo.dataInicio} a ${dadosGlobais.periodo.dataFim}</p>
-                        <p style="color: #7f8c8d;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
-                    </div>
+            csv += '\n\nMarca,Quantidade,Vendas\n';
+            dadosGlobais.marcasArray.forEach(m => {
+                csv += `${m.marca},${m.quantidade},${m.vendas.toFixed(2)}\n`;
+            });
 
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px;">
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 10px; color: white; text-align: center;">
-                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">FATURAMENTO TOTAL</div>
-                            <div style="font-size: 2em; font-weight: bold;">${formatarValor(aud.geral.totalVendas)}</div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 25px; border-radius: 10px; color: white; text-align: center;">
-                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">NOTAS AUTORIZADAS</div>
-                            <div style="font-size: 2em; font-weight: bold;">${aud.geral.totalNotas}</div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 25px; border-radius: 10px; color: white; text-align: center;">
-                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">TICKET MÉDIO</div>
-                            <div style="font-size: 2em; font-weight: bold;">${formatarValor(aud.geral.ticketMedio)}</div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 25px; border-radius: 10px; color: white; text-align: center;">
-                            <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">ITENS VENDIDOS</div>
-                            <div style="font-size: 2em; font-weight: bold;">${aud.geral.totalItens}</div>
-                        </div>
-                    </div>
-
-                    <h2 style="color: #2c3e50; margin: 30px 0 20px; border-left: 4px solid #667eea; padding-left: 15px;">PERFORMANCE POR LOJA</h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
-                        <thead>
-                            <tr style="background: #f8f9fa;">
-                                <th style="padding: 15px; text-align: left; border-bottom: 2px solid #dee2e6;">Loja</th>
-                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Faturamento</th>
-                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Meta</th>
-                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Atingimento</th>
-                                <th style="padding: 15px; text-align: center; border-bottom: 2px solid #dee2e6;">Risco</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${aud.lojasArray.map(loja => {
-                                const meta = metasLojas[loja.nome] || 0;
-                                const atingimento = meta > 0 ? (loja.valorTotal / meta * 100) : 0;
-                                let nivelRisco = '';
-                                let corRisco = '';
-                                
-                                if (atingimento >= 100) {
-                                    nivelRisco = '✅ BAIXO';
-                                    corRisco = '#27ae60';
-                                } else if (atingimento >= 80) {
-                                    nivelRisco = '⚠️ MÉDIO';
-                                    corRisco = '#f39c12';
-                                } else if (atingimento >= 50) {
-                                    nivelRisco = '🔶 ALTO';
-                                    corRisco = '#e67e22';
-                                } else {
-                                    nivelRisco = '🔴 CRÍTICO';
-                                    corRisco = '#e74c3c';
-                                }
-
-                                return `
-                                    <tr style="border-bottom: 1px solid #e9ecef;">
-                                        <td style="padding: 15px; font-weight: 600;">${loja.nome}</td>
-                                        <td style="padding: 15px; text-align: center; color: #27ae60; font-weight: 600;">${formatarValor(loja.valorTotal)}</td>
-                                        <td style="padding: 15px; text-align: center;">${formatarValor(meta)}</td>
-                                        <td style="padding: 15px; text-align: center; font-weight: 600;">${atingimento.toFixed(1)}%</td>
-                                        <td style="padding: 15px; text-align: center; font-weight: 600; color: ${corRisco};">${nivelRisco}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-
-                    <h2 style="color: #2c3e50; margin: 30px 0 20px; border-left: 4px solid #667eea; padding-left: 15px;">TOP 10 PRODUTOS MAIS VENDIDOS</h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px;">
-                        <thead>
-                            <tr style="background: #f8f9fa;">
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Código</th>
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Produto</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Quantidade</th>
-                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Valor Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${aud.produtosTop.slice(0, 10).map(prod => `
-                                <tr style="border-bottom: 1px solid #e9ecef;">
-                                    <td style="padding: 12px;">${prod.codigo}</td>
-                                    <td style="padding: 12px;">${prod.descricao}</td>
-                                    <td style="padding: 12px; text-align: center;">${prod.quantidade}</td>
-                                    <td style="padding: 12px; text-align: right; color: #27ae60; font-weight: 600;">${formatarValor(prod.valorTotal)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-
-                    <h2 style="color: #2c3e50; margin: 30px 0 20px; border-left: 4px solid #667eea; padding-left: 15px;">DESEMPENHO POR MARCA</h2>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #f8f9fa;">
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Marca</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Quantidade</th>
-                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Valor Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${aud.marcasArray.map(marca => `
-                                <tr style="border-bottom: 1px solid #e9ecef;">
-                                    <td style="padding: 12px;">${marca.marca}</td>
-                                    <td style="padding: 12px; text-align: center;">${marca.quantidade}</td>
-                                    <td style="padding: 12px; text-align: right; color: #27ae60; font-weight: 600;">${formatarValor(marca.valorTotal)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-
-                    <div style="margin-top: 50px; padding: 20px; background: #f8f9fa; border-radius: 10px; text-align: center;">
-                        <p style="color: #7f8c8d; font-size: 0.9em;">Este relatório foi gerado automaticamente pelo sistema de auditoria NFC-e</p>
-                    </div>
-                </div>
-            `;
-
-            const div = document.createElement('div');
-            div.innerHTML = relatorioHTML;
-            div.style.position = 'absolute';
-            div.style.left = '-9999px';
-            document.body.appendChild(div);
-
-            try {
-                const canvas = await html2canvas(div.querySelector('#relatorio'), {
-                    scale: 2,
-                    backgroundColor: '#ffffff'
-                });
-                
-                const link = document.createElement('a');
-                link.download = `relatorio_auditoria_${dadosGlobais.periodo.dataInicio}_${dadosGlobais.periodo.dataFim}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                
-                alert('✅ Relatório gerado com sucesso!');
-            } catch (error) {
-                alert('❌ Erro ao gerar relatório: ' + error.message);
-            } finally {
-                document.body.removeChild(div);
-            }
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dashboard-nfce-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
         }
 
+        // Inicialização
         setDefaultDates();
+        carregarDados();
     </script>
 </body>
 </html>

@@ -10,6 +10,9 @@ export default async function handler(req, res) {
   }
 
   try {
+    const startTime = Date.now();
+    const timeoutLimit = 280000; // 280s to avoid 300s timeout
+
     const { dataInicio, dataFim } = req.query;
     
     const testes = [];
@@ -39,6 +42,10 @@ export default async function handler(req, res) {
         amostra: data1.data?.slice(0, 2),
         erro: !response1.ok ? data1 : null
       });
+
+      if (Date.now() - startTime > timeoutLimit) {
+        throw new Error('Debug interrompido: risco de timeout');
+      }
 
       // Formato 2: YYYY-MM-DD sem horários (original)
       const filtro2 = `dataEmissao[${dataInicio} TO ${dataFim}]`;

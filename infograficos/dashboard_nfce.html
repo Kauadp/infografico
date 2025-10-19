@@ -388,6 +388,14 @@
                 return;
             }
 
+            // Verificar se período é muito longo
+            const start = new Date(dataInicio);
+            const end = new Date(dataFim);
+            const diffDays = (end - start) / (1000 * 60 * 60 * 24);
+            if (diffDays > 7) {
+                alert('Períodos acima de 7 dias podem causar timeout. Considere reduzir o intervalo ou consultar por dia.');
+            }
+
             document.getElementById('loading').style.display = 'block';
             document.getElementById('dashboard').style.display = 'none';
             document.getElementById('error').style.display = 'none';
@@ -563,7 +571,7 @@
             } catch (error) {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = 'Erro: ' + error.message;
+                document.getElementById('error').textContent = 'Erro: ' + error.message + '. Tente um período menor (ex.: 1-3 dias).';
             }
         }
 

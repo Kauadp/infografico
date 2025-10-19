@@ -18,8 +18,10 @@ const MAPEAMENTO_LOJAS = {
   0: 'Loja Principal',
 };
 
-// Cache de lojas
+// Caches
 const cacheLojas = {};
+const cacheContatos = {};
+const cacheProdutos = {};
 
 async function refreshAccessToken() {
   if (!refresh_token) throw new Error("REFRESH TOKEN ausente");
@@ -93,6 +95,8 @@ async function fetchLoja(lojaId) {
  */
 async function fetchContato(contatoId) {
   if (!contatoId) return null;
+  if (cacheContatos[contatoId]) return cacheContatos[contatoId];
+
   const url = `${BLING_API_BASE_URL}/contatos/${contatoId}`;
   const response = await fetch(url, {
     method: 'GET',
@@ -103,7 +107,8 @@ async function fetchContato(contatoId) {
   });
   const data = await response.json();
   if (response.ok && data.data) {
-    return data.data; // Campos: sexo ('M'/'F'), dataNascimento, etc.
+    cacheContatos[contatoId] = data.data;
+    return data.data;
   }
   return null;
 }
@@ -113,6 +118,8 @@ async function fetchContato(contatoId) {
  */
 async function fetchProduto(produtoId) {
   if (!produtoId) return null;
+  if (cacheProdutos[produtoId]) return cacheProdutos[produtoId];
+
   const url = `${BLING_API_BASE_URL}/produtos/${produtoId}`;
   const response = await fetch(url, {
     method: 'GET',
@@ -123,7 +130,8 @@ async function fetchProduto(produtoId) {
   });
   const data = await response.json();
   if (response.ok && data.data) {
-    return data.data; // Campo: marca
+    cacheProdutos[produtoId] = data.data;
+    return data.data;
   }
   return null;
 }
@@ -149,14 +157,14 @@ async function fetchNFCe(filtro = null) {
     if (!response.ok) {
       if (data.error?.type === 'invalid_token') {
         await refreshAccessToken();
-        return await fetchNFCe(filtro); // Retry
+        return await fetchNFCe(filtro);
       }
       throw new Error(`API Error: ${JSON.stringify(data)}`);
     }
 
     const notasPage = data.data || [];
     allNotas = [...allNotas, ...notasPage];
-    hasMore = notasPage.length === 100; // Continua se página cheia
+    hasMore = notasPage.length === 100;
     page++;
   }
 
@@ -193,7 +201,7 @@ function getSituacaoTexto(situacao) {
 
 function calculateAge(dataNascimento) {
   const birth = new Date(dataNascimento);
-  const today = new Date('2025-10-19');
+  const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
@@ -208,11 +216,10 @@ function getGrupoIdade(idade) {
 }
 
 function extractMarcaFromDescricao(descricao) {
-  const marcasConhecidas = ['Nike', 'Adidas', 'Aramis', 'Acostamento'];
-  for (let marca of marcasConhecidas) {
-    if (descricao?.toLowerCase().includes(marca.toLowerCase())) return marca;
-  }
-  return 'Não informado';
+  if (!descricao) return 'Não informado';
+  const regex = /^(Nike|Adidas|Aramis|Acostamento)\b/i;
+  const match = descricao.match(regex);
+  return match ? match[1] : 'Não informado';
 }
 
 function processarDadosAuditoria(notasDetalhadas) {
@@ -438,6 +445,9 @@ export default async function handler(req, res) {
   }
 
   try {
+    const startTime = Date.now();
+    const timeoutLimit = 280000; // 280s to avoid 300s timeout
+
     const { dataInicio, dataFim } = req.query;
 
     let dataInicioFormatada, dataFimFormatada;
@@ -460,6 +470,10 @@ export default async function handler(req, res) {
 
     const notas = await fetchNFCe(filtro);
     console.log(`📦 ${notas.length} notas encontradas no período`);
+
+    if (Date.now() - startTime > timeoutLimit) {
+      throw new Error('Processamento interrompido: risco de timeout');
+    }
     
     if (notas.length === 0) {
       return res.status(200).json({
@@ -489,9 +503,12 @@ export default async function handler(req, res) {
     console.log(`🔄 Buscando detalhes...`);
     
     const notasDetalhadas = [];
-    const batchSize = 10;
+    const batchSize = 20;
     
     for (let i = 0; i < notas.length; i += batchSize) {
+      if (Date.now() - startTime > timeoutLimit) {
+        throw new Error('Processamento interrompido: risco de timeout');
+      }
       const batch = notas.slice(i, i + batchSize);
       const promises = batch.map(nota => 
         fetchNFCeDetalhes(nota.id).catch(err => {
@@ -506,14 +523,17 @@ export default async function handler(req, res) {
       console.log(`   ✓ ${notasDetalhadas.length}/${notas.length}`);
       
       if (i + batchSize < notas.length) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
 
     console.log(`✅ ${notasDetalhadas.length} notas processadas`);
 
-    // Enriquecer com contatos e produtos
+    // Enriquecer com contatos
     for (let nota of notasDetalhadas) {
+      if (Date.now() - startTime > timeoutLimit) {
+        throw new Error('Processamento interrompido: risco de timeout');
+      }
       if (nota.contato?.id) {
         const contato = await fetchContato(nota.contato.id);
         if (contato) {
@@ -526,6 +546,8 @@ export default async function handler(req, res) {
       }
       if (nota.itens) {
         for (let item of nota.itens) {
+          // Descomente se fetchProduto for necessário
+          /*
           if (item.produto?.id) {
             const produto = await fetchProduto(item.produto.id);
             if (produto) {
@@ -534,18 +556,23 @@ export default async function handler(req, res) {
           } else {
             item.marca = extractMarcaFromDescricao(item.descricao);
           }
+          */
+          item.marca = extractMarcaFromDescricao(item.descricao);
         }
       }
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     const lojasIds = [...new Set(notasDetalhadas.map(n => n.loja?.id).filter(id => id))];
     console.log(`🏪 ${lojasIds.length} lojas únicas encontradas:`, lojasIds);
     
     for (const lojaId of lojasIds) {
+      if (Date.now() - startTime > timeoutLimit) {
+        throw new Error('Processamento interrompido: risco de timeout');
+      }
       const nomeLoja = await fetchLoja(lojaId);
       console.log(`   Loja ${lojaId}: ${nomeLoja}`);
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     notasDetalhadas.forEach(nota => {

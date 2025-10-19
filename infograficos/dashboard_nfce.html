@@ -246,3 +246,376 @@
                     <tbody></tbody>
                 </table>
             </div>
+
+            <!-- Gráficos: Vendas por Dia e Hora -->
+            <div class="grid-2">
+                <div class="section">
+                    <h3>📅 Vendas por Dia</h3>
+                    <canvas id="chartVendasDia"></canvas>
+                </div>
+                <div class="section">
+                    <h3>⏰ Vendas por Hora</h3>
+                    <canvas id="chartVendasHora"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Produtos e Marcas -->
+            <div class="grid-2">
+                <div class="section">
+                    <h3>🏆 Top 10 Produtos</h3>
+                    <table id="tabelaProdutos">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Produto</th>
+                                <th>Marca</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="section">
+                    <h3>🏷️ Desempenho por Marca</h3>
+                    <table id="tabelaMarcas">
+                        <thead>
+                            <tr>
+                                <th>Marca</th>
+                                <th>Quantidade</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Clientes (Visível apenas se detalhado = true) -->
+            <div class="grid-2" id="clientesSection" style="display: none;">
+                <div class="section">
+                    <h3>👥 Clientes por Gênero</h3>
+                    <canvas id="chartGenero"></canvas>
+                </div>
+                <div class="section">
+                    <h3>🎂 Clientes por Faixa Etária</h3>
+                    <canvas id="chartIdade"></canvas>
+                </div>
+            </div>
+
+            <!-- Últimas Vendas -->
+            <div class="section">
+                <h3>🕒 Últimas Vendas (Real-Time)</h3>
+                <table id="tabelaVendasRealTime">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Hora</th>
+                            <th>Loja</th>
+                            <th>Produto</th>
+                            <th>Marca</th>
+                            <th>Quantidade</th>
+                            <th>Valor</th>
+                            <th>Nota</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dadosGlobais = null;
+        let autoRefreshInterval = null;
+        let chartVendasDia, chartVendasHora, chartGenero, chartIdade;
+
+        // Função para formatar valores monetários
+        function formatarValor(valor) {
+            return 'R$ ' + Number(valor).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Definir datas padrão (hoje)
+        function setDefaultDates() {
+            const hoje = new Date().toISOString().split('T')[0];
+            document.getElementById('dataInicio').value = hoje;
+            document.getElementById('dataFim').value = hoje;
+        }
+
+        // Mostrar/esconder loading
+        function toggleLoading(show, message = 'Aguarde, processando notas fiscais') {
+            const loading = document.getElementById('loading');
+            loading.classList.toggle('show', show);
+            document.getElementById('loadingMsg').textContent = message;
+        }
+
+        // Mostrar alerta
+        function showAlert(message, type = 'error') {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+        }
+
+        // Limpar alerta
+        function clearAlert() {
+            document.getElementById('alertContainer').innerHTML = '';
+        }
+
+        // Toggle auto-refresh
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('btnRefresh');
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                btn.textContent = '🔄 Auto-Atualizar';
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-success');
+                showAlert('Auto-atualização desativada', 'success');
+            } else {
+                autoRefreshInterval = setInterval(carregarDados, 60000); // Atualiza a cada 60s
+                btn.textContent = '🛑 Parar Auto-Atualização';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-danger');
+                showAlert('Auto-atualização ativada (a cada 60s)', 'success');
+            }
+        }
+
+        // Carregar dados
+        async function carregarDados() {
+            const dataInicio = document.getElementById('dataInicio').value;
+            const dataFim = document.getElementById('dataFim').value;
+            const limit = document.getElementById('limit').value;
+            const detalhado = document.getElementById('detalhado').checked;
+
+            if (!dataInicio || !dataFim) {
+                showAlert('Por favor, selecione as datas de início e fim.');
+                return;
+            }
+
+            // Verificar período longo
+            const start = new Date(dataInicio);
+            const end = new Date(dataFim);
+            const diffDays = (end - start) / (1000 * 60 * 60 * 24);
+            if (diffDays > 7 && detalhado) {
+                showAlert('Períodos acima de 7 dias com dados de cliente podem ser lentos. Considere reduzir o intervalo ou desmarcar "Dados de Cliente".', 'error');
+                return;
+            }
+
+            toggleLoading(true, 'Buscando notas fiscais...');
+            document.getElementById('dashboard').style.opacity = '0.5';
+            clearAlert();
+
+            try {
+                const url = `/api/bling-nfce?dataInicio=${dataInicio}&dataFim=${dataFim}&limit=${limit}&detalhado=${detalhado}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!response.ok || data.status === 'error') {
+                    throw new Error(data.message || 'Erro ao buscar dados');
+                }
+
+                dadosGlobais = data;
+
+                // Atualizar última atualização
+                document.getElementById('lastUpdate').textContent = `Última atualização: ${new Date().toLocaleString('pt-BR')} (Processado em ${data.tempoProcessamento})`;
+
+                // Atualizar KPIs
+                const resumo = data.dados.resumo;
+                document.getElementById('kpiFaturamento').textContent = formatarValor(resumo.totalVendas);
+                document.getElementById('kpiNotas').textContent = resumo.totalNotas;
+                document.getElementById('kpiTicket').textContent = formatarValor(resumo.ticketMedio);
+                document.getElementById('kpiItens').textContent = resumo.totalItens;
+
+                // Tabela de Lojas
+                const tbodyLojas = document.getElementById('tabelaLojas').querySelector('tbody');
+                tbodyLojas.innerHTML = data.dados.lojasArray.map(loja => `
+                    <tr>
+                        <td>${loja.nome}</td>
+                        <td>${loja.notas}</td>
+                        <td>${loja.itens}</td>
+                        <td class="valor">${formatarValor(loja.vendas)}</td>
+                    </tr>
+                `).join('');
+
+                // Tabela de Produtos
+                const tbodyProdutos = document.getElementById('tabelaProdutos').querySelector('tbody');
+                tbodyProdutos.innerHTML = data.dados.produtosTop.map(prod => `
+                    <tr>
+                        <td>${prod.codigo}</td>
+                        <td>${prod.descricao}</td>
+                        <td>${prod.marca}</td>
+                        <td>${prod.quantidade}</td>
+                        <td class="valor">${formatarValor(prod.valorTotal)}</td>
+                    </tr>
+                `).join('');
+
+                // Tabela de Marcas
+                const tbodyMarcas = document.getElementById('tabelaMarcas').querySelector('tbody');
+                tbodyMarcas.innerHTML = data.dados.marcasArray.map(marca => `
+                    <tr>
+                        <td>${marca.marca}</td>
+                        <td>${marca.quantidade}</td>
+                        <td class="valor">${formatarValor(marca.vendas)}</td>
+                    </tr>
+                `).join('');
+
+                // Tabela de Vendas Real-Time
+                const tbodyVendasRealTime = document.getElementById('tabelaVendasRealTime').querySelector('tbody');
+                tbodyVendasRealTime.innerHTML = data.dados.vendasRealTime.map(venda => `
+                    <tr>
+                        <td>${venda.data}</td>
+                        <td>${venda.hora}</td>
+                        <td>${venda.loja}</td>
+                        <td>${venda.produto}</td>
+                        <td>${venda.marca}</td>
+                        <td>${venda.quantidade}</td>
+                        <td class="valor">${formatarValor(venda.valor)}</td>
+                        <td>${venda.numeroNota}</td>
+                    </tr>
+                `).join('');
+
+                // Gráfico de Vendas por Dia
+                if (chartVendasDia) chartVendasDia.destroy();
+                chartVendasDia = new Chart(document.getElementById('chartVendasDia'), {
+                    type: 'bar',
+                    data: {
+                        labels: data.dados.diasArray.map(d => d.data),
+                        datasets: [{
+                            label: 'Faturamento por Dia',
+                            data: data.dados.diasArray.map(d => d.vendas),
+                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Faturamento (R$)' } },
+                            x: { title: { display: true, text: 'Data' } }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+
+                // Gráfico de Vendas por Hora
+                if (chartVendasHora) chartVendasHora.destroy();
+                chartVendasHora = new Chart(document.getElementById('chartVendasHora'), {
+                    type: 'line',
+                    data: {
+                        labels: data.dados.horasArray.map(h => h.hora),
+                        datasets: [{
+                            label: 'Faturamento por Hora',
+                            data: data.dados.horasArray.map(h => h.vendas),
+                            backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 2,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Faturamento (R$)' } },
+                            x: { title: { display: true, text: 'Hora' } }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+
+                // Gráficos de Clientes (se detalhado)
+                document.getElementById('clientesSection').style.display = detalhado ? 'grid' : 'none';
+                if (detalhado) {
+                    // Gráfico de Gênero
+                    if (chartGenero) chartGenero.destroy();
+                    chartGenero = new Chart(document.getElementById('chartGenero'), {
+                        type: 'pie',
+                        data: {
+                            labels: data.dados.clientes.generoArray.map(g => g.genero),
+                            datasets: [{
+                                label: 'Clientes por Gênero',
+                                data: data.dados.clientes.generoArray.map(g => g.count),
+                                backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
+                                borderColor: ['#2A8ABF', '#D63D5C', '#D4A017'],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                legend: { position: 'bottom' }
+                            }
+                        }
+                    });
+
+                    // Gráfico de Faixa Etária
+                    if (chartIdade) chartIdade.destroy();
+                    chartIdade = new Chart(document.getElementById('chartIdade'), {
+                        type: 'bar',
+                        data: {
+                            labels: data.dados.clientes.idadeArray.map(i => i.faixa),
+                            datasets: [{
+                                label: 'Clientes por Faixa Etária',
+                                data: data.dados.clientes.idadeArray.map(i => i.count),
+                                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                                borderColor: 'rgba(102, 126, 234, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true, title: { display: true, text: 'Número de Clientes' } },
+                                x: { title: { display: true, text: 'Faixa Etária' } }
+                            },
+                            plugins: {
+                                legend: { display: false }
+                            }
+                        }
+                    });
+                }
+
+                document.getElementById('dashboard').style.opacity = '1';
+                toggleLoading(false);
+                showAlert(`Dados carregados com sucesso! ${data.totalProcessado} notas processadas.`, 'success');
+            } catch (error) {
+                toggleLoading(false);
+                document.getElementById('dashboard').style.opacity = '1';
+                showAlert(`Erro: ${error.message}. Tente reduzir o período ou o limite de notas.`, 'error');
+            }
+        }
+
+        // Exportar CSV
+        function exportarCSV() {
+            if (!dadosGlobais) {
+                showAlert('Carregue os dados primeiro!');
+                return;
+            }
+
+            const { dados, periodo } = dadosGlobais;
+            let csv = '"Data";"Hora";"Loja";"Produto";"Marca";"Quantidade";"Valor";"Nota"\n';
+
+            dados.vendas.forEach(venda => {
+                csv += `"${venda.data}";"${venda.hora}";"${venda.loja}";"${venda.produto.replace(/"/g, '""')}";"${venda.marca}";"${venda.quantidade}";"${venda.valor}";"${venda.numeroNota}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `vendas_${periodo.dataInicio}_${periodo.dataFim}.csv`;
+            link.click();
+            showAlert('CSV exportado com sucesso!', 'success');
+        }
+
+        // Inicializar
+        setDefaultDates();
+        document.getElementById('dashboard').style.opacity = '1';
+    </script>
+</body>
+</html>

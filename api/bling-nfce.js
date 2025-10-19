@@ -96,7 +96,7 @@ async function buscarNotas(dataInicio, dataFim, limite = 100) {
     console.log(`🔍 Requisição para URL: ${url}`);
     const data = await fazerRequisicao(url);
     const notasPage = data.data || [];
-    console.log(`📋 Notas retornadas na página ${page}: ${notasPage.length}`);
+    console.log(`📋 Notas retornadas na página ${page}: ${notasPage.length} | Primeira data: ${notasPage[0]?.dataEmissao || 'N/A'}`);
     allNotas = [...allNotas, ...notasPage];
     hasMore = notasPage.length === limite;
     page++;

@@ -83,12 +83,23 @@ async function fazerRequisicao(url, tentativa = 1) {
 // ==================== BUSCAR DADOS ====================
 
 async function buscarNotas(dataInicio, dataFim, limite = 100) {
-  const filtro = `dataEmissao[${dataInicio} TO ${dataFim}];situacao[4,5]`; // 4=Autorizada, 5=Autorizada com cancelamento
-  const url = `${BLING_API_BASE}/nfce?limite=${limite}&filters=${encodeURIComponent(filtro)}`;
-  
+  const filtro = `dataEmissao[${dataInicio} TO ${dataFim}];situacao[4]`; // Apenas notas efetuadas (autorizadas)
+  let page = 1;
+  let allNotas = [];
+  let hasMore = true;
+
   console.log(`📡 Buscando notas: ${dataInicio} a ${dataFim}`);
-  const data = await fazerRequisicao(url);
-  return data.data || [];
+
+  while (hasMore) {
+    const url = `${BLING_API_BASE}/nfce?page=${page}&limite=${limite}&filters=${encodeURIComponent(filtro)}`;
+    const data = await fazerRequisicao(url);
+    const notasPage = data.data || [];
+    allNotas = [...allNotas, ...notasPage];
+    hasMore = notasPage.length === limite;
+    page++;
+  }
+
+  return allNotas;
 }
 
 async function buscarDetalhesNota(id) {
@@ -189,7 +200,7 @@ function processarDados(notas, incluirClientes = false) {
   };
 
   notas.forEach(nota => {
-    if (!nota || (nota.situacao !== 4 && nota.situacao !== 5)) return;
+    if (!nota || nota.situacao !== 4) return; // Apenas efetuadas (autorizadas)
     
     const valorNota = parseFloat(nota.valorNota || 0);
     const nomeLoja = LOJAS[nota.loja?.id] || 'NÃO INFORMADO';

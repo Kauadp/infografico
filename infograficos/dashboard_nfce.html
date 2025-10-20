@@ -3,619 +3,1635 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Vendas - Bling NFC-e</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Dashboard de Auditoria de Vendas</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .container { max-width: 1800px; margin: 0 auto; }
+
+        :root {
+            --color-primary: #E54E88;
+            --color-secondary: #f95b3c;
+            --color-accent: #00BFB2;
+            --color-success: #57da1c;
+            --color-warning: #FDBB2D;
+            --color-dark: #222222;
+            --color-light-bg: #F0F0F0;
+            --color-white: #FFFFFF;
+            --color-text: #4A5568;
+        }
         
-        .header {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-            margin-bottom: 20px;
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--color-light-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(229, 78, 136, 0.3);
+            margin-bottom: 2rem;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .main-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 0.5rem;
+        }
+
+        .main-header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .controls-section {
+            background: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            border-left: 6px solid var(--color-primary);
+        }
+
+        .controls-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 1rem;
         }
-        .header h1 { color: #2c3e50; font-size: 1.8em; }
-        .header small { color: #7f8c8d; display: block; margin-top: 5px; }
-        
-        .btn {
-            padding: 12px 24px;
-            border-radius: 10px;
-            border: none;
+
+        .controls-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-dark);
+        }
+
+        .last-update {
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
+            color: var(--color-text);
+            font-size: 0.95rem;
         }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-success { background: #27ae60; color: white; }
-        .btn-danger { background: #e74c3c; color: white; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        
-        .controls {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
+
+        .controls-actions {
             display: flex;
-            gap: 15px;
+            gap: 1rem;
             flex-wrap: wrap;
-            align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
-        .controls label { font-weight: 600; color: #555; }
-        .controls input, .controls select {
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .controls input:focus, .controls select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .kpi-grid {
+
+        .filter-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: var(--color-dark);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        select, input {
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(229, 78, 136, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Nunito', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: var(--color-white);
+            box-shadow: 0 4px 15px rgba(229, 78, 136, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(229, 78, 136, 0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--color-success), var(--color-accent));
+            color: var(--color-white);
+            box-shadow: 0 4px 15px rgba(87, 218, 28, 0.4);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(87, 218, 28, 0.5);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
         .kpi-card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+            background: var(--color-white);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-left: 6px solid var(--color-primary);
+            position: relative;
+            overflow: hidden;
         }
-        .kpi-card:hover { transform: translateY(-5px); }
-        .kpi-card .icon { font-size: 2.5em; margin-bottom: 10px; }
-        .kpi-card .label { color: #7f8c8d; font-size: 0.9em; margin-bottom: 5px; text-transform: uppercase; }
-        .kpi-card .value { color: #2c3e50; font-size: 2.2em; font-weight: bold; }
-        
-        .section {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        .section h3 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            border-left: 5px solid #667eea;
-            padding-left: 15px;
-            font-size: 1.3em;
-        }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ecf0f1; }
-        th { background: #f8f9fa; font-weight: 600; color: #555; text-transform: uppercase; font-size: 0.85em; }
-        tr:hover { background: #f8f9fa; }
-        .valor { font-weight: 600; color: #27ae60; }
-        
-        .loading {
-            position: fixed;
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: none;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--color-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-label {
+            font-weight: 700;
+            color: var(--color-text);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .main-chart-container {
+            background: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-left: 6px solid var(--color-accent);
+            margin-bottom: 2rem;
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--color-dark);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .stores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .store-card {
+            background: var(--color-white);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border-left: 6px solid var(--color-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .store-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+        }
+
+        .store-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .store-name {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--color-dark);
+            margin-bottom: 1rem;
+        }
+
+        .store-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .metric-item {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border-left: 3px solid var(--color-accent);
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--color-text);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--color-dark);
+        }
+
+        .progress-bar-container {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-success), var(--color-accent));
+            border-radius: 10px;
+            transition: width 0.6s ease;
+        }
+
+        .table-container {
+            background: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow-x: auto;
+            margin-bottom: 2rem;
+            border-left: 6px solid var(--color-primary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: var(--color-white);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .loading {
+            display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: var(--color-text);
+            font-weight: 700;
         }
-        .loading.show { display: flex; }
-        .loading-content {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
-        }
+
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid var(--color-primary);
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin-right: 1rem;
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
-        .alert {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+
+        .hidden {
+            display: none !important;
         }
-        .alert-error { background: #fee; color: #c33; border-left: 5px solid #c33; }
-        .alert-success { background: #efe; color: #3c3; border-left: 5px solid #3c3; }
-        
-        @media (max-width: 1200px) { 
-            .grid-2 { grid-template-columns: 1fr; }
-            .header { flex-direction: column; text-align: center; }
+
+        .message {
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin: 1rem 0;
+            font-weight: 600;
+            border-left: 6px solid;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            border-left-color: #dc2626;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            border-left-color: #166534;
+        }
+
+        .report-container {
+            position: fixed;
+            top: -9999px;
+            left: -9999px;
+            width: 1400px;
+            background: white;
+            z-index: -1;
+        }
+
+        .report-header {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .report-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+
+        .report-section {
+            padding: 2rem;
+        }
+
+        .report-section h3 {
+            color: var(--color-primary);
+            font-weight: 800;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 3px solid var(--color-primary);
+            padding-bottom: 0.75rem;
+        }
+
+        .report-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .report-kpi {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            border-left: 6px solid var(--color-primary);
+        }
+
+        .report-kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--color-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .report-kpi-label {
+            font-size: 1rem;
+            color: var(--color-text);
+            font-weight: 700;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .report-table th {
+            background: var(--color-primary);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .report-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .report-table tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .report-footer {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            padding: 2rem;
+            text-align: center;
+            color: var(--color-text);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .main-header h1 {
+                font-size: 1.75rem;
+            }
+
+            .stores-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .controls-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .report-kpis {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .store-metrics {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="loading" id="loading">
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <h3>Carregando dados...</h3>
-            <p id="loadingMsg">Aguarde, processando notas fiscais</p>
-        </div>
-    </div>
-    
     <div class="container">
-        <div class="header">
-            <div>
-                <h1>📊 Dashboard de Vendas - NFC-e Bling</h1>
-                <small id="lastUpdate">Aguardando primeira busca...</small>
+        <header class="main-header">
+            <h1>📊 Dashboard de Auditoria de Vendas</h1>
+            <p>Análise e monitoramento em tempo real - Foco em performance por loja</p>
+        </header>
+
+        <div class="controls-section">
+            <div class="controls-header">
+                <h3 class="controls-title">⚙️ Filtros e Controles</h3>
+                <span class="last-update">
+                    📅 Última atualização: <strong id="last-update-time">Carregando...</strong>
+                </span>
+                <div class="controls-actions">
+                    <button onclick="reloadData()" class="btn btn-primary" id="reload-btn">
+                        🔄 Atualizar
+                    </button>
+                    <button onclick="exportReport()" class="btn btn-success" id="export-btn" disabled>
+                        📄 Exportar PNG
+                    </button>
+                </div>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-success" onclick="toggleAutoRefresh()" id="btnRefresh">
-                    🔄 Auto-Atualizar
-                </button>
+
+            <div class="filter-grid">
+                <div class="filter-item">
+                    <label class="filter-label">📅 Data Inicial</label>
+                    <input type="date" id="date-start-filter" />
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">📅 Data Final</label>
+                    <input type="date" id="date-end-filter" />
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">🏪 Loja</label>
+                    <select id="loja-filter">
+                        <option value="">Todas as Lojas</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">📦 Produto</label>
+                    <select id="produto-filter">
+                        <option value="">Todos os Produtos</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div id="alertContainer"></div>
-
-        <div class="controls">
-            <label>📅 Data Início:</label>
-            <input type="date" id="dataInicio">
-            
-            <label>📅 Data Fim:</label>
-            <input type="date" id="dataFim">
-            
-            <label>📊 Máx. Notas:</label>
-            <select id="limit">
-                <option value="50">50</option>
-                <option value="100" selected>100</option>
-            </select>
-            
-            <label style="display: flex; align-items: center; gap: 5px;">
-                <input type="checkbox" id="detalhado">
-                👥 Dados de Cliente (mais lento)
-            </label>
-            
-            <button class="btn btn-primary" onclick="carregarDados()">
-                🔍 Buscar Dados
-            </button>
-            
-            <button class="btn btn-success" onclick="exportarCSV()">
-                📥 Exportar CSV
-            </button>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            Carregando dados...
         </div>
 
-        <div id="dashboard">
-            <!-- KPIs -->
-            <div class="kpi-grid">
+        <div id="error" class="message error hidden"></div>
+        <div id="success" class="message success hidden"></div>
+
+        <div id="dashboard" class="hidden">
+            <section class="kpi-grid">
                 <div class="kpi-card">
-                    <div class="icon">💰</div>
-                    <div class="label">Faturamento Total</div>
-                    <div class="value" id="kpiFaturamento">R$ 0,00</div>
+                    <div class="kpi-value" id="kpi-total-vendas">R$ 0,00</div>
+                    <div class="kpi-label">💰 Total de Vendas</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="icon">📄</div>
-                    <div class="label">Notas Emitidas</div>
-                    <div class="value" id="kpiNotas">0</div>
+                    <div class="kpi-value" id="kpi-total-notas">0</div>
+                    <div class="kpi-label">📋 Total de Notas</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="icon">🎯</div>
-                    <div class="label">Ticket Médio</div>
-                    <div class="value" id="kpiTicket">R$ 0,00</div>
+                    <div class="kpi-value" id="kpi-ticket-medio">R$ 0,00</div>
+                    <div class="kpi-label">🎯 Ticket Médio</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="icon">📦</div>
-                    <div class="label">Itens Vendidos</div>
-                    <div class="value" id="kpiItens">0</div>
+                    <div class="kpi-value" id="kpi-lojas-ativas">0</div>
+                    <div class="kpi-label">🏪 Lojas Ativas</div>
+                </div>
+            </section>
+
+            <div class="main-chart-container">
+                <h3 class="chart-title">📈 Faturamento por Loja</h3>
+                <canvas id="chart-vendas-loja"></canvas>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+                <div class="main-chart-container">
+                    <h3 class="chart-title">📅 Vendas por Dia</h3>
+                    <canvas id="chart-vendas-dia"></canvas>
+                </div>
+                <div class="main-chart-container">
+                    <h3 class="chart-title">⏰ Vendas por Hora</h3>
+                    <canvas id="chart-vendas-hora"></canvas>
                 </div>
             </div>
 
-            <!-- Performance por Loja -->
-            <div class="section">
-                <h3>🏪 Performance por Loja</h3>
-                <table id="tabelaLojas">
+            <h3 class="chart-title" style="margin-bottom: 1.5rem; text-align: center;">🏆 Performance por Loja</h3>
+            <div class="stores-grid" id="stores-container"></div>
+
+            <div class="table-container">
+                <h3 class="chart-title">🏢 Ranking Completo de Lojas</h3>
+                <table>
                     <thead>
                         <tr>
+                            <th>Posição</th>
                             <th>Loja</th>
-                            <th>Notas</th>
-                            <th>Itens</th>
-                            <th>Faturamento</th>
+                            <th>Qtd. Vendas</th>
+                            <th>Valor Total</th>
+                            <th>Ticket Médio</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody id="table-lojas-body"></tbody>
                 </table>
             </div>
 
-            <!-- Gráficos: Vendas por Dia e Hora -->
-            <div class="grid-2">
-                <div class="section">
-                    <h3>📅 Vendas por Dia</h3>
-                    <canvas id="chartVendasDia"></canvas>
-                </div>
-                <div class="section">
-                    <h3>⏰ Vendas por Hora</h3>
-                    <canvas id="chartVendasHora"></canvas>
-                </div>
-            </div>
-
-            <!-- Top Produtos e Marcas -->
-            <div class="grid-2">
-                <div class="section">
-                    <h3>🏆 Top 10 Produtos</h3>
-                    <table id="tabelaProdutos">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Produto</th>
-                                <th>Marca</th>
-                                <th>Quantidade</th>
-                                <th>Valor Total</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-                <div class="section">
-                    <h3>🏷️ Desempenho por Marca</h3>
-                    <table id="tabelaMarcas">
-                        <thead>
-                            <tr>
-                                <th>Marca</th>
-                                <th>Quantidade</th>
-                                <th>Valor Total</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Clientes (Visível apenas se detalhado = true) -->
-            <div class="grid-2" id="clientesSection" style="display: none;">
-                <div class="section">
-                    <h3>👥 Clientes por Gênero</h3>
-                    <canvas id="chartGenero"></canvas>
-                </div>
-                <div class="section">
-                    <h3>🎂 Clientes por Faixa Etária</h3>
-                    <canvas id="chartIdade"></canvas>
-                </div>
-            </div>
-
-            <!-- Últimas Vendas -->
-            <div class="section">
-                <h3>🕒 Últimas Vendas (Real-Time)</h3>
-                <table id="tabelaVendasRealTime">
+            <div class="table-container">
+                <h3 class="chart-title">📦 Top 5 Produtos Mais Vendidos</h3>
+                <table>
                     <thead>
                         <tr>
-                            <th>Data</th>
-                            <th>Hora</th>
-                            <th>Loja</th>
+                            <th>Posição</th>
                             <th>Produto</th>
-                            <th>Marca</th>
+                            <th>Loja</th>
                             <th>Quantidade</th>
-                            <th>Valor</th>
-                            <th>Nota</th>
+                            <th>Valor Total</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody id="table-produtos-body"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        let dadosGlobais = null;
-        let autoRefreshInterval = null;
-        let chartVendasDia, chartVendasHora, chartGenero, chartIdade;
+        let allData = [];
+        let filteredData = [];
+        let processedData = null;
+        let charts = {};
 
-        // Função para formatar valores monetários
-        function formatarValor(valor) {
-            return 'R$ ' + Number(valor).toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        }
+        // Metas por loja (placeholder)
+        const metas = {
+            'Vans': 100000,
+            'Arezzo': 100000,
+            'Aramis': 100000,
+            'Acostamento': 100000,
+            'High': 100000,
+            'Default': 100000
+        };
 
-        // Definir datas padrão (hoje)
-        function setDefaultDates() {
-            const hoje = new Date().toISOString().split('T')[0];
-            document.getElementById('dataInicio').value = hoje;
-            document.getElementById('dataFim').value = hoje;
-        }
+        // Custo Operação por loja
+        const custoOperacao = {
+            'Vans': 24285,
+            'Arezzo': 36429,
+            'Aramis': 12143,
+            'Acostamento': 15000,
+            'High': 12143,
+            'Default': 0
+        };
 
-        // Mostrar/esconder loading
-        function toggleLoading(show, message = 'Aguarde, processando notas fiscais') {
-            const loading = document.getElementById('loading');
-            loading.classList.toggle('show', show);
-            document.getElementById('loadingMsg').textContent = message;
-        }
+        // Custo Montagem por loja
+        const custoMontagem = {
+            'Vans': 21071,
+            'Arezzo': 31607,
+            'Aramis': 10536,
+            'Acostamento': 10536,
+            'High': 10536,
+            'Default': 0
+        };
 
-        // Mostrar alerta
-        function showAlert(message, type = 'error') {
-            const alertContainer = document.getElementById('alertContainer');
-            alertContainer.innerHTML = `
-                <div class="alert alert-${type}">
-                    ${message}
-                </div>
-            `;
-        }
+        // Comissão por loja (em porcentagem)
+        const comissao = {
+            'Vans': 60,
+            'Arezzo': 60,
+            'Aramis': 55,
+            'Acostamento': 55,
+            'High': 55,
+            'Default': 0
+        };
 
-        // Limpar alerta
-        function clearAlert() {
-            document.getElementById('alertContainer').innerHTML = '';
-        }
+        // Receita Fixa por loja
+        const receitaFixa = {
+            'Vans': 0,
+            'Arezzo': 0,
+            'Aramis': 0,
+            'Acostamento': 0,
+            'High': 0,
+            'Default': 100000
+        };
 
-        // Toggle auto-refresh
-        function toggleAutoRefresh() {
-            const btn = document.getElementById('btnRefresh');
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
-                btn.textContent = '🔄 Auto-Atualizar';
-                btn.classList.remove('btn-danger');
-                btn.classList.add('btn-success');
-                showAlert('Auto-atualização desativada', 'success');
+        function showMessage(type, message) {
+            const errorEl = document.getElementById('error');
+            const successEl = document.getElementById('success');
+            errorEl.classList.add('hidden');
+            successEl.classList.add('hidden');
+            if (type === 'error') {
+                errorEl.textContent = message;
+                errorEl.classList.remove('hidden');
             } else {
-                autoRefreshInterval = setInterval(carregarDados, 60000); // Atualiza a cada 60s
-                btn.textContent = '🛑 Parar Auto-Atualização';
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-danger');
-                showAlert('Auto-atualização ativada (a cada 60s)', 'success');
+                successEl.textContent = message;
+                successEl.classList.remove('hidden');
             }
         }
 
-        // Carregar dados
-        async function carregarDados() {
-            const dataInicio = document.getElementById('dataInicio').value;
-            const dataFim = document.getElementById('dataFim').value;
-            const limit = document.getElementById('limit').value;
-            const detalhado = document.getElementById('detalhado').checked;
+        function parseValor(valor) {
+            if (!valor) return 0;
+            return parseFloat(valor.toString().replace(',', '.')) || 0;
+        }
 
-            if (!dataInicio || !dataFim) {
-                showAlert('Por favor, selecione as datas de início e fim.');
-                return;
+        function parseData(dataString) {
+            if (!dataString) return null;
+            const partes = dataString.split(' ')[0].split('/');
+            if (partes.length === 3) {
+                return new Date(partes[2], partes[1] - 1, partes[0]);
             }
+            return null;
+        }
 
-            // Verificar período longo
-            const start = new Date(dataInicio);
-            const end = new Date(dataFim);
-            const diffDays = (end - start) / (1000 * 60 * 60 * 24);
-            if (diffDays > 7 && detalhado) {
-                showAlert('Períodos acima de 7 dias com dados de cliente podem ser lentos. Considere reduzir o intervalo ou desmarcar "Dados de Cliente".', 'error');
-                return;
-            }
+        function extractProduto(descricao) {
+            if (!descricao) return 'Sem Produto';
+            return descricao || 'Sem Produto';
+        }
 
-            toggleLoading(true, 'Buscando notas fiscais...');
-            document.getElementById('dashboard').style.opacity = '0.5';
-            clearAlert();
+        async function loadCSVData() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('reload-btn').disabled = true;
 
             try {
-                const url = `/api/bling-nfce?dataInicio=${dataInicio}&dataFim=${dataFim}&limit=${limit}&detalhado=${detalhado}`;
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (!response.ok || data.status === 'error') {
-                    throw new Error(data.message || 'Erro ao buscar dados');
+                const response = await fetch('data/bling_export.csv');
+                if (!response.ok) {
+                    throw new Error('Não foi possível carregar o arquivo CSV');
                 }
 
-                dadosGlobais = data;
+                const csvText = await response.text();
 
-                // Atualizar última atualização
-                document.getElementById('lastUpdate').textContent = `Última atualização: ${new Date().toLocaleString('pt-BR')} (Processado em ${data.tempoProcessamento})`;
-
-                // Atualizar KPIs
-                const resumo = data.dados.resumo;
-                document.getElementById('kpiFaturamento').textContent = formatarValor(resumo.totalVendas);
-                document.getElementById('kpiNotas').textContent = resumo.totalNotas;
-                document.getElementById('kpiTicket').textContent = formatarValor(resumo.ticketMedio);
-                document.getElementById('kpiItens').textContent = resumo.totalItens;
-
-                // Tabela de Lojas
-                const tbodyLojas = document.getElementById('tabelaLojas').querySelector('tbody');
-                tbodyLojas.innerHTML = data.dados.lojasArray.map(loja => `
-                    <tr>
-                        <td>${loja.nome}</td>
-                        <td>${loja.notas}</td>
-                        <td>${loja.itens}</td>
-                        <td class="valor">${formatarValor(loja.vendas)}</td>
-                    </tr>
-                `).join('');
-
-                // Tabela de Produtos
-                const tbodyProdutos = document.getElementById('tabelaProdutos').querySelector('tbody');
-                tbodyProdutos.innerHTML = data.dados.produtosTop.map(prod => `
-                    <tr>
-                        <td>${prod.codigo}</td>
-                        <td>${prod.descricao}</td>
-                        <td>${prod.marca}</td>
-                        <td>${prod.quantidade}</td>
-                        <td class="valor">${formatarValor(prod.valorTotal)}</td>
-                    </tr>
-                `).join('');
-
-                // Tabela de Marcas
-                const tbodyMarcas = document.getElementById('tabelaMarcas').querySelector('tbody');
-                tbodyMarcas.innerHTML = data.dados.marcasArray.map(marca => `
-                    <tr>
-                        <td>${marca.marca}</td>
-                        <td>${marca.quantidade}</td>
-                        <td class="valor">${formatarValor(marca.vendas)}</td>
-                    </tr>
-                `).join('');
-
-                // Tabela de Vendas Real-Time
-                const tbodyVendasRealTime = document.getElementById('tabelaVendasRealTime').querySelector('tbody');
-                tbodyVendasRealTime.innerHTML = data.dados.vendasRealTime.map(venda => `
-                    <tr>
-                        <td>${venda.data}</td>
-                        <td>${venda.hora}</td>
-                        <td>${venda.loja}</td>
-                        <td>${venda.produto}</td>
-                        <td>${venda.marca}</td>
-                        <td>${venda.quantidade}</td>
-                        <td class="valor">${formatarValor(venda.valor)}</td>
-                        <td>${venda.numeroNota}</td>
-                    </tr>
-                `).join('');
-
-                // Gráfico de Vendas por Dia
-                if (chartVendasDia) chartVendasDia.destroy();
-                chartVendasDia = new Chart(document.getElementById('chartVendasDia'), {
-                    type: 'bar',
-                    data: {
-                        labels: data.dados.diasArray.map(d => d.data),
-                        datasets: [{
-                            label: 'Faturamento por Dia',
-                            data: data.dados.diasArray.map(d => d.vendas),
-                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'Faturamento (R$)' } },
-                            x: { title: { display: true, text: 'Data' } }
-                        },
-                        plugins: {
-                            legend: { display: false }
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        try {
+                            allData = results.data.filter(row => row['Situação'] === 'Autorizada');
+                            filteredData = [...allData];
+                            processData();
+                            setupFilters();
+                            renderDashboard();
+                            updateLastUpdateTime();
+                            showMessage('success', `✅ Dashboard atualizado! ${allData.length} notas autorizadas analisadas.`);
+                            document.getElementById('export-btn').disabled = false;
+                        } catch (error) {
+                            console.error('Erro ao processar CSV:', error);
+                            showMessage('error', 'Erro ao processar os dados: ' + error.message);
+                        } finally {
+                            document.getElementById('loading').classList.add('hidden');
+                            document.getElementById('reload-btn').disabled = false;
                         }
+                    },
+                    error: function(error) {
+                        showMessage('error', 'Erro ao ler o arquivo CSV: ' + error.message);
+                        document.getElementById('loading').classList.add('hidden');
+                        document.getElementById('reload-btn').disabled = false;
                     }
                 });
-
-                // Gráfico de Vendas por Hora
-                if (chartVendasHora) chartVendasHora.destroy();
-                chartVendasHora = new Chart(document.getElementById('chartVendasHora'), {
-                    type: 'line',
-                    data: {
-                        labels: data.dados.horasArray.map(h => h.hora),
-                        datasets: [{
-                            label: 'Faturamento por Hora',
-                            data: data.dados.horasArray.map(h => h.vendas),
-                            backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            borderWidth: 2,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true, title: { display: true, text: 'Faturamento (R$)' } },
-                            x: { title: { display: true, text: 'Hora' } }
-                        },
-                        plugins: {
-                            legend: { display: false }
-                        }
-                    }
-                });
-
-                // Gráficos de Clientes (se detalhado)
-                document.getElementById('clientesSection').style.display = detalhado ? 'grid' : 'none';
-                if (detalhado) {
-                    // Gráfico de Gênero
-                    if (chartGenero) chartGenero.destroy();
-                    chartGenero = new Chart(document.getElementById('chartGenero'), {
-                        type: 'pie',
-                        data: {
-                            labels: data.dados.clientes.generoArray.map(g => g.genero),
-                            datasets: [{
-                                label: 'Clientes por Gênero',
-                                data: data.dados.clientes.generoArray.map(g => g.count),
-                                backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
-                                borderColor: ['#2A8ABF', '#D63D5C', '#D4A017'],
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            plugins: {
-                                legend: { position: 'bottom' }
-                            }
-                        }
-                    });
-
-                    // Gráfico de Faixa Etária
-                    if (chartIdade) chartIdade.destroy();
-                    chartIdade = new Chart(document.getElementById('chartIdade'), {
-                        type: 'bar',
-                        data: {
-                            labels: data.dados.clientes.idadeArray.map(i => i.faixa),
-                            datasets: [{
-                                label: 'Clientes por Faixa Etária',
-                                data: data.dados.clientes.idadeArray.map(i => i.count),
-                                backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                                borderColor: 'rgba(102, 126, 234, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: { beginAtZero: true, title: { display: true, text: 'Número de Clientes' } },
-                                x: { title: { display: true, text: 'Faixa Etária' } }
-                            },
-                            plugins: {
-                                legend: { display: false }
-                            }
-                        }
-                    });
-                }
-
-                document.getElementById('dashboard').style.opacity = '1';
-                toggleLoading(false);
-                showAlert(`Dados carregados com sucesso! ${data.totalProcessado} notas processadas.`, 'success');
             } catch (error) {
-                toggleLoading(false);
-                document.getElementById('dashboard').style.opacity = '1';
-                showAlert(`Erro: ${error.message}. Tente reduzir o período ou o limite de notas.`, 'error');
+                console.error('Erro ao carregar CSV:', error);
+                showMessage('error', 'Erro ao carregar o arquivo: ' + error.message);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('reload-btn').disabled = false;
             }
         }
 
-        // Exportar CSV
-        function exportarCSV() {
-            if (!dadosGlobais) {
-                showAlert('Carregue os dados primeiro!');
-                return;
-            }
+        function processData() {
+            let totalVendas = 0;
+            let totalNotas = filteredData.length;
+            let vendasPorLoja = {};
+            let vendasPorDia = {};
+            let vendasPorHora = {};
+            let produtos = {};
 
-            const { dados, periodo } = dadosGlobais;
-            let csv = '"Data";"Hora";"Loja";"Produto";"Marca";"Quantidade";"Valor";"Nota"\n';
+            filteredData.forEach(row => {
+                const valorTotal = parseValor(row['Valor total líquido']);
+                const quantidade = parseValor(row['Quantidade']);
+                const loja = row['Fornecedor'] || 'Sem Loja';
+                const descricao = row['Descrição'] || 'Sem Descrição';
+                const produto = extractProduto(descricao);
+                
+                totalVendas += valorTotal;
 
-            dados.vendas.forEach(venda => {
-                csv += `"${venda.data}";"${venda.hora}";"${venda.loja}";"${venda.produto.replace(/"/g, '""')}";"${venda.marca}";"${venda.quantidade}";"${venda.valor}";"${venda.numeroNota}"\n`;
+                if (!vendasPorLoja[loja]) {
+                    vendasPorLoja[loja] = { total: 0, quantidade: 0 };
+                }
+                vendasPorLoja[loja].total += valorTotal;
+                vendasPorLoja[loja].quantidade += 1;
+
+                if (row['Data de emissão']) {
+                    const dataHora = row['Data de emissão'].split(' ');
+                    const data = dataHora[0];
+                    const hora = dataHora[1] ? dataHora[1].split(':')[0] : '00';
+                    
+                    if (!vendasPorDia[data]) {
+                        vendasPorDia[data] = { total: 0, quantidade: 0 };
+                    }
+                    vendasPorDia[data].total += valorTotal;
+                    vendasPorDia[data].quantidade += 1;
+
+                    if (!vendasPorHora[hora]) {
+                        vendasPorHora[hora] = { total: 0, quantidade: 0 };
+                    }
+                    vendasPorHora[hora].total += valorTotal;
+                    vendasPorHora[hora].quantidade += 1;
+                }
+
+                const produtoKey = `${descricao}|||${loja}`;
+                if (!produtos[produtoKey]) {
+                    produtos[produtoKey] = { 
+                        descricao, 
+                        loja, 
+                        quantidade: 0, 
+                        valorTotal: 0 
+                    };
+                }
+                produtos[produtoKey].quantidade += quantidade;
+                produtos[produtoKey].valorTotal += valorTotal;
             });
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `vendas_${periodo.dataInicio}_${periodo.dataFim}.csv`;
-            link.click();
-            showAlert('CSV exportado com sucesso!', 'success');
+            const ticketMedio = totalNotas > 0 ? totalVendas / totalNotas : 0;
+
+            const topProdutos = Object.values(produtos)
+                .sort((a, b) => b.quantidade - a.quantidade)
+                .slice(0, 5);
+
+            processedData = {
+                totalVendas,
+                totalNotas,
+                ticketMedio,
+                vendasPorLoja,
+                vendasPorDia,
+                vendasPorHora,
+                topProdutos,
+                lojasAtivas: Object.keys(vendasPorLoja).length
+            };
         }
 
-        // Inicializar
-        setDefaultDates();
-        document.getElementById('dashboard').style.opacity = '1';
+        function setupFilters() {
+            const lojas = [...new Set(allData.map(r => r['Fornecedor']).filter(Boolean))].sort();
+            const lojaSelect = document.getElementById('loja-filter');
+            lojaSelect.innerHTML = '<option value="">Todas as Lojas</option>';
+            lojas.forEach(f => {
+                const option = document.createElement('option');
+                option.value = f;
+                option.textContent = f;
+                lojaSelect.appendChild(option);
+            });
+
+            const produtos = [...new Set(allData.map(r => extractProduto(r['Descrição'])).filter(Boolean))].sort();
+            const produtoSelect = document.getElementById('produto-filter');
+            produtoSelect.innerHTML = '<option value="">Todos os Produtos</option>';
+            produtos.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m;
+                option.textContent = m;
+                produtoSelect.appendChild(option);
+            });
+
+            document.getElementById('date-start-filter').addEventListener('change', applyFilters);
+            document.getElementById('date-end-filter').addEventListener('change', applyFilters);
+            document.getElementById('loja-filter').addEventListener('change', applyFilters);
+            document.getElementById('produto-filter').addEventListener('change', applyFilters);
+        }
+
+        function applyFilters() {
+            const dateStart = document.getElementById('date-start-filter').value;
+            const dateEnd = document.getElementById('date-end-filter').value;
+            const loja = document.getElementById('loja-filter').value;
+            const produto = document.getElementById('produto-filter').value;
+
+            filteredData = allData.filter(row => {
+                if (dateStart || dateEnd) {
+                    const dataVenda = parseData(row['Data de emissão']);
+                    if (dataVenda) {
+                        if (dateStart) {
+                            const startDate = new Date(dateStart);
+                            if (dataVenda < startDate) return false;
+                        }
+                        if (dateEnd) {
+                            const endDate = new Date(dateEnd);
+                            endDate.setHours(23, 59, 59);
+                            if (dataVenda > endDate) return false;
+                        }
+                    }
+                }
+
+                if (loja && row['Fornecedor'] !== loja) return false;
+
+                if (produto && extractProduto(row['Descrição']) !== produto) return false;
+
+                return true;
+            });
+
+            processData();
+            renderDashboard();
+        }
+
+        function updateLastUpdateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('last-update-time').textContent = timeString;
+        }
+
+        function reloadData() {
+            loadCSVData();
+        }
+
+        function renderDashboard() {
+            document.getElementById('dashboard').classList.remove('hidden');
+
+            document.getElementById('kpi-total-vendas').textContent = 
+                processedData.totalVendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('kpi-total-notas').textContent = processedData.totalNotas;
+            document.getElementById('kpi-ticket-medio').textContent = 
+                processedData.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('kpi-lojas-ativas').textContent = processedData.lojasAtivas;
+
+            renderChartVendasLoja();
+            renderChartVendasDia();
+            renderChartVendasHora();
+            renderStoreCards();
+            renderTableLojas();
+            renderTableProdutos();
+        }
+
+        function renderChartVendasLoja() {
+            const ctx = document.getElementById('chart-vendas-loja');
+            if (charts.vendasLoja) {
+                charts.vendasLoja.destroy();
+            }
+
+            const lojas = Object.entries(processedData.vendasPorLoja)
+                .sort((a, b) => b[1].total - a[1].total);
+
+            charts.vendasLoja = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: lojas.map(f => f[0]),
+                    datasets: [{
+                        label: 'Faturamento (R$)',
+                        data: lojas.map(f => f[1].total),
+                        backgroundColor: 'rgba(229, 78, 136, 0.8)',
+                        borderColor: '#E54E88',
+                        borderWidth: 2
+                    }, {
+                        label: 'Quantidade de Vendas',
+                        data: lojas.map(f => f[1].quantidade),
+                        backgroundColor: 'rgba(0, 191, 178, 0.8)',
+                        borderColor: '#00BFB2',
+                        borderWidth: 2,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Faturamento (R$)'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Quantidade'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartVendasDia() {
+            const ctx = document.getElementById('chart-vendas-dia');
+            if (charts.vendasDia) {
+                charts.vendasDia.destroy();
+            }
+
+            const dias = Object.keys(processedData.vendasPorDia).sort((a, b) => {
+                const dateA = parseData(a + ' 00:00:00');
+                const dateB = parseData(b + ' 00:00:00');
+                return dateA - dateB;
+            });
+            const valores = dias.map(d => processedData.vendasPorDia[d].total);
+            const quantidades = dias.map(d => processedData.vendasPorDia[d].quantidade);
+
+            charts.vendasDia = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dias,
+                    datasets: [{
+                        label: 'Faturamento (R$)',
+                        data: valores,
+                        borderColor: '#E54E88',
+                        backgroundColor: 'rgba(229, 78, 136, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3
+                    }, {
+                        label: 'Quantidade de Vendas',
+                        data: quantidades,
+                        borderColor: '#00BFB2',
+                        backgroundColor: 'rgba(0, 191, 178, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Faturamento (R$)'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Quantidade'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartVendasHora() {
+            const ctx = document.getElementById('chart-vendas-hora');
+            if (charts.vendasHora) {
+                charts.vendasHora.destroy();
+            }
+
+            const horas = Object.keys(processedData.vendasPorHora).sort((a, b) => parseInt(a) - parseInt(b));
+            const valores = horas.map(h => processedData.vendasPorHora[h].total);
+            const quantidades = horas.map(h => processedData.vendasPorHora[h].quantidade);
+
+            charts.vendasHora = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: horas.map(h => `${h}:00`),
+                    datasets: [{
+                        label: 'Faturamento (R$)',
+                        data: valores,
+                        backgroundColor: 'rgba(229, 78, 136, 0.8)',
+                        borderColor: '#E54E88',
+                        borderWidth: 2
+                    }, {
+                        label: 'Quantidade de Vendas',
+                        data: quantidades,
+                        backgroundColor: 'rgba(0, 191, 178, 0.8)',
+                        borderColor: '#00BFB2',
+                        borderWidth: 2,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Faturamento (R$)'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Quantidade'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderStoreCards() {
+            const container = document.getElementById('stores-container');
+            container.innerHTML = '';
+
+            const lojas = Object.entries(processedData.vendasPorLoja)
+                .sort((a, b) => b[1].total - a[1].total);
+
+            lojas.forEach(([nome, dados]) => {
+                const ticketMedio = dados.quantidade > 0 ? dados.total / dados.quantidade : 0;
+                const meta = metas[nome] || metas['Default'];
+                const custoOp = custoOperacao[nome] || custoOperacao['Default'];
+                const custoMont = custoMontagem[nome] || custoMontagem['Default'];
+                const comiss = comissao[nome] || comissao['Default'];
+                const recFixa = receitaFixa[nome] || receitaFixa['Default'];
+                const percentualMeta = (dados.total / meta) * 100;
+                const atingiuMeta = percentualMeta >= 100;
+
+                const card = document.createElement('div');
+                card.className = 'store-card';
+                card.innerHTML = `
+                    <div class="store-name">${nome}</div>
+                    <div class="store-metrics">
+                        <div class="metric-item">
+                            <div class="metric-label">Faturamento</div>
+                            <div class="metric-value">${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Vendas</div>
+                            <div class="metric-value">${dados.quantidade}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Ticket Médio</div>
+                            <div class="metric-value">${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Meta</div>
+                            <div class="metric-value">${meta.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Custo Operação</div>
+                            <div class="metric-value">${custoOp.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Custo Montagem</div>
+                            <div class="metric-value">${custoMont.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Comissão</div>
+                            <div class="metric-value">${comiss.toFixed(2)}%</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Receita Fixa</div>
+                            <div class="metric-value">${recFixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>${atingiuMeta ? '✅' : '📊'} Progresso da Meta</span>
+                            <strong>${Math.min(percentualMeta, 100).toFixed(1)}%</strong>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${Math.min(percentualMeta, 100)}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderTableLojas() {
+            const tbody = document.getElementById('table-lojas-body');
+            tbody.innerHTML = '';
+
+            const lojas = Object.entries(processedData.vendasPorLoja)
+                .sort((a, b) => b[1].total - a[1].total);
+
+            const medals = ['🥇', '🥈', '🥉'];
+
+            lojas.forEach(([nome, dados], index) => {
+                const ticketMedio = dados.quantidade > 0 ? dados.total / dados.quantidade : 0;
+                const medal = index < 3 ? medals[index] : '';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align: center; font-size: 1.2rem;">${medal} ${index + 1}º</td>
+                    <td><strong>${nome}</strong></td>
+                    <td>${dados.quantidade}</td>
+                    <td><strong>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                    <td>${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderTableProdutos() {
+            const tbody = document.getElementById('table-produtos-body');
+            tbody.innerHTML = '';
+
+            const medals = ['🥇', '🥈', '🥉'];
+
+            processedData.topProdutos.forEach((produto, index) => {
+                const medal = index < 3 ? medals[index] : '';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align: center; font-size: 1.2rem;">${medal} ${index + 1}º</td>
+                    <td><strong>${produto.descricao}</strong></td>
+                    <td>${produto.loja}</td>
+                    <td>${produto.quantidade.toFixed(2)}</td>
+                    <td><strong>${produto.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function exportReport() {
+            const exportBtn = document.getElementById('export-btn');
+            exportBtn.disabled = true;
+            exportBtn.textContent = '📄 Gerando...';
+
+            Swal.fire({
+                title: 'Gerando Relatório',
+                text: 'Por favor, aguarde enquanto o relatório é preparado...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                if (!processedData || !processedData.vendasPorLoja || !processedData.vendasPorDia || !processedData.vendasPorHora || !processedData.topProdutos) {
+                    throw new Error('Dados processados incompletos ou ausentes.');
+                }
+
+                const reportContainer = document.createElement('div');
+                reportContainer.className = 'report-container';
+                reportContainer.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(reportContainer);
+
+                const sanitize = (str) => {
+                    const div = document.createElement('div');
+                    div.textContent = str || '';
+                    return div.innerHTML;
+                };
+
+                const dataAtual = new Date().toLocaleString('pt-BR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const topLojas = Object.entries(processedData.vendasPorLoja)
+                    .sort((a, b) => b[1].total - a[1].total)
+                    .slice(0, 10);
+
+                const diasOrdenados = Object.keys(processedData.vendasPorDia).sort((a, b) => {
+                    const dateA = parseData(a + ' 00:00:00') || new Date(0);
+                    const dateB = parseData(b + ' 00:00:00') || new Date(0);
+                    return dateA - dateB;
+                });
+
+                const melhorDia = Object.entries(processedData.vendasPorDia)
+                    .sort((a, b) => b[1].total - a[1].total)[0] || ['N/A', { total: 0, quantidade: 0 }];
+
+                const melhorHora = Object.entries(processedData.vendasPorHora)
+                    .sort((a, b) => b[1].total - a[1].total)[0] || ['N/A', { total: 0, quantidade: 0 }];
+
+                reportContainer.innerHTML = `
+                    <div class="report-header" role="banner">
+                        <div class="report-title">📊 Relatório de Auditoria de Vendas</div>
+                        <div class="report-subtitle">Análise Completa por Loja - ${sanitize(dataAtual)}</div>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>📈 KPIs Principais</h3>
+                        <div class="report-kpis" role="region" aria-label="Indicadores principais">
+                            <div class="report-kpi">
+                                <div class="report-kpi-value">${processedData.totalVendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                                <div class="report-kpi-label">Total de Vendas</div>
+                            </div>
+                            <div class="report-kpi">
+                                <div class="report-kpi-value">${processedData.totalNotas}</div>
+                                <div class="report-kpi-label">Total de Notas</div>
+                            </div>
+                            <div class="report-kpi">
+                                <div class="report-kpi-value">${processedData.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                                <div class="report-kpi-label">Ticket Médio</div>
+                            </div>
+                            <div class="report-kpi">
+                                <div class="report-kpi-value">${processedData.lojasAtivas}</div>
+                                <div class="report-kpi-label">Lojas Ativas</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>🎯 Análise de Desempenho Temporal</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                            <div style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 1.5rem; border-radius: 0.75rem; border-left: 6px solid #E54E88;">
+                                <h4 style="color: #E54E88; font-weight: 700; margin-bottom: 1rem;">📅 Melhor Dia de Vendas</h4>
+                                <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${sanitize(melhorDia[0])}</div>
+                                <div style="font-size: 1.1rem; color: #4A5568;">
+                                    ${melhorDia[1].total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </div>
+                                <div style="font-size: 0.9rem; color: #4A5568; margin-top: 0.5rem;">
+                                    ${melhorDia[1].quantidade} vendas realizadas
+                                </div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 1.5rem; border-radius: 0.75rem; border-left: 6px solid #00BFB2;">
+                                <h4 style="color: #00BFB2; font-weight: 700; margin-bottom: 1rem;">⏰ Melhor Horário</h4>
+                                <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${sanitize(melhorHora[0])}:00</div>
+                                <div style="font-size: 1.1rem; color: #4A5568;">
+                                    ${melhorHora[1].total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </div>
+                                <div style="font-size: 0.9rem; color: #4A5568; margin-top: 0.5rem;">
+                                    ${melhorHora[1].quantidade} vendas realizadas
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>📅 Vendas por Dia</h3>
+                        <table class="report-table" role="grid" aria-label="Vendas por dia">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Data</th>
+                                    <th scope="col">Quantidade de Vendas</th>
+                                    <th scope="col">Valor Total</th>
+                                    <th scope="col">Ticket Médio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${diasOrdenados.map(dia => {
+                                    const dados = processedData.vendasPorDia[dia];
+                                    const ticketMedio = dados.quantidade > 0 ? dados.total / dados.quantidade : 0;
+                                    return `
+                                        <tr>
+                                            <td><strong>${sanitize(dia)}</strong></td>
+                                            <td>${dados.quantidade}</td>
+                                            <td><strong>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                            <td>${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>⏰ Vendas por Horário</h3>
+                        <table class="report-table" role="grid" aria-label="Vendas por horário">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Horário</th>
+                                    <th scope="col">Quantidade de Vendas</th>
+                                    <th scope="col">Valor Total</th>
+                                    <th scope="col">% do Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(processedData.vendasPorHora)
+                                    .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                                    .map(([hora, dados]) => {
+                                        const percentual = processedData.totalVendas > 0 ? (dados.total / processedData.totalVendas) * 100 : 0;
+                                        return `
+                                            <tr>
+                                                <td><strong>${sanitize(hora)}:00</strong></td>
+                                                <td>${dados.quantidade}</td>
+                                                <td><strong>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                                <td>${percentual.toFixed(2)}%</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>🏆 Top 10 Lojas - Performance e Metas</h3>
+                        <table class="report-table" role="grid" aria-label="Top 10 lojas">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Pos.</th>
+                                    <th scope="col">Loja</th>
+                                    <th scope="col">Faturamento</th>
+                                    <th scope="col">Vendas</th>
+                                    <th scope="col">Ticket Médio</th>
+                                    <th scope="col">Meta</th>
+                                    <th scope="col">% Meta</th>
+                                    <th scope="col">Custo Operação</th>
+                                    <th scope="col">Custo Montagem</th>
+                                    <th scope="col">Comissão</th>
+                                    <th scope="col">Receita Fixa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${topLojas.map(([nome, dados], index) => {
+                                    const medals = ['🥇', '🥈', '🥉'];
+                                    const medal = index < 3 ? medals[index] : `${index + 1}º`;
+                                    const ticketMedio = dados.quantidade > 0 ? dados.total / dados.quantidade : 0;
+                                    const meta = metas[nome] || metas['Default'];
+                                    const custoOp = custoOperacao[nome] || custoOperacao['Default'];
+                                    const custoMont = custoMontagem[nome] || custoMontagem['Default'];
+                                    const comiss = comissao[nome] || comissao['Default'];
+                                    const recFixa = receitaFixa[nome] || receitaFixa['Default'];
+                                    const percentualMeta = meta > 0 ? (dados.total / meta) * 100 : 0;
+                                    return `
+                                        <tr>
+                                            <td style="text-align: center; font-size: 1.1rem;">${medal}</td>
+                                            <td><strong>${sanitize(nome)}</strong></td>
+                                            <td><strong>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                            <td>${dados.quantidade}</td>
+                                            <td>${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${meta.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td><strong>${percentualMeta.toFixed(1)}%</strong></td>
+                                            <td>${custoOp.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${custoMont.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${comiss.toFixed(2)}%</td>
+                                            <td>${recFixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>📦 Top 5 Produtos Mais Vendidos</h3>
+                        <table class="report-table" role="grid" aria-label="Top 5 produtos">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Pos.</th>
+                                    <th scope="col">Produto</th>
+                                    <th scope="col">Loja</th>
+                                    <th scope="col">Quantidade</th>
+                                    <th scope="col">Valor Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${processedData.topProdutos.map((produto, index) => {
+                                    const medals = ['🥇', '🥈', '🥉'];
+                                    const medal = index < 3 ? medals[index] : `${index + 1}º`;
+                                    return `
+                                        <tr>
+                                            <td style="text-align: center; font-size: 1.1rem;">${medal}</td>
+                                            <td><strong>${sanitize(produto.descricao)}</strong></td>
+                                            <td>${sanitize(produto.loja)}</td>
+                                            <td>${produto.quantidade.toFixed(2)}</td>
+                                            <td><strong>${produto.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="report-footer">
+                        <strong>Relatório gerado automaticamente pelo Sistema de Auditoria de Vendas</strong><br>
+                        ${sanitize(dataAtual)}<br>
+                        Total de ${processedData.totalNotas} notas fiscais autorizadas analisadas
+                    </div>
+                `;
+
+                await new Promise(resolve => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(resolve);
+                    });
+                });
+
+                const canvas = await html2canvas(reportContainer, {
+                    width: 1400,
+                    height: reportContainer.scrollHeight,
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                });
+
+                document.body.removeChild(reportContainer);
+
+                const link = document.createElement('a');
+                link.download = `relatorio_vendas_${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                Swal.close();
+                showMessage('success', '✅ Relatório exportado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao exportar relatório:', error);
+                Swal.close();
+                showMessage('error', `❌ Erro ao gerar relatório: ${error.message}`);
+            } finally {
+                exportBtn.disabled = false;
+                exportBtn.textContent = '📄 Exportar PNG';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCSVData();
+        });
     </script>
 </body>
 </html>

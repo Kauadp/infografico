@@ -10,5 +10,20 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kauadp/infografico.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kauadp/infografico/issues"
+  },
+  "homepage": "https://github.com/Kauadp/infografico#readme",
+  "dependencies": {
+    "csv-parse": "^6.1.0"
   }
 }

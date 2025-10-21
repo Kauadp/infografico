@@ -230,7 +230,7 @@
         }
 
         .kpi-value {
-            font-size: 2rem;
+            font-size: 1.2rem;
             font-weight: 800;
             color: var(--color-secondary);
             margin-bottom: 0.5rem;
@@ -678,6 +678,14 @@
                     <div class="kpi-value" id="kpi-lojas-ativas">0</div>
                     <div class="kpi-label">🏪 Lojas Ativas</div>
                 </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-total-custo">R$ 0,00</div>
+                    <div class="kpi-label">🛠️ Total Preço de Custo</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-total-lucro">R$ 0,00</div>
+                    <div class="kpi-label">💰 Total de Lucro</div>
+                </div>
             </section>
 
             <div class="main-chart-container">
@@ -739,54 +747,53 @@
         let processedData = null;
         let charts = {};
 
-        // Metas por loja (placeholder)
+        // Mapeamento de fornecedores para lojas
+        const fornecedorToLoja = {
+            'HIGH COMPANY LTDA': 'HIGH',
+            'PASQUINI E PASQUINI CONFECCOES LTDA.': 'ACOSTAMENTO',
+            'VCI - VANGUARD CONFECCOES IMPORTADAS S/A': 'ARAMIS',
+            'ZZAB Comercio de Calcados Ltda. VANS': 'VANS',
+            'ZZAB Comercio de Calcados Ltda. AREZZO': 'AREZZO'
+        };
+
+        // Metas por loja
         const metas = {
-            'Vans': 100000,
-            'Arezzo': 100000,
-            'Aramis': 100000,
-            'Acostamento': 100000,
-            'High': 100000,
+            'VANS': 400000,
+            'AREZZO': 600000,
+            'ARAMIS': 200000,
+            'ACOSTAMENTO': 100000,
+            'HIGH': 200000,
             'Default': 100000
         };
 
         // Custo Operação por loja
         const custoOperacao = {
-            'Vans': 24285,
-            'Arezzo': 36429,
-            'Aramis': 12143,
-            'Acostamento': 15000,
-            'High': 12143,
+            'VANS': 28571.42,
+            'AREZZO': 28571.42,
+            'ARAMIS': 14285.71,
+            'ACOSTAMENTO': 14285.71,
+            'HIGH': 14285.71,
             'Default': 0
         };
 
         // Custo Montagem por loja
         const custoMontagem = {
-            'Vans': 21071,
-            'Arezzo': 31607,
-            'Aramis': 10536,
-            'Acostamento': 10536,
-            'High': 10536,
+            'VANS': 21071.42,
+            'AREZZO': 21071.42,
+            'ARAMIS': 10535.71,
+            'ACOSTAMENTO': 10535.71,
+            'HIGH': 10535.71,
             'Default': 0
         };
 
-        // Comissão por loja (em porcentagem)
-        const comissao = {
-            'Vans': 60,
-            'Arezzo': 60,
-            'Aramis': 55,
-            'Acostamento': 55,
-            'High': 55,
-            'Default': 0
-        };
-
-        // Receita Fixa por loja
-        const receitaFixa = {
-            'Vans': 0,
-            'Arezzo': 0,
-            'Aramis': 0,
-            'Acostamento': 0,
-            'High': 0,
-            'Default': 100000
+        // Imposto por loja (em porcentagem)
+        const imposto = {
+            'VANS': 10,
+            'AREZZO': 10,
+            'ARAMIS': 10,
+            'ACOSTAMENTO': 10,
+            'HIGH': 10,
+            'Default': 10
         };
 
         function showMessage(type, message) {
@@ -820,6 +827,10 @@
         function extractProduto(descricao) {
             if (!descricao) return 'Sem Produto';
             return descricao || 'Sem Produto';
+        }
+
+        function getLojaName(fornecedor) {
+            return fornecedorToLoja[fornecedor] || 'Sem Loja';
         }
 
         async function loadCSVData() {
@@ -873,25 +884,31 @@
         function processData() {
             let totalVendas = 0;
             let totalNotas = filteredData.length;
+            let totalCusto = 0;
+            let totalLucro = 0;
             let vendasPorLoja = {};
             let vendasPorDia = {};
             let vendasPorHora = {};
             let produtos = {};
 
             filteredData.forEach(row => {
-                const valorTotal = parseValor(row['Valor total líquido']);
+                const valorTotal = parseValor(row['Valor total']);
+                const precoCusto = parseValor(row['Preço de custo']);
                 const quantidade = parseValor(row['Quantidade']);
-                const loja = row['Fornecedor'] || 'Sem Loja';
+                const fornecedor = row['Fornecedor'] || 'Sem Fornecedor';
+                const loja = getLojaName(fornecedor);
                 const descricao = row['Descrição'] || 'Sem Descrição';
                 const produto = extractProduto(descricao);
                 
                 totalVendas += valorTotal;
+                totalCusto += precoCusto * quantidade;
 
                 if (!vendasPorLoja[loja]) {
-                    vendasPorLoja[loja] = { total: 0, quantidade: 0 };
+                    vendasPorLoja[loja] = { total: 0, quantidade: 0, custoTotal: 0 };
                 }
                 vendasPorLoja[loja].total += valorTotal;
                 vendasPorLoja[loja].quantidade += 1;
+                vendasPorLoja[loja].custoTotal += precoCusto * quantidade;
 
                 if (row['Data de emissão']) {
                     const dataHora = row['Data de emissão'].split(' ');
@@ -924,6 +941,17 @@
                 produtos[produtoKey].valorTotal += valorTotal;
             });
 
+            // Calcular Lucro Total por loja e somar para o total geral
+            Object.keys(vendasPorLoja).forEach(loja => {
+                const faturamento = vendasPorLoja[loja].total;
+                const custoOp = custoOperacao[loja] || custoOperacao['Default'];
+                const custoMont = custoMontagem[loja] || custoMontagem['Default'];
+                const imp = imposto[loja] || imposto['Default'];
+                const lucroLoja = faturamento - ((custoMont + custoOp) * (imp / 100));
+                vendasPorLoja[loja].lucroTotal = lucroLoja;
+                totalLucro += lucroLoja;
+            });
+
             const ticketMedio = totalNotas > 0 ? totalVendas / totalNotas : 0;
 
             const topProdutos = Object.values(produtos)
@@ -934,6 +962,8 @@
                 totalVendas,
                 totalNotas,
                 ticketMedio,
+                totalCusto,
+                totalLucro,
                 vendasPorLoja,
                 vendasPorDia,
                 vendasPorHora,
@@ -943,7 +973,7 @@
         }
 
         function setupFilters() {
-            const lojas = [...new Set(allData.map(r => r['Fornecedor']).filter(Boolean))].sort();
+            const lojas = [...new Set(allData.map(r => getLojaName(r['Fornecedor'])).filter(Boolean))].sort();
             const lojaSelect = document.getElementById('loja-filter');
             lojaSelect.innerHTML = '<option value="">Todas as Lojas</option>';
             lojas.forEach(f => {
@@ -991,7 +1021,7 @@
                     }
                 }
 
-                if (loja && row['Fornecedor'] !== loja) return false;
+                if (loja && getLojaName(row['Fornecedor']) !== loja) return false;
 
                 if (produto && extractProduto(row['Descrição']) !== produto) return false;
 
@@ -1028,6 +1058,10 @@
             document.getElementById('kpi-ticket-medio').textContent = 
                 processedData.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById('kpi-lojas-ativas').textContent = processedData.lojasAtivas;
+            document.getElementById('kpi-total-custo').textContent = 
+                processedData.totalCusto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('kpi-total-lucro').textContent = 
+                processedData.totalLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
             renderChartVendasLoja();
             renderChartVendasDia();
@@ -1242,10 +1276,10 @@
                 const meta = metas[nome] || metas['Default'];
                 const custoOp = custoOperacao[nome] || custoOperacao['Default'];
                 const custoMont = custoMontagem[nome] || custoMontagem['Default'];
-                const comiss = comissao[nome] || comissao['Default'];
-                const recFixa = receitaFixa[nome] || receitaFixa['Default'];
+                const imp = imposto[nome] || imposto['Default'];
                 const percentualMeta = (dados.total / meta) * 100;
                 const atingiuMeta = percentualMeta >= 100;
+                const lucroTotal = dados.lucroTotal;
 
                 const card = document.createElement('div');
                 card.className = 'store-card';
@@ -1277,12 +1311,12 @@
                             <div class="metric-value">${custoMont.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                         </div>
                         <div class="metric-item">
-                            <div class="metric-label">Comissão</div>
-                            <div class="metric-value">${comiss.toFixed(2)}%</div>
+                            <div class="metric-label">Imposto</div>
+                            <div class="metric-value">${imp.toFixed(2)}%</div>
                         </div>
                         <div class="metric-item">
-                            <div class="metric-label">Receita Fixa</div>
-                            <div class="metric-value">${recFixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                            <div class="metric-label">Lucro Total</div>
+                            <div class="metric-value">${lucroTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                         </div>
                     </div>
                     <div class="progress-bar-container">
@@ -1424,6 +1458,14 @@
                                 <div class="report-kpi-value">${processedData.lojasAtivas}</div>
                                 <div class="report-kpi-label">Lojas Ativas</div>
                             </div>
+                            <div class="report-kpi">
+                                <div class="report-kpi-value">${processedData.totalCusto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                                <div class="report-kpi-label">Total Preço de Custo</div>
+                            </div>
+                            <div class="report-kpi">
+                                <div class="report-kpi-value">${processedData.totalLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                                <div class="report-kpi-label">Total de Lucro</div>
+                            </div>
                         </div>
                     </div>
 
@@ -1496,13 +1538,13 @@
                                 ${Object.entries(processedData.vendasPorHora)
                                     .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
                                     .map(([hora, dados]) => {
-                                        const percentual = processedData.totalVendas > 0 ? (dados.total / processedData.totalVendas) * 100 : 0;
+                                        const percentual = processedData.totalVendas > 0 ? (dados.total / processedData.totalVendas * 100).toFixed(2) : '0.00';
                                         return `
                                             <tr>
                                                 <td><strong>${sanitize(hora)}:00</strong></td>
                                                 <td>${dados.quantidade}</td>
                                                 <td><strong>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
-                                                <td>${percentual.toFixed(2)}%</td>
+                                                <td>${percentual}%</td>
                                             </tr>
                                         `;
                                     }).join('')}
@@ -1511,47 +1553,44 @@
                     </div>
 
                     <div class="report-section">
-                        <h3>🏆 Top 10 Lojas - Performance e Metas</h3>
-                        <table class="report-table" role="grid" aria-label="Top 10 lojas">
+                        <h3>🏢 Ranking de Lojas</h3>
+                        <table class="report-table" role="grid" aria-label="Ranking de lojas">
                             <thead>
                                 <tr>
-                                    <th scope="col">Pos.</th>
+                                    <th scope="col">Posição</th>
                                     <th scope="col">Loja</th>
                                     <th scope="col">Faturamento</th>
                                     <th scope="col">Vendas</th>
                                     <th scope="col">Ticket Médio</th>
-                                    <th scope="col">Meta</th>
-                                    <th scope="col">% Meta</th>
                                     <th scope="col">Custo Operação</th>
                                     <th scope="col">Custo Montagem</th>
-                                    <th scope="col">Comissão</th>
-                                    <th scope="col">Receita Fixa</th>
+                                    <th scope="col">Imposto</th>
+                                    <th scope="col">Lucro Total</th>
+                                    <th scope="col">Progresso Meta</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${topLojas.map(([nome, dados], index) => {
-                                    const medals = ['🥇', '🥈', '🥉'];
-                                    const medal = index < 3 ? medals[index] : `${index + 1}º`;
                                     const ticketMedio = dados.quantidade > 0 ? dados.total / dados.quantidade : 0;
                                     const meta = metas[nome] || metas['Default'];
                                     const custoOp = custoOperacao[nome] || custoOperacao['Default'];
                                     const custoMont = custoMontagem[nome] || custoMontagem['Default'];
-                                    const comiss = comissao[nome] || comissao['Default'];
-                                    const recFixa = receitaFixa[nome] || receitaFixa['Default'];
-                                    const percentualMeta = meta > 0 ? (dados.total / meta) * 100 : 0;
+                                    const imp = imposto[nome] || imposto['Default'];
+                                    const percentualMeta = (dados.total / meta) * 100;
+                                    const lucroTotal = dados.lucroTotal;
+                                    const medal = index < 3 ? ['🥇', '🥈', '🥉'][index] : '';
                                     return `
                                         <tr>
-                                            <td style="text-align: center; font-size: 1.1rem;">${medal}</td>
+                                            <td style="text-align: center; font-size: 1.2rem;">${medal} ${index + 1}º</td>
                                             <td><strong>${sanitize(nome)}</strong></td>
-                                            <td><strong>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                            <td>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                             <td>${dados.quantidade}</td>
                                             <td>${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${meta.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td><strong>${percentualMeta.toFixed(1)}%</strong></td>
                                             <td>${custoOp.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                             <td>${custoMont.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${comiss.toFixed(2)}%</td>
-                                            <td>${recFixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${imp.toFixed(2)}%</td>
+                                            <td>${lucroTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${Math.min(percentualMeta, 100).toFixed(1)}%</td>
                                         </tr>
                                     `;
                                 }).join('')}
@@ -1564,7 +1603,7 @@
                         <table class="report-table" role="grid" aria-label="Top 5 produtos">
                             <thead>
                                 <tr>
-                                    <th scope="col">Pos.</th>
+                                    <th scope="col">Posição</th>
                                     <th scope="col">Produto</th>
                                     <th scope="col">Loja</th>
                                     <th scope="col">Quantidade</th>
@@ -1573,15 +1612,14 @@
                             </thead>
                             <tbody>
                                 ${processedData.topProdutos.map((produto, index) => {
-                                    const medals = ['🥇', '🥈', '🥉'];
-                                    const medal = index < 3 ? medals[index] : `${index + 1}º`;
+                                    const medal = index < 3 ? ['🥇', '🥈', '🥉'][index] : '';
                                     return `
                                         <tr>
-                                            <td style="text-align: center; font-size: 1.1rem;">${medal}</td>
+                                            <td style="text-align: center; font-size: 1.2rem;">${medal} ${index + 1}º</td>
                                             <td><strong>${sanitize(produto.descricao)}</strong></td>
                                             <td>${sanitize(produto.loja)}</td>
                                             <td>${produto.quantidade.toFixed(2)}</td>
-                                            <td><strong>${produto.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                            <td>${produto.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                         </tr>
                                     `;
                                 }).join('')}
@@ -1590,46 +1628,60 @@
                     </div>
 
                     <div class="report-footer">
-                        <strong>Relatório gerado automaticamente pelo Sistema de Auditoria de Vendas</strong><br>
-                        ${sanitize(dataAtual)}<br>
-                        Total de ${processedData.totalNotas} notas fiscais autorizadas analisadas
+                        Relatório gerado em ${sanitize(dataAtual)} | Sistema de Auditoria de Vendas
                     </div>
                 `;
 
-                await new Promise(resolve => {
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(resolve);
-                    });
-                });
+                setTimeout(async () => {
+                    try {
+                        const canvas = await html2canvas(reportContainer, {
+                            scale: 2,
+                            width: reportContainer.offsetWidth,
+                            windowWidth: reportContainer.offsetWidth,
+                            backgroundColor: '#FFFFFF',
+                            logging: false,
+                            useCORS: true
+                        });
 
-                const canvas = await html2canvas(reportContainer, {
-                    width: 1400,
-                    height: reportContainer.scrollHeight,
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff'
-                });
+                        const link = document.createElement('a');
+                        link.href = canvas.toDataURL('image/png');
+                        link.download = `relatorio-vendas-${new Date().toISOString().split('T')[0]}.png`;
+                        link.click();
 
-                document.body.removeChild(reportContainer);
-
-                const link = document.createElement('a');
-                link.download = `relatorio_vendas_${new Date().toISOString().split('T')[0]}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-
-                Swal.close();
-                showMessage('success', '✅ Relatório exportado com sucesso!');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Relatório Exportado!',
+                            text: 'O relatório foi gerado e baixado como PNG.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } catch (error) {
+                        console.error('Erro ao gerar PNG:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro',
+                            text: 'Não foi possível gerar o relatório: ' + error.message
+                        });
+                    } finally {
+                        document.body.removeChild(reportContainer);
+                        exportBtn.disabled = false;
+                        exportBtn.textContent = '📄 Exportar PNG';
+                    }
+                }, 1000);
             } catch (error) {
                 console.error('Erro ao exportar relatório:', error);
-                Swal.close();
-                showMessage('error', `❌ Erro ao gerar relatório: ${error.message}`);
-            } finally {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'Não foi possível gerar o relatório: ' + error.message
+                });
                 exportBtn.disabled = false;
                 exportBtn.textContent = '📄 Exportar PNG';
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        // Inicializar o dashboard
+        document.addEventListener('DOMContentLoaded', () => {
             loadCSVData();
         });
     </script>

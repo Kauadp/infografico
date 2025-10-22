@@ -686,6 +686,14 @@
                     <div class="kpi-value" id="kpi-total-lucro">R$ 0,00</div>
                     <div class="kpi-label">💰 Total de Lucro</div>
                 </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-projecao-faturamento-total">R$ 0,00</div>
+                    <div class="kpi-label">📈 Projeção Faturamento Total</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-projecao-lucro-total">R$ 0,00</div>
+                    <div class="kpi-label">💡 Projeção Lucro Total</div>
+                </div>
             </section>
 
             <div class="main-chart-container">
@@ -717,6 +725,9 @@
                             <th>Qtd. Vendas</th>
                             <th>Valor Total</th>
                             <th>Ticket Médio</th>
+                            <th>Preço de Custo</th>
+                            <th>Projeção Faturamento</th>
+                            <th>Projeção Lucro</th>
                         </tr>
                     </thead>
                     <tbody id="table-lojas-body"></tbody>
@@ -902,7 +913,7 @@
                 const precoCusto = parseValor(row['Preço de custo']);
                 const quantidade = parseValor(row['Quantidade']);
                 const fornecedor = row['Fornecedor'] || 'Sem Fornecedor';
-                const loja = getLojaName(fornecedor, row['Descrição']);                
+                const loja = getLojaName(fornecedor, row['Descrição']);
                 const descricao = row['Descrição'] || 'Sem Descrição';
                 const produto = extractProduto(descricao);
                 
@@ -910,7 +921,7 @@
                 totalCusto += precoCusto * quantidade;
 
                 if (!vendasPorLoja[loja]) {
-                    vendasPorLoja[loja] = { total: 0, quantidade: 0, custoTotal: 0 };
+                    vendasPorLoja[loja] = { total: 0, quantidade: 0, custoTotal: 0, dias: new Set() };
                 }
                 vendasPorLoja[loja].total += valorTotal;
                 vendasPorLoja[loja].quantidade += 1;
@@ -919,14 +930,15 @@
                 if (row['Data de emissão']) {
                     const dataHora = row['Data de emissão'].split(' ');
                     const data = dataHora[0];
-                    const hora = dataHora[1] ? dataHora[1].split(':')[0] : '00';
-                    
+                    vendasPorLoja[loja].dias.add(data);
+
                     if (!vendasPorDia[data]) {
                         vendasPorDia[data] = { total: 0, quantidade: 0 };
                     }
                     vendasPorDia[data].total += valorTotal;
                     vendasPorDia[data].quantidade += 1;
 
+                    const hora = dataHora[1] ? dataHora[1].split(':')[0] : '00';
                     if (!vendasPorHora[hora]) {
                         vendasPorHora[hora] = { total: 0, quantidade: 0 };
                     }
@@ -947,15 +959,25 @@
                 produtos[produtoKey].valorTotal += valorTotal;
             });
 
-            // Calcular Lucro Total por loja e somar para o total geral
+            // Calcular Lucro Total e Projeções por loja
             Object.keys(vendasPorLoja).forEach(loja => {
                 const faturamento = vendasPorLoja[loja].total;
+                const custoTotal = vendasPorLoja[loja].custoTotal;
                 const custoOp = custoOperacao[loja] || custoOperacao['Default'];
                 const custoMont = custoMontagem[loja] || custoMontagem['Default'];
                 const imp = imposto[loja] || imposto['Default'];
-                const lucroLoja = faturamento - (custoMont + custoOp) - (faturamento - (custoMont + custoOp))*(imp/100);
+                // Novo cálculo de lucro: (faturamento - todos os custos) * (1 - imposto/100)
+                const lucroLoja = (faturamento - (custoTotal + custoOp + custoMont)) * (1 - imp / 100);
                 vendasPorLoja[loja].lucroTotal = lucroLoja;
                 totalLucro += lucroLoja;
+
+                // Calcular projeção de faturamento e lucro
+                const qntdDias = vendasPorLoja[loja].dias.size || 1; // Evitar divisão por zero
+                const faturamentoDiario = faturamento / qntdDias;
+                const projecaoFaturamento = faturamentoDiario * 6;
+                const projecaoLucro = (projecaoFaturamento - (custoTotal + custoOp + custoMont)) * (1 - imp / 100);
+                vendasPorLoja[loja].projecaoFaturamento = projecaoFaturamento;
+                vendasPorLoja[loja].projecaoLucro = projecaoLucro;
             });
 
             const ticketMedio = totalNotas > 0 ? totalVendas / totalNotas : 0;
@@ -1068,6 +1090,17 @@
                 processedData.totalCusto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById('kpi-total-lucro').textContent = 
                 processedData.totalLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            // Calcular e exibir as projeções totais
+            const totalProjecaoFaturamento = Object.values(processedData.vendasPorLoja)
+                .reduce((sum, loja) => sum + loja.projecaoFaturamento, 0);
+            const totalProjecaoLucro = Object.values(processedData.vendasPorLoja)
+                .reduce((sum, loja) => sum + loja.projecaoLucro, 0);
+
+            document.getElementById('kpi-projecao-faturamento-total').textContent = 
+                totalProjecaoFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('kpi-projecao-lucro-total').textContent = 
+                totalProjecaoLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
             renderChartVendasLoja();
             renderChartVendasDia();
@@ -1286,6 +1319,7 @@
                 const percentualMeta = (dados.total / meta) * 100;
                 const atingiuMeta = percentualMeta >= 100;
                 const lucroTotal = dados.lucroTotal;
+                const custoTotal = dados.custoTotal;
 
                 const card = document.createElement('div');
                 card.className = 'store-card';
@@ -1319,6 +1353,10 @@
                         <div class="metric-item">
                             <div class="metric-label">Imposto</div>
                             <div class="metric-value">${imp.toFixed(2)}%</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Preço de Custo Total</div>
+                            <div class="metric-value">${custoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                         </div>
                         <div class="metric-item">
                             <div class="metric-label">Lucro Total</div>
@@ -1359,6 +1397,9 @@
                     <td>${dados.quantidade}</td>
                     <td><strong>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
                     <td>${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    <td>${dados.custoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    <td>${dados.projecaoFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    <td>${dados.projecaoLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1385,7 +1426,7 @@
             });
         }
 
-        async function exportReport() {
+        function exportReport() {
             const exportBtn = document.getElementById('export-btn');
             exportBtn.disabled = true;
             exportBtn.textContent = '📄 Gerando...';
@@ -1435,9 +1476,14 @@
 
                 const melhorDia = Object.entries(processedData.vendasPorDia)
                     .sort((a, b) => b[1].total - a[1].total)[0] || ['N/A', { total: 0, quantidade: 0 }];
-
                 const melhorHora = Object.entries(processedData.vendasPorHora)
                     .sort((a, b) => b[1].total - a[1].total)[0] || ['N/A', { total: 0, quantidade: 0 }];
+
+                // Calcular projeções totais
+                const totalProjecaoFaturamento = Object.values(processedData.vendasPorLoja)
+                    .reduce((sum, loja) => sum + loja.projecaoFaturamento, 0);
+                const totalProjecaoLucro = Object.values(processedData.vendasPorLoja)
+                    .reduce((sum, loja) => sum + loja.projecaoLucro, 0);
 
                 reportContainer.innerHTML = `
                     <div class="report-header" role="banner">
@@ -1446,38 +1492,63 @@
                     </div>
 
                     <div class="report-section">
-                        <h3>📈 KPIs Principais</h3>
-                        <div class="report-kpis" role="region" aria-label="Indicadores principais">
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${processedData.totalVendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-                                <div class="report-kpi-label">Total de Vendas</div>
-                            </div>
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${processedData.totalNotas}</div>
-                                <div class="report-kpi-label">Total de Notas</div>
-                            </div>
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${processedData.ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-                                <div class="report-kpi-label">Ticket Médio</div>
-                            </div>
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${processedData.lojasAtivas}</div>
-                                <div class="report-kpi-label">Lojas Ativas</div>
-                            </div>
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${processedData.totalCusto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-                                <div class="report-kpi-label">Total Preço de Custo</div>
-                            </div>
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${processedData.totalLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-                                <div class="report-kpi-label">Total de Lucro</div>
-                            </div>
-                        </div>
+                        <h3>🏢 Ranking de Lojas</h3>
+                        <table class="report-table" role="grid" aria-label="Ranking de lojas">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Posição</th>
+                                    <th scope="col">Loja</th>
+                                    <th scope="col">Faturamento</th>
+                                    <th scope="col">Vendas</th>
+                                    <th scope="col">Ticket Médio</th>
+                                    <th scope="col">Preço de Custo</th>
+                                    <th scope="col">Custo Operação</th>
+                                    <th scope="col">Custo Montagem</th>
+                                    <th scope="col">Imposto</th>
+                                    <th scope="col">Lucro Total</th>
+                                    <th scope="col">Projeção Faturamento</th>
+                                    <th scope="col">Projeção Lucro</th>
+                                    <th scope="col">Progresso Meta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${topLojas.map(([nome, dados], index) => {
+                                    const ticketMedio = dados.quantidade > 0 ? dados.total / dados.quantidade : 0;
+                                    const meta = metas[nome] || metas['Default'];
+                                    const custoOp = custoOperacao[nome] || custoOperacao['Default'];
+                                    const custoMont = custoMontagem[nome] || custoMontagem['Default'];
+                                    const imp = imposto[nome] || imposto['Default'];
+                                    const percentualMeta = (dados.total / meta) * 100;
+                                    const lucroTotal = dados.lucroTotal;
+                                    const projecaoFaturamento = dados.projecaoFaturamento;
+                                    const projecaoLucro = dados.projecaoLucro;
+                                    const custoTotal = dados.custoTotal;
+                                    const medal = index < 3 ? ['🥇', '🥈', '🥉'][index] : '';
+                                    return `
+                                        <tr>
+                                            <td style="text-align: center; font-size: 1.2rem;">${medal} ${index + 1}º</td>
+                                            <td><strong>${sanitize(nome)}</strong></td>
+                                            <td>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${dados.quantidade}</td>
+                                            <td>${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${custoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${custoOp.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${custoMont.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${imp.toFixed(2)}%</td>
+                                            <td>${lucroTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${projecaoFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${projecaoLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${Math.min(percentualMeta, 100).toFixed(1)}%</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
                     </div>
 
                     <div class="report-section">
                         <h3>🎯 Análise de Desempenho Temporal</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
                             <div style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 1.5rem; border-radius: 0.75rem; border-left: 6px solid #E54E88;">
                                 <h4 style="color: #E54E88; font-weight: 700; margin-bottom: 1rem;">📅 Melhor Dia de Vendas</h4>
                                 <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${sanitize(melhorDia[0])}</div>
@@ -1497,6 +1568,14 @@
                                 <div style="font-size: 0.9rem; color: #4A5568; margin-top: 0.5rem;">
                                     ${melhorHora[1].quantidade} vendas realizadas
                                 </div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 1.5rem; border-radius: 0.75rem; border-left: 6px solid #E54E88;">
+                                <h4 style="color: #E54E88; font-weight: 700; margin-bottom: 1rem;">📈 Projeção Faturamento Total</h4>
+                                <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${totalProjecaoFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 1.5rem; border-radius: 0.75rem; border-left: 6px solid #00BFB2;">
+                                <h4 style="color: #00BFB2; font-weight: 700; margin-bottom: 1rem;">💡 Projeção Lucro Total</h4>
+                                <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${totalProjecaoLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                             </div>
                         </div>
                     </div>
@@ -1554,52 +1633,6 @@
                                             </tr>
                                         `;
                                     }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="report-section">
-                        <h3>🏢 Ranking de Lojas</h3>
-                        <table class="report-table" role="grid" aria-label="Ranking de lojas">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Posição</th>
-                                    <th scope="col">Loja</th>
-                                    <th scope="col">Faturamento</th>
-                                    <th scope="col">Vendas</th>
-                                    <th scope="col">Ticket Médio</th>
-                                    <th scope="col">Custo Operação</th>
-                                    <th scope="col">Custo Montagem</th>
-                                    <th scope="col">Imposto</th>
-                                    <th scope="col">Lucro Total</th>
-                                    <th scope="col">Progresso Meta</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${topLojas.map(([nome, dados], index) => {
-                                    const ticketMedio = dados.quantidade > 0 ? dados.total / dados.quantidade : 0;
-                                    const meta = metas[nome] || metas['Default'];
-                                    const custoOp = custoOperacao[nome] || custoOperacao['Default'];
-                                    const custoMont = custoMontagem[nome] || custoMontagem['Default'];
-                                    const imp = imposto[nome] || imposto['Default'];
-                                    const percentualMeta = (dados.total / meta) * 100;
-                                    const lucroTotal = dados.lucroTotal;
-                                    const medal = index < 3 ? ['🥇', '🥈', '🥉'][index] : '';
-                                    return `
-                                        <tr>
-                                            <td style="text-align: center; font-size: 1.2rem;">${medal} ${index + 1}º</td>
-                                            <td><strong>${sanitize(nome)}</strong></td>
-                                            <td>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${dados.quantidade}</td>
-                                            <td>${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${custoOp.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${custoMont.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${imp.toFixed(2)}%</td>
-                                            <td>${lucroTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${Math.min(percentualMeta, 100).toFixed(1)}%</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
                             </tbody>
                         </table>
                     </div>

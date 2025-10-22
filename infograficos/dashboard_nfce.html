@@ -753,7 +753,8 @@
             'PASQUINI E PASQUINI CONFECCOES LTDA.': 'ACOSTAMENTO',
             'VCI - VANGUARD CONFECCOES IMPORTADAS S/A': 'ARAMIS',
             'ZZAB Comercio de Calcados Ltda. VANS': 'VANS',
-            'ZZAB Comercio de Calcados Ltda. AREZZO': 'AREZZO'
+            'ZZAB Comercio de Calcados Ltda. AREZZO': 'AREZZO',
+            '-': 'HIGH'
         };
 
         // Metas por loja
@@ -829,7 +830,12 @@
             return descricao || 'Sem Produto';
         }
 
-        function getLojaName(fornecedor) {
+        function getLojaName(fornecedor, descricao = '') {
+            // Para o fornecedor ZZAB, verificar a descrição
+            if (fornecedor === 'ZZAB Comercio de Calcados Ltda. AREZZO') {
+                return descricao.toUpperCase().startsWith('CALCADOS') ? 'AREZZO' : 'VANS';
+            }
+            // Para outros fornecedores, usar o mapeamento padrão
             return fornecedorToLoja[fornecedor] || 'Sem Loja';
         }
 
@@ -896,7 +902,7 @@
                 const precoCusto = parseValor(row['Preço de custo']);
                 const quantidade = parseValor(row['Quantidade']);
                 const fornecedor = row['Fornecedor'] || 'Sem Fornecedor';
-                const loja = getLojaName(fornecedor);
+                const loja = getLojaName(fornecedor, row['Descrição']);                
                 const descricao = row['Descrição'] || 'Sem Descrição';
                 const produto = extractProduto(descricao);
                 
@@ -947,7 +953,7 @@
                 const custoOp = custoOperacao[loja] || custoOperacao['Default'];
                 const custoMont = custoMontagem[loja] || custoMontagem['Default'];
                 const imp = imposto[loja] || imposto['Default'];
-                const lucroLoja = faturamento - ((custoMont + custoOp) * (imp / 100));
+                const lucroLoja = faturamento - (custoMont + custoOp) - (faturamento - (custoMont + custoOp))*(imp/100);
                 vendasPorLoja[loja].lucroTotal = lucroLoja;
                 totalLucro += lucroLoja;
             });

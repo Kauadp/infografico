@@ -843,7 +843,7 @@
 
         function getLojaName(fornecedor, descricao = '') {
             // Para o fornecedor ZZAB, verificar a descrição
-            if (fornecedor === 'ZZAB Comercio de Calcados Ltda. AREZZO') {
+            if (fornecedor === 'ZZAB Comercio de Calcados Ltda. AREZZO' || fornecedor === 'ZZAB Comercio de Calcados Ltda. VANS') {
                 return descricao.toUpperCase().startsWith('CALCADOS') ? 'AREZZO' : 'VANS';
             }
             // Para outros fornecedores, usar o mapeamento padrão
@@ -966,8 +966,8 @@
                 const custoOp = custoOperacao[loja] || custoOperacao['Default'];
                 const custoMont = custoMontagem[loja] || custoMontagem['Default'];
                 const imp = imposto[loja] || imposto['Default'];
-                // Novo cálculo de lucro: (faturamento - todos os custos) * (1 - imposto/100)
-                const lucroLoja = (faturamento - (custoTotal + custoOp + custoMont)) * (1 - imp / 100);
+                // Novo cálculo de lucro: SEM IMPOSTO E PREÇO DE CUSTO (ERRADO)
+                const lucroLoja = (faturamento - (custoOp + custoMont));
                 vendasPorLoja[loja].lucroTotal = lucroLoja;
                 totalLucro += lucroLoja;
 
@@ -975,7 +975,7 @@
                 const qntdDias = vendasPorLoja[loja].dias.size || 1; // Evitar divisão por zero
                 const faturamentoDiario = faturamento / qntdDias;
                 const projecaoFaturamento = faturamentoDiario * 6;
-                const projecaoLucro = (projecaoFaturamento - (custoTotal + custoOp + custoMont)) * (1 - imp / 100);
+                const projecaoLucro = (projecaoFaturamento - (custoOp + custoMont));
                 vendasPorLoja[loja].projecaoFaturamento = projecaoFaturamento;
                 vendasPorLoja[loja].projecaoLucro = projecaoLucro;
             });
@@ -1485,6 +1485,26 @@
                 const totalProjecaoLucro = Object.values(processedData.vendasPorLoja)
                     .reduce((sum, loja) => sum + loja.projecaoLucro, 0);
 
+                // Preparar dados por loja e dia (indexado por loja, depois por data)
+                const vendasPorDiaLoja = {};
+                filteredData.forEach(row => {
+                    const valorTotal = parseValor(row['Valor total']);
+                    const loja = getLojaName(row['Fornecedor'] || 'Sem Fornecedor', row['Descrição']);
+                    const dataCompleta = row['Data de emissão'] ? row['Data de emissão'].split(' ')[0] : 'Sem Data';
+                    const diaAbreviado = dataCompleta.substring(0, 5); // Ex.: "23/10" de "23/10/2025"
+                    if (!vendasPorDiaLoja[loja]) {
+                        vendasPorDiaLoja[loja] = {};
+                    }
+                    if (!vendasPorDiaLoja[loja][diaAbreviado]) {
+                        vendasPorDiaLoja[loja][diaAbreviado] = { total: 0, quantidade: 0 };
+                    }
+                    vendasPorDiaLoja[loja][diaAbreviado].total += valorTotal;
+                    vendasPorDiaLoja[loja][diaAbreviado].quantidade += parseValor(row['Quantidade']) || 1;
+                });
+
+                // Definir dias específicos (21/10 a 26/10)
+                const diasSelecionados = ['21/10', '22/10', '23/10', '24/10', '25/10', '26/10'];
+
                 reportContainer.innerHTML = `
                     <div class="report-header" role="banner">
                         <div class="report-title">📊 Relatório de Auditoria de Vendas</div>
@@ -1582,28 +1602,32 @@
 
                     <div class="report-section">
                         <h3>📅 Vendas por Dia</h3>
-                        <table class="report-table" role="grid" aria-label="Vendas por dia">
+                        <table class="report-table" role="grid" aria-label="Vendas por loja e dia">
                             <thead>
                                 <tr>
-                                    <th scope="col">Data</th>
-                                    <th scope="col">Quantidade de Vendas</th>
-                                    <th scope="col">Valor Total</th>
-                                    <th scope="col">Ticket Médio</th>
+                                    <th scope="col">Loja</th>
+                                    ${diasSelecionados.map(dia => `<th scope="col">${dia} (Faturamento)</th>`).join('')}
+                                    <th scope="col">Total (Faturamento)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${diasOrdenados.map(dia => {
-                                    const dados = processedData.vendasPorDia[dia];
-                                    const ticketMedio = dados.quantidade > 0 ? dados.total / dados.quantidade : 0;
+                                ${Object.entries(vendasPorDiaLoja).map(([loja, dias]) => {
+                                    const faturamentos = diasSelecionados.map(d => dias[d]?.total || 0);
+                                    const totalFaturamento = faturamentos.reduce((a, b) => a + b, 0);
                                     return `
                                         <tr>
-                                            <td><strong>${sanitize(dia)}</strong></td>
-                                            <td>${dados.quantidade}</td>
-                                            <td><strong>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
-                                            <td>${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td><strong>${sanitize(loja)}</strong></td>
+                                            ${faturamentos.map(f => `<td>${f.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>`).join('')}
+                                            <td><strong>${totalFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
                                         </tr>
                                     `;
                                 }).join('')}
+                                <!-- Total Geral -->
+                                <tr style="font-weight: bold; background-color: #e2e8f0;">
+                                    <td>Total Geral</td>
+                                    ${diasSelecionados.map(dia => `<td>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[dia]?.total || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>`).join('')}
+                                    <td><strong>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + Object.values(dias).reduce((s, d) => s + d.total, 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>

@@ -970,7 +970,7 @@
                 const custoMont = custoMontagem[loja] || custoMontagem['Default'];
                 const imp = imposto[loja] || imposto['Default'];
                 // Correção no cálculo do lucro: incluir custoTotal, custoOp e custoMont
-                const lucroLoja = faturamento - custoTotal - custoOp - custoMont;
+                const lucroLoja = (faturamento - custoTotal - custoOp - custoMont)*(1-imp/100);
                 vendasPorLoja[loja].lucroTotal = lucroLoja;
                 totalLucro += lucroLoja;
 
@@ -978,7 +978,7 @@
                 const qntdDias = vendasPorLoja[loja].dias.size || 1; // Evitar divisão por zero
                 const faturamentoDiario = faturamento / qntdDias;
                 const projecaoFaturamento = faturamentoDiario * 6;
-                const projecaoLucro = (projecaoFaturamento - custoTotal - custoOp - custoMont); // Ajustado para incluir custos fixos
+                const projecaoLucro = (projecaoFaturamento - custoTotal - custoOp - custoMont)*(1-imp/100); // Ajustado para incluir custos fixos
                 vendasPorLoja[loja].projecaoFaturamento = projecaoFaturamento;
                 vendasPorLoja[loja].projecaoLucro = projecaoLucro;
             });

@@ -13,7 +13,7 @@ dados$Data.de.emissão <- str_extract(dados$Data.de.emissão, "[0-9]+/[0-9]+/[0-
 table(dados$Data.de.emissão)
 
 high <- dados |> 
-  filter(Fornecedor == "-" | Fornecedor == "HIGH COMPANY LTDA")
+  filter(Fornecedor == "-")
 
 dados |> 
   filter(Nome.da.Loja == "Vans")
@@ -33,8 +33,30 @@ table(dados$Descrição)
 
 dados$Descrição
 
-str_detect(dados$Descrição, "CALCADOS")
+str(arezzo)
 
+arezzo <- arezzo %>%
+  mutate(
+    # 1. Converte 'Quantidade' para numérico, usando o locale (separador decimal = vírgula)
+    Quantidade = parse_number(Quantidade, locale = locale(decimal_mark = ",")),
+    
+    # 2. Converte 'Preço.de.custo' para numérico, usando o locale
+    `Preço.de.custo` = parse_number(`Preço.de.custo`, locale = locale(decimal_mark = ",")),
+    
+    Valor.total = parse_number(`Valor.total`, locale = locale(decimal_mark = ","))
+  )
+
+
+arezzo$custo_total <- arezzo$Quantidade*arezzo$Preço.de.custo
+
+sum(arezzo$Valor.total)
+
+sum(arezzo$custo_total, na.rm = T)
+
+arezzo_filtrado <- arezzo %>%
+  filter(str_starts(Descrição, "CALCADOS"))
+
+sum(arezzo_filtrado$Valor.total)
 
 high |> 
   filter(Número == 10811)

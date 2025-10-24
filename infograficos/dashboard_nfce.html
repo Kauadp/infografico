@@ -1467,6 +1467,9 @@
                     minute: '2-digit'
                 });
 
+                // Variável configurável para a data alvo das metas
+                const targetDate = '24/10'; // Altere esta data diariamente (formato DD/MM)
+
                 const topLojas = Object.entries(processedData.vendasPorLoja)
                     .sort((a, b) => b[1].total - a[1].total)
                     .slice(0, 10);
@@ -1494,19 +1497,27 @@
                     const valorTotal = parseValor(row['Valor total']);
                     const loja = getLojaName(row['Fornecedor'] || 'Sem Fornecedor', row['Descrição']);
                     const dataCompleta = row['Data de emissão'] ? row['Data de emissão'].split(' ')[0] : 'Sem Data';
-                    const diaAbreviado = dataCompleta.substring(0, 5); // Ex.: "23/10" de "23/10/2025"
+                    const diaAbreviado = dataCompleta.substring(0, 5); // Ex.: "24/10" de "24/10/2025"
                     if (!vendasPorDiaLoja[loja]) {
                         vendasPorDiaLoja[loja] = {};
                     }
                     if (!vendasPorDiaLoja[loja][diaAbreviado]) {
-                        vendasPorDiaLoja[loja][diaAbreviado] = { total: 0, quantidade: 0 };
+                        vendasPorDiaLoja[loja][diaAbreviado] = { total: 0 };
                     }
                     vendasPorDiaLoja[loja][diaAbreviado].total += valorTotal;
-                    vendasPorDiaLoja[loja][diaAbreviado].quantidade += parseValor(row['Quantidade']) || 1;
                 });
 
                 // Definir dias específicos (21/10 a 26/10)
                 const diasSelecionados = ['21/10', '22/10', '23/10', '24/10', '25/10', '26/10'];
+
+                // Exemplo de mapeamento de metas por loja para o targetDate (ajuste conforme necessário)
+                const metasPorLoja = {
+                    'VANS': 100000,    
+                    'AREZZO': 100000, 
+                    'ARAMIS': 60000,
+                    'ACOSTAMENTO': 40000,
+                    'HIGH': 40000  
+                };
 
                 reportContainer.innerHTML = `
                     <div class="report-header" role="banner">
@@ -1583,7 +1594,7 @@
                                 </div>
                             </div>
                             <div style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 1.5rem; border-radius: 0.75rem; border-left: 6px solid #00BFB2;">
-                                <h4 style="color: #00BFB2; font-weight: 700; margin-bottom: 1rem;">⏰ Melhor Horário</h4>
+                                <h3 style="color: #00BFB2; font-weight: 700; margin-bottom: 1rem;">⏰ Melhor Horário</h3>
                                 <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${sanitize(melhorHora[0])}:00</div>
                                 <div style="font-size: 1.1rem; color: #4A5568;">
                                     ${melhorHora[1].total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -1630,6 +1641,42 @@
                                     <td>Total Geral</td>
                                     ${diasSelecionados.map(dia => `<td>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[dia]?.total || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>`).join('')}
                                     <td><strong>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + Object.values(dias).reduce((s, d) => s + d.total, 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>🎯 Metas por Loja Dia 24/10</h3>
+                        <table class="report-table" role="grid" aria-label="Metas por loja">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Nome das Lojas</th>
+                                    <th scope="col">Faturamento</th>
+                                    <th scope="col">Meta do Dia</th>
+                                    <th scope="col">% da Meta do Dia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(vendasPorDiaLoja).map(([loja, dias]) => {
+                                    const faturamento = dias[targetDate]?.total || 0;
+                                    const metaLoja = metasPorLoja[loja] || metasPorLoja['Sem Loja'];
+                                    const percentualMeta = metaLoja > 0 ? (faturamento / metaLoja) * 100 : 0;
+                                    return `
+                                        <tr>
+                                            <td><strong>${sanitize(loja)}</strong></td>
+                                            <td>${faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${metaLoja.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${percentualMeta.toFixed(1)}%</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                                <!-- Total Geral -->
+                                <tr style="font-weight: bold; background-color: #e2e8f0;">
+                                    <td>Total Geral</td>
+                                    <td>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[targetDate]?.total || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                    <td>${Object.values(metasPorLoja).reduce((sum, meta) => sum + meta, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                    <td>${(Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[targetDate]?.total || 0), 0) / Object.values(metasPorLoja).reduce((sum, meta) => sum + meta, 0) * 100).toFixed(1)}%</td>
                                 </tr>
                             </tbody>
                         </table>

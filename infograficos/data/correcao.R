@@ -13,7 +13,7 @@ dados$Data.de.emissão <- str_extract(dados$Data.de.emissão, "[0-9]+/[0-9]+/[0-
 table(dados$Data.de.emissão)
 
 high <- dados |> 
-  filter(Fornecedor == "-")
+  filter(Fornecedor == "-" | Fornecedor == 'HIGH COMPANY LTDA')
 
 dados |> 
   filter(Nome.da.Loja == "Vans")

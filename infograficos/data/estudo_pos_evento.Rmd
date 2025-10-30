@@ -1,0 +1,305 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# *Documento para analisar os dados pós-evento Exagerado Carapina Outubro 2025*
+
+
+## Tratamento dos Dados
+
+```{r}
+
+# CARREGANDO AS LIBS NECESSÁRIAS E LENDO OS DADOS
+
+library(tidyverse)
+library(jsonlite)
+library(dunn.test)
+library(MASS)
+library(ggplot2)
+library(scales)
+library(ggthemes)
+
+dados <- read.csv('bling_export.csv', sep = ";")
+
+head(dados)
+
+```
+
+Vamos tratar os Fornecedores
+
+```{r}
+
+table(dados$Fornecedor)
+
+dados <- dados |> 
+  mutate(
+    loja = case_when(
+      Fornecedor == "-" | Fornecedor == 'HIGH COMPANY LTDA' ~ "High",
+      Fornecedor == "VCI - VANGUARD CONFECCOES IMPORTADAS S/A" ~ "Aramis",
+      Fornecedor == "PASQUINI E PASQUINI CONFECCOES LTDA." ~ "Acostamento",
+      Fornecedor == "ZZAB Comercio de Calcados Ltda. AREZZO" | Fornecedor == "ZZAB Comercio de Calcados Ltda. VANS" ~ "ZZAB Comercio de Calcados Ltda."
+      )
+  )
+
+table(dados$loja)
+
+dados <- dados |>
+  mutate(
+    loja = case_when(
+      loja == "ZZAB Comercio de Calcados Ltda." & str_starts(Descrição, "CALCADOS") ~ "Arezzo",
+            loja == "ZZAB Comercio de Calcados Ltda." & !str_starts(Descrição, "CALCADOS") ~ "Vans",
+      
+      TRUE ~ loja
+    )
+  )
+
+```
+
+Com os fornecedores mapeados, vamos partir para o tratamento das datas
+
+```{r}
+
+dados <- dados |> 
+  mutate(
+    data = dmy_hms(Data.de.emissão),
+    data_emissao = as.Date(data),
+    hora_emissao = hour(data)
+  )
+
+```
+
+Agora, vamos ajeitar o tipo dos dados
+
+```{r}
+
+dados <- dados |> 
+  mutate(
+    Quantidade = parse_number(Quantidade, locale = locale(decimal_mark = ",")),
+    Preço.de.custo = parse_number(Preço.de.custo, locale = locale(decimal_mark = ",")),
+    Valor.total = parse_number(Valor.total, locale = locale(decimal_mark = ",")),
+    Valor.unitário = parse_number(Valor.unitário, locale = locale(decimal_mark = ",")),
+    Valor.total.líquido = parse_number(Valor.total.líquido, locale = locale(decimal_mark = ","))
+  ) 
+
+## AJEITANDO O PREÇO DE CUSTO DOS PRODUTOS DA AREZZO
+
+dados <- dados |> 
+  mutate(
+    Preço.de.custo = case_when(
+      loja == "Arezzo" ~ 42,
+      TRUE ~ Preço.de.custo)
+  )
+
+## ADICIONANDO NOVA VARIÁVEL DE PREÇO DE CUSTO TOTAL
+
+dados <- dados |> 
+  mutate(
+    custo_total = Quantidade*Preço.de.custo
+  )
+
+```
+
+Pronto, podemos seguir para as análises mais aprofundadas
+
+## Análise Exploratória e Modelagem
+
+Vamos separar por projetos e tirar o máximo de insights possíveis de cada um
+
+### Análise de Comportamento de Compra por Horário e Dia (Pico de Demanda)
+
+Vamos tentar identificar os horários e dias de pico de vendas
+
+```{r}
+
+peak_demanda <- as.data.frame.matrix(table(dados$data_emissao, dados$hora_emissao)) |>
+  rownames_to_column(var = "data_emissao") |>
+  pivot_longer(
+    cols = -data_emissao,
+    names_to = "hora_emissao",
+    values_to = "contagem"
+  ) |>
+  mutate(
+    hora_emissao = as.factor(hora_emissao),
+    data_emissao = ymd(data_emissao)
+  )
+
+peak_demanda <- peak_demanda |> 
+  mutate(
+  hora_emissao = as.factor(hora_emissao),
+  dia_da_semana = factor(weekdays(data_emissao, abbreviate = TRUE)) 
+)
+
+peak_demanda |>
+  ggplot(aes(x = hora_emissao, y = dia_da_semana, fill = contagem)) +
+  geom_tile(color = "white") +
+  scale_fill_viridis_c() + 
+  labs(
+    title = "Heatmap de Contagem de Emissões por Hora e Dia da Semana",
+    x = "Hora da Emissão",
+    y = "Dia da Semana",
+    fill = "Contagem"
+  ) +
+  scale_y_discrete(limits = rev)
+
+```
+Podemos notar alguns padrões no mapa de calor, vamos ajustar um modelo binomial negativo para entendermos o peso das variáveis na contagem de emissão
+
+```{r}
+
+summary(glm.nb(contagem ~ dia_da_semana + hora_emissao, data = peak_demanda))
+
+```
+
+ - O modelo utilizou Domingo como dia de referência e 10h, o intercepto para o dia e hora de referência é aproximadamente $e^{3.52775} \approx 34$.
+
+ - Terça-feira parece ter uma contagem significativamente menor que Domingo, enquanto outros dias como Sábado parecem mais próximos do volume, terça-feira inclusive, é o único dia estatisticamente significativo no modelo.
+
+ - As horas da noite (18h, 19h, 20h) têm os maiores coeficientes, confirmando que o pico de emissões ocorre nesse período, sendo às 19h a hora com maior aumento em relação à hora de referência (10h).
+
+ - A hora 22h já volta a ter um volume de emissões próximo ao da hora de referência.
+
+Vamos analisar por Faturamento 
+
+```{r}
+
+peak_demanda_fat <- dados |> 
+  mutate(
+    data_emissao = as.factor(data_emissao),
+    hora_emissao = as.factor(hora_emissao)
+  )
+
+
+aov_lm <- aov(Valor.total ~ data_emissao * hora_emissao, data = peak_demanda_fat)
+
+summary(aov_lm)
+
+```
+O padrão de faturamento por hora é diferente em pelo menos um dos dias. 
+
+Onde está a diferença?
+
+```{r}
+
+TukeyHSD(aov_lm, which = "data_emissao")
+
+```
+Terça-feira é o dia em que o cliente mais gasta, ou seja, maior ticket médio.
+
+Vamos encontrar a hora de pico
+
+```{r}
+
+TukeyHSD(aov_lm, which = "hora_emissao")
+
+```
+O maior Ticket médio está concentrado pela manhã, de 10h às 11h.
+
+Vamos gerar o heatmap de faturamento
+
+```{r}
+
+dados |>
+  mutate(
+    dia_da_semana = wday(data_emissao, label = TRUE, abbr = FALSE),
+    
+    hora_emissao = as.factor(hora_emissao)
+  ) |>
+  group_by(dia_da_semana, hora_emissao) |>
+  summarise(
+    receita_bruta = sum(Valor.total, na.rm = TRUE),
+    .groups = 'drop'
+  ) |>
+  ggplot(aes(x = hora_emissao, y = dia_da_semana, fill = receita_bruta)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  scale_fill_viridis_c(
+    name = "Receita Bruta (R$)",
+    labels = scales::label_number(prefix = "R$")
+  ) +
+  labs(
+    title = "Heatmap: Receita Bruta por Hora do Dia e Dia da Semana",
+    x = "Hora da Emissão",
+    y = "Dia da Semana"
+  ) +
+  scale_y_discrete(limits = rev) + # Mantém a inversão para que a leitura seja de cima para baixo
+  theme_minimal()
+
+```
+
+ - O maior faturamento bruto ocorre no Sábado, especificamente das 12h às 18h, sendo o pico máximo concentrado por volta das 16h.
+
+ - Existe uma clara separação entre as métricas. O maior Ticket Médio ocorre no início do dia (10h/11h), enquanto o maior Volume de Transações ocorre no final do dia (19h).
+
+ - O dia da semana é o fator mais influente no faturamento, com o sábado e o domingo apresentando faturamento significativamente maior que os dias úteis.
+
+ - Os horários da manhã (10h-15h) de quarta, quinta e sexta-feira representam um ponto de baixa receita bruta, confirmando que o alto ticket médio não compensa o baixíssimo volume de transações nessas janelas.
+
+Vamos analisar um gráfico de área dupla para faturamento e volume de vendas
+
+```{r}
+
+dados_diarios <- dados |>
+  group_by(data_emissao) |>
+  summarise(
+    Faturamento_R = sum(Valor.total, na.rm = TRUE),
+    Quantidade_Vendas = n(), #
+    .groups = 'drop'
+  )
+
+fator_escala <- max(dados_diarios$Faturamento_R) / max(dados_diarios$Quantidade_Vendas)
+
+
+ggplot(dados_diarios, aes(x = data_emissao)) +
+  geom_area(aes(y = Faturamento_R), fill = "#f5c5d0", alpha = 0.8) +
+  geom_line(aes(y = Faturamento_R), color = "#e64a6e", linewidth = 1) +
+  geom_point(aes(y = Faturamento_R), color = "#e64a6e", size = 3) +
+  geom_area(aes(y = Quantidade_Vendas * fator_escala), fill = "#b3ecec", alpha = 0.8) +
+  geom_line(aes(y = Quantidade_Vendas * fator_escala), color = "#00c49f", linewidth = 1) +
+  geom_point(aes(y = Quantidade_Vendas * fator_escala), color = "#00c49f", size = 3) +
+  scale_y_continuous(
+    name = "Faturamento (R$)",
+    labels = scales::label_number(prefix = "R$ "),
+    sec.axis = sec_axis(~ . / fator_escala, name = "Quantidade", labels = scales::comma)
+  ) +
+  scale_x_date(date_breaks = "1 day", date_labels = "%d/%m/%Y") +
+  labs(
+    title = "Vendas por Dia",
+    x = NULL
+  ) +
+  theme_fivethirtyeight() +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    axis.title.y.left = element_text(color = "#e64a6e"),
+    axis.title.y.right = element_text(color = "#00c49f"),
+    legend.position = "none"
+  )
+
+```
+
+ - Tanto o faturamento quanto a quantidade de vendas mostram uma clara tendência de crescimento progressivo do dia 21/10 até 25/10.
+
+ - O pico de ambos o Faturamento e a Quantidade de Vendas ocorre no dia 25/10/2025.
+
+ - No domingo, a Quantidade de Vendas atinge seu ponto mais alto, indicando que o volume de transações não caiu ou até aumentou ligeiramente.
+
+ - Também no domingo, o Faturamento  cai bruscamente.
+
+ - A queda no faturamento com um volume alto de vendas significa que o Ticket Médio nesse dia caiu drasticamente.
+
+#### Conclusão
+
+ - O pico de Receita Bruta (Valor Total) ocorre no Sábado, das 12h às 18h, com concentração máxima por volta das 16h. Este é o momento ideal para alocar recursos e pessoal, pois a receita por hora atinge o máximo.
+
+ - Existe uma clara e estatisticamente significativa contradição no comportamento de compra: 
+ 
+    * Maior Ticket Médio: Ocorre nas horas da manhã (10h/11h), indicando que, embora o volume seja baixo, os clientes nessas horas gastam significativamente mais por transação.
+    
+    * Maior Ticket Médio: Ocorre nas horas da manhã (10h/11h), indicando que, embora o volume seja baixo, os clientes nessas horas gastam significativamente mais por transação.
+    
+ - O Dia da Semana é o fator mais forte para determinar o Valor Faturado, com o Sábado e o Domingo impulsionando a maior parte da receita bruta semanal.
+
+ - O dia 2025-10-21 (início da semana) é o ponto de menor Receita Bruta Total, mas possui o maior Ticket Médio por transação.
+ 
+ - As horas da manhã dos dias úteis (Quarta a Sexta, 10h-15h) apresentam baixa receita bruta, confirmando que o alto ticket médio não compensa o baixíssimo volume de transações.
+ 
+ - O faturamento e o volume mostram uma forte tendência de crescimento progressivo ao longo da semana, atingindo o máximo no final de semana (Dia 25/10), exceto pela queda notável no ticket médio do último dia.

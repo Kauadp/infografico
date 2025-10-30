@@ -1468,7 +1468,7 @@
                 });
 
                 // Variável configurável para a data alvo das metas
-                const targetDate = '24/10'; // Altere esta data diariamente (formato DD/MM)
+                const targetDate = '25/10'; // Ajustado para hoje (24/10/2025)
 
                 const topLojas = Object.entries(processedData.vendasPorLoja)
                     .sort((a, b) => b[1].total - a[1].total)
@@ -1487,15 +1487,19 @@
 
                 // Calcular projeções totais
                 const totalProjecaoFaturamento = Object.values(processedData.vendasPorLoja)
-                    .reduce((sum, loja) => sum + loja.projecaoFaturamento, 0);
+                    .reduce((sum, loja) => sum + (loja.projecaoFaturamento || 0), 0);
                 const totalProjecaoLucro = Object.values(processedData.vendasPorLoja)
-                    .reduce((sum, loja) => sum + loja.projecaoLucro, 0);
+                    .reduce((sum, loja) => sum + (loja.projecaoLucro || 0), 0);
 
                 // Preparar dados por loja e dia (indexado por loja, depois por data)
                 const vendasPorDiaLoja = {};
+                console.log('filteredData:', filteredData); // Depuração
                 filteredData.forEach(row => {
                     const valorTotal = parseValor(row['Valor total']);
-                    const loja = getLojaName(row['Fornecedor'] || 'Sem Fornecedor', row['Descrição']);
+                    console.log(`Valor total raw: ${row['Valor total']}, Parsed: ${valorTotal}`); // Depuração
+                    const fornecedor = row['Fornecedor'] || 'Sem Fornecedor';
+                    const loja = getLojaName(fornecedor, row['Descrição'] || '');
+                    console.log(`Fornecedor: ${fornecedor}, Descrição: ${row['Descrição']}, Loja: ${loja}`); // Depuração
                     const dataCompleta = row['Data de emissão'] ? row['Data de emissão'].split(' ')[0] : 'Sem Data';
                     const diaAbreviado = dataCompleta.substring(0, 5); // Ex.: "24/10" de "24/10/2025"
                     if (!vendasPorDiaLoja[loja]) {
@@ -1504,19 +1508,22 @@
                     if (!vendasPorDiaLoja[loja][diaAbreviado]) {
                         vendasPorDiaLoja[loja][diaAbreviado] = { total: 0 };
                     }
-                    vendasPorDiaLoja[loja][diaAbreviado].total += valorTotal;
+                    vendasPorDiaLoja[loja][diaAbreviado].total += valorTotal || 0; // Tratar NaN ou undefined
                 });
+                console.log('vendasPorDiaLoja:', vendasPorDiaLoja); // Depuração
 
                 // Definir dias específicos (21/10 a 26/10)
                 const diasSelecionados = ['21/10', '22/10', '23/10', '24/10', '25/10', '26/10'];
 
                 // Exemplo de mapeamento de metas por loja para o targetDate (ajuste conforme necessário)
                 const metasPorLoja = {
-                    'VANS': 100000,    
-                    'AREZZO': 100000, 
+                    'VANS': 100000,    // Meta de R$ 1000 para VANS no dia targetDate
+                    'AREZZO': 100000,  // Meta de R$ 1500 para AREZZO no dia targetDate
+                    'HIGH': 40000,
                     'ARAMIS': 60000,
                     'ACOSTAMENTO': 40000,
-                    'HIGH': 40000  
+                    'Sem Loja': 0  // Meta padrão para outras lojas, incluindo novos fornecedores
+                    // Adicione mais lojas conforme necessário
                 };
 
                 reportContainer.innerHTML = `
@@ -1548,31 +1555,31 @@
                             <tbody>
                                 ${topLojas.map(([nome, dados], index) => {
                                     const ticketMedio = dados.quantidade > 0 ? dados.total / dados.quantidade : 0;
-                                    const meta = metas[nome] || metas['Default'];
-                                    const custoOp = custoOperacao[nome] || custoOperacao['Default'];
-                                    const custoMont = custoMontagem[nome] || custoMontagem['Default'];
-                                    const imp = imposto[nome] || imposto['Default'];
-                                    const percentualMeta = (dados.total / meta) * 100;
-                                    const lucroTotal = dados.lucroTotal;
-                                    const projecaoFaturamento = dados.projecaoFaturamento;
-                                    const projecaoLucro = dados.projecaoLucro;
-                                    const custoTotal = dados.custoTotal;
+                                    const meta = metas[nome] || metas['Default'] || 0;
+                                    const custoOp = custoOperacao[nome] || custoOperacao['Default'] || 0;
+                                    const custoMont = custoMontagem[nome] || custoMontagem['Default'] || 0;
+                                    const imp = imposto[nome] || imposto['Default'] || 0;
+                                    const percentualMeta = meta > 0 ? (dados.total / meta) * 100 : 0;
+                                    const lucroTotal = dados.lucroTotal || 0;
+                                    const projecaoFaturamento = dados.projecaoFaturamento || 0;
+                                    const projecaoLucro = dados.projecaoLucro || 0;
+                                    const custoTotal = dados.custoTotal || 0;
                                     const medal = index < 3 ? ['🥇', '🥈', '🥉'][index] : '';
                                     return `
                                         <tr>
                                             <td style="text-align: center; font-size: 1.2rem;">${medal} ${index + 1}º</td>
                                             <td><strong>${sanitize(nome)}</strong></td>
-                                            <td>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${dados.quantidade}</td>
-                                            <td>${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${custoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${custoOp.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${custoMont.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${(dados.total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${dados.quantidade || 0}</td>
+                                            <td>${(ticketMedio || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${(custoTotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${(custoOp || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${(custoMont || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                             <td>${imp.toFixed(2)}%</td>
-                                            <td>${lucroTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${projecaoFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${projecaoLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${Math.min(percentualMeta, 100).toFixed(1)}%</td>
+                                            <td>${(lucroTotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${(projecaoFaturamento || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${(projecaoLucro || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${percentualMeta.toFixed(1)}%</td>
                                         </tr>
                                     `;
                                 }).join('')}
@@ -1587,29 +1594,29 @@
                                 <h4 style="color: #E54E88; font-weight: 700; margin-bottom: 1rem;">📅 Melhor Dia de Vendas</h4>
                                 <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${sanitize(melhorDia[0])}</div>
                                 <div style="font-size: 1.1rem; color: #4A5568;">
-                                    ${melhorDia[1].total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                    ${(melhorDia[1].total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                 </div>
                                 <div style="font-size: 0.9rem; color: #4A5568; margin-top: 0.5rem;">
-                                    ${melhorDia[1].quantidade} vendas realizadas
+                                    ${melhorDia[1].quantidade || 0} vendas realizadas
                                 </div>
                             </div>
                             <div style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 1.5rem; border-radius: 0.75rem; border-left: 6px solid #00BFB2;">
                                 <h3 style="color: #00BFB2; font-weight: 700; margin-bottom: 1rem;">⏰ Melhor Horário</h3>
                                 <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${sanitize(melhorHora[0])}:00</div>
                                 <div style="font-size: 1.1rem; color: #4A5568;">
-                                    ${melhorHora[1].total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                    ${(melhorHora[1].total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                 </div>
                                 <div style="font-size: 0.9rem; color: #4A5568; margin-top: 0.5rem;">
-                                    ${melhorHora[1].quantidade} vendas realizadas
+                                    ${melhorHora[1].quantidade || 0} vendas realizadas
                                 </div>
                             </div>
                             <div style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 1.5rem; border-radius: 0.75rem; border-left: 6px solid #E54E88;">
                                 <h4 style="color: #E54E88; font-weight: 700; margin-bottom: 1rem;">📈 Projeção Faturamento Total</h4>
-                                <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${totalProjecaoFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                                <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${(totalProjecaoFaturamento || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                             </div>
                             <div style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 1.5rem; border-radius: 0.75rem; border-left: 6px solid #00BFB2;">
                                 <h4 style="color: #00BFB2; font-weight: 700; margin-bottom: 1rem;">💡 Projeção Lucro Total</h4>
-                                <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${totalProjecaoLucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                                <div style="font-size: 1.5rem; font-weight: 800; color: #f95b3c; margin-bottom: 0.5rem;">${(totalProjecaoLucro || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                             </div>
                         </div>
                     </div>
@@ -1631,23 +1638,23 @@
                                     return `
                                         <tr>
                                             <td><strong>${sanitize(loja)}</strong></td>
-                                            ${faturamentos.map(f => `<td>${f.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>`).join('')}
-                                            <td><strong>${totalFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                            ${faturamentos.map(f => `<td>${(f || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>`).join('')}
+                                            <td><strong>${(totalFaturamento || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                         </tr>
                                     `;
                                 }).join('')}
                                 <!-- Total Geral -->
                                 <tr style="font-weight: bold; background-color: #e2e8f0;">
                                     <td>Total Geral</td>
-                                    ${diasSelecionados.map(dia => `<td>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[dia]?.total || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>`).join('')}
-                                    <td><strong>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + Object.values(dias).reduce((s, d) => s + d.total, 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                    ${diasSelecionados.map(dia => `<td>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[dia]?.total || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 0,00'}</td>`).join('')}
+                                    <td><strong>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + Object.values(dias).reduce((s, d) => s + (d.total || 0), 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || 'R$ 0,00'}</strong></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
                     <div class="report-section">
-                        <h3>🎯 Metas por Loja Dia 24/10</h3>
+                        <h3>🎯 Metas por Loja Dia 25/10</h3>
                         <table class="report-table" role="grid" aria-label="Metas por loja">
                             <thead>
                                 <tr>
@@ -1660,13 +1667,13 @@
                             <tbody>
                                 ${Object.entries(vendasPorDiaLoja).map(([loja, dias]) => {
                                     const faturamento = dias[targetDate]?.total || 0;
-                                    const metaLoja = metasPorLoja[loja] || metasPorLoja['Sem Loja'];
+                                    const metaLoja = metasPorLoja[loja] || metasPorLoja['Sem Loja'] || 0;
                                     const percentualMeta = metaLoja > 0 ? (faturamento / metaLoja) * 100 : 0;
                                     return `
                                         <tr>
                                             <td><strong>${sanitize(loja)}</strong></td>
-                                            <td>${faturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                            <td>${metaLoja.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${(faturamento || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${(metaLoja || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                             <td>${percentualMeta.toFixed(1)}%</td>
                                         </tr>
                                     `;
@@ -1674,9 +1681,9 @@
                                 <!-- Total Geral -->
                                 <tr style="font-weight: bold; background-color: #e2e8f0;">
                                     <td>Total Geral</td>
-                                    <td>${Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[targetDate]?.total || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                    <td>${Object.values(metasPorLoja).reduce((sum, meta) => sum + meta, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                    <td>${(Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[targetDate]?.total || 0), 0) / Object.values(metasPorLoja).reduce((sum, meta) => sum + meta, 0) * 100).toFixed(1)}%</td>
+                                    <td>${(Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[targetDate]?.total || 0), 0) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                    <td>${(Object.values(metasPorLoja).reduce((sum, meta) => sum + (meta || 0), 0) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                    <td>${(Object.values(vendasPorDiaLoja).reduce((sum, dias) => sum + (dias[targetDate]?.total || 0), 0) / Object.values(metasPorLoja).reduce((sum, meta) => sum + (meta || 0), 0) * 100 || 0).toFixed(1)}%</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1701,8 +1708,8 @@
                                         return `
                                             <tr>
                                                 <td><strong>${sanitize(hora)}:00</strong></td>
-                                                <td>${dados.quantidade}</td>
-                                                <td><strong>${dados.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                                <td>${dados.quantidade || 0}</td>
+                                                <td><strong>${(dados.total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                                 <td>${percentual}%</td>
                                             </tr>
                                         `;
@@ -1731,8 +1738,8 @@
                                             <td style="text-align: center; font-size: 1.2rem;">${medal} ${index + 1}º</td>
                                             <td><strong>${sanitize(produto.descricao)}</strong></td>
                                             <td>${sanitize(produto.loja)}</td>
-                                            <td>${produto.quantidade.toFixed(2)}</td>
-                                            <td>${produto.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td>${(produto.quantidade || 0).toFixed(2)}</td>
+                                            <td>${(produto.valorTotal || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                                         </tr>
                                     `;
                                 }).join('')}

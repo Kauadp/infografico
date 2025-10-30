@@ -1,6 +1,8 @@
 rm(list = ls())
 
 library(tidyverse)
+library(jsonlite)
+
 
 dados <- read.csv('bling_export.csv', sep = ";")
 
@@ -13,7 +15,11 @@ dados$Data.de.emissão <- str_extract(dados$Data.de.emissão, "[0-9]+/[0-9]+/[0-
 table(dados$Data.de.emissão)
 
 high <- dados |> 
+<<<<<<< HEAD
   filter(Fornecedor == "-" | Fornecedor == 'HIGH COMPANY LTDA')
+=======
+  filter(Fornecedor == "CIA. HERING.")
+>>>>>>> e79378a2a4f2d738eb19b03c1b3a59f9307184ec
 
 dados |> 
   filter(Nome.da.Loja == "Vans")

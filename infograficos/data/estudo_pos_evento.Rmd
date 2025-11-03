@@ -1,9 +1,13 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Estudo Pós-Evento"
+author: "Kauã Dias"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  word_document: default
+  pdf_document: default
+subtitle: Análise comparativa de indicadores
 ---
 
-# *Documento para analisar os dados pós-evento Exagerado Carapina Outubro 2025*
 
 
 ## Tratamento dos Dados
@@ -19,6 +23,7 @@ library(MASS)
 library(ggplot2)
 library(scales)
 library(ggthemes)
+library(cluster)
 
 dados <- read.csv('bling_export.csv', sep = ";")
 
@@ -97,6 +102,7 @@ dados <- dados |>
   mutate(
     custo_total = Quantidade*Preço.de.custo
   )
+
 
 ```
 
@@ -303,3 +309,50 @@ ggplot(dados_diarios, aes(x = data_emissao)) +
  - As horas da manhã dos dias úteis (Quarta a Sexta, 10h-15h) apresentam baixa receita bruta, confirmando que o alto ticket médio não compensa o baixíssimo volume de transações.
  
  - O faturamento e o volume mostram uma forte tendência de crescimento progressivo ao longo da semana, atingindo o máximo no final de semana (Dia 25/10), exceto pela queda notável no ticket médio do último dia.
+ 
+### Análise de Elasticidade de Preço por Produto
+
+Vamos tentar modelar quantidade de vendas pelo valor e loja
+
+```{r}
+
+modelo_elast <- lm(formula =  log(Quantidade) ~ log(Valor.unitário)*loja, data = dados)
+
+summary(modelo_elast)
+
+
+```
+O modelo prova que, para o produto analisado, a demanda é altamente inelástica em todas as lojas, menos na Arezzo, onde o aumento do preço unitário reflete no aumenta na quantidade de vendas.
+
+Vamos entender isso visualmente
+
+```{r}
+
+dados |> 
+  ggplot(aes(x = log(Valor.unitário), y = log(Quantidade), col = loja)) +
+  geom_point(alpha = 0.6, size = 1.5) + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  labs(
+    title = "Elasticidade de Preço (log-log) por Loja",
+    subtitle = "Variação da Quantidade em função do Valor Unitário",
+    x = "Log(Valor Unitário)",
+    y = "Log(Quantidade Vendida)",
+    color = "Loja"
+  ) +
+  theme_minimal() + # Estilo limpo
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5),
+    legend.position = "right"
+  )
+
+```
+
+
+## Conclusões Gerais
+
+ - O estudo provou a existência de dois picos de demanda opostos: o pico de Receita Bruta (Soma Total de Vendas) é impulsionado pelo Sábado à tarde (12h-18h), enquanto as manhãs dos dias úteis (10h/11h) são caracterizadas pelo pico de Ticket Médio (Valor por Transação). A maior receita ocorre quando o alto volume e o alto ticket médio se alinham no fim de semana.
+ 
+ - A demanda geral pelo produto analisado é altamente inelástica, o que significa que o consumidor é insensível ao preço. 
+ 
+ - A Loja Arezzo apresenta uma elasticidade positiva, o que é o comportamento de um Bem de Veblen (Status/Luxo). Isso sugere que o preço é um fator de valor para o cliente, e o aumento do preço na Arezzo levará tanto ao aumento da Receita quanto ao Volume de Vendas.

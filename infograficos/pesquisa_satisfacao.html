@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infográfico Estratégico - Evento Exagerado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            color: #1a1a1a;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .section-title {
+            border-bottom: 2px solid #D00000;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            color: #D00000;
+        }
+
+        .highlight-red { color: #D00000; font-weight: 700; }
+        .highlight-green { color: #008000; font-weight: 700; }
+        .highlight-blue { color: #0077b6; font-weight: 700; }
+        .brand-color { color: #D00000; }
+        .icon { font-size: 2rem; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-red { background-color: #FEE2E2; color: #991B1B; }
+        .badge-green { background-color: #DCFCE7; color: #166534; }
+        .badge-blue { background-color: #DBEAFE; color: #1E40AF; }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #D00000;
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2rem;
+            top: 0.5rem;
+            width: 12px;
+            height: 12px;
+            background-color: #D00000;
+            border-radius: 50%;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 0 3px #D00000;
+        }
+
+        /* botão exportar */
+        .export-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            z-index: 50;
+        }
+
+        .export-btn button {
+            background-color: #D00000;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: 0.2s;
+        }
+
+        .export-btn button:hover {
+            background-color: #a00000;
+        }
+
+        /* não incluir o botão no PDF */
+        @media print {
+            .export-btn {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- CONTEÚDO DO RELATÓRIO -->
+    <div id="report-content" class="max-w-5xl mx-auto p-4 md:p-8">
+        <!-- HEADER -->
+        <header class="text-center mb-10 p-8 bg-gradient-to-br from-red-50 to-white rounded-2xl shadow-xl border border-red-100">
+            <div class="flex justify-center mb-4">
+                <div class="bg-red-100 p-3 rounded-full">
+                    <span class="text-4xl">🎪</span>
+                </div>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black brand-color mb-3">
+                EXAGERADO: ANÁLISE ESTRATÉGICA
+            </h1>
+            <p class="text-xl text-gray-700 mb-2">60º Evento no Pavilhão de Carapina – Outubro 2025</p>
+            <p class="text-sm text-gray-500">79 clientes analisados | Ciência de Dados Aplicada</p>
+        </header>
+
+        <!-- SEÇÃO 1: DISPARIDADE CRÍTICA -->
+        <section class="mb-12">
+            <h2 class="section-title text-2xl flex items-center">
+                <span class="icon mr-3">📊</span> 1. A Grande Disparidade: Receita vs. Engajamento
+            </h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- BOOMERS/X -->
+                <div class="card border-t-4 border-red-600 transform hover:scale-105 transition-transform">
+                    <div class="flex items-center mb-4">
+                        <span class="icon brand-color mr-3">👴💰</span>
+                        <h3 class="text-2xl font-bold">Segmento 1: Compradores Fiéis</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <p class="flex items-center"><span class="badge badge-red mr-2">Perfil</span> <strong>Boomer/X</strong> (35+ anos)</p>
+                        <p class="flex items-center"><span class="badge badge-red mr-2">Classe</span> <strong>Classe D</strong> (R$1.000–3.000)</p>
+                        <p class="flex items-center"><span class="badge badge-red mr-2">Origem</span> <strong>Serra</strong> (maior volume)</p>
+                        <p class="flex items-center"><span class="badge badge-red mr-2">Gasto</span> <strong>97%</strong> Alto Gasto (≥ R$500)</p>
+                    </div>
+                    <div class="mt-5 p-4 bg-red-50 rounded-xl border border-red-200">
+                        <p class="font-bold text-red-800 text-sm">
+                            💡 <strong>Motor Financeiro:</strong> Eles pagam as contas do evento.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- GERAÇÃO Z -->
+                <div class="card border-t-4 border-blue-600 transform hover:scale-105 transition-transform">
+                    <div class="flex items-center mb-4">
+                        <span class="icon text-blue-600 mr-3">🧑‍🎤✨</span>
+                        <h3 class="text-2xl font-bold">Segmento 2: Caçadores de Ofertas</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <p class="flex items-center"><span class="badge badge-blue mr-2">Perfil</span> <strong>Geração Z</strong> (15–26 anos)</p>
+                        <p class="flex items-center"><span class="badge badge-blue mr-2">Classe</span> <strong>Classe E</strong> (&lt; R$1.000)</p>
+                        <p class="flex items-center"><span class="badge badge-blue mr-2">Origem</span> <strong>Vitória</strong></p>
+                        <p class="flex items-center"><span class="badge badge-blue mr-2">Gasto</span> <strong>Baixo</strong> (foco em preço)</p>
+                    </div>
+                    <div class="mt-5 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <p class="font-bold text-blue-800 text-sm">
+                            💡 <strong>Motor de Engajamento:</strong> Eles espalham o evento nas redes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 2: MÉTRICAS DE IMPACTO -->
+        <section class="mb-12">
+            <h2 class="section-title text-2xl flex items-center">
+                <span class="icon mr-3">🚀</span> 2. Fatores que Movem o NPS (Modelo Logístico)
+            </h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- GERAÇÃO Z -->
+                <div class="card text-center bg-gradient-to-br from-green-50 to-white border border-green-200">
+                    <div class="text-sm font-bold text-green-700 mb-2">Geração Z vs. Boomer/X</div>
+                    <p class="metric-value text-green-600">45<small class="text-lg">x</small></p>
+                    <p class="text-gray-700 font-medium text-sm">Mais chance de ser <strong>Promotor</strong></p>
+                    <p class="text-xs text-gray-500 mt-1">Odds Ratio (OR)</p>
+                </div>
+
+                <!-- ALTO GASTO -->
+                <div class="card text-center bg-gradient-to-br from-yellow-50 to-white border border-yellow-200">
+                    <div class="text-sm font-bold text-yellow-700 mb-2">Alto Gasto vs. Baixo Gasto</div>
+                    <p class="metric-value text-yellow-600">18<small class="text-lg">x</small></p>
+                    <p class="text-gray-700 font-medium text-sm">Mais chance de ser <strong>Promotor</strong></p>
+                    <p class="text-xs text-gray-500 mt-1">Quem gasta mais, ama mais</p>
+                </div>
+
+                <!-- VIP FUNCIONA -->
+                <div class="card text-center bg-gradient-to-br from-emerald-50 to-white border border-emerald-200">
+                    <div class="text-sm font-bold text-emerald-700 mb-2">VIP (Carteirinha) Usada</div>
+                    <p class="metric-value text-emerald-600">3<small class="text-lg">x</small></p>
+                    <p class="text-gray-700 font-medium text-sm">Mais chance de ser <strong>Promotor</strong></p>
+                    <p class="text-xs text-gray-500 mt-1">Benefício comprovado</p>
+                </div>
+            </div>
+
+            <!-- ALERTA VIP -->
+            <div class="mt-6 p-5 bg-red-50 border-l-4 border-red-600 rounded-r-xl">
+                <p class="font-bold text-red-800 flex items-center">
+                    <span class="mr-2">⚠️</span> Falha Crítica: <span class="highlight-red ml-1">A maioria NÃO SABE do VIP</span>
+                </p>
+                <p class="text-sm text-red-700 mt-1">Quem "nem ficou sabendo" tem <strong>5x MENOS chance</strong> de recomendar.</p>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 3: ANÁLISE POR GERAÇÃO -->
+        <section class="mb-12">
+            <h2 class="section-title text-2xl flex items-center">
+                <span class="icon mr-3">🎯</span> 3. Perfil Detalhado por Geração
+            </h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- BOOMER/X -->
+                <div class="card">
+                    <h3 class="text-xl font-bold text-red-700 mb-4">👴 Boomer/X: O Cliente de Valor</h3>
+                    <div class="space-y-3 text-sm">
+                        <p><strong>Top 3 Segmentos:</strong> Calçados, Moda Masc., Moda Fem.</p>
+                        <p><strong>Top Atrações:</strong> Shows/DJs, Feirinha Adoção, Fanfarra</p>
+                        <p><strong>Transporte:</strong> 80% carro próprio</p>
+                        <p><strong>Descoberta:</strong> Boca a boca + Redes Sociais</p>
+                        <p><strong>Sentimento:</strong> Formal, focado em organização</p>
+                    </div>
+                </div>
+
+                <!-- GERAÇÃO Z -->
+                <div class="card">
+                    <h3 class="text-xl font-bold text-blue-700 mb-4">🧑‍🎤 Geração Z: O Influenciador</h3>
+                    <div class="space-y-3 text-sm">
+                        <p><strong>Marcas Procuradas:</strong> Farm (7x), Borana, Nike, Vans</p>
+                        <p><strong>Gasto Médio:</strong> R$100–300</p>
+                        <p><strong>Sentimento:</strong> Superlativo ("show", "tops", "amei")</p>
+                        <p><strong>Score Médio:</strong> 1.24 (mais alto)</p>
+                        <p><strong>Engajamento:</strong> Maior NPS e boca a boca</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 4: PLANO DE AÇÃO -->
+        <section class="mb-12">
+            <h2 class="section-title text-2xl flex items-center">
+                <span class="icon mr-3">🛠️</span> 4. Plano de Ação Prioritário
+            </h2>
+            <div class="card p-6 bg-gradient-to-br from-red-50 to-white border border-red-200">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <h4 class="font-bold text-red-800">1. O problema vai além de marcas, atração cultural e logística</h4>
+                        <p class="text-sm text-gray-700 mt-1">O produto é universalmente amado. O problema é <strong>fidelização pessoal</strong>.</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h4 class="font-bold text-red-800">2. Campanha "EXG de Carteirinha" nas Redes + Boca a Boca</h4>
+                        <p class="text-sm text-gray-700 mt-1">Foco em <strong>status, exclusividade e benefícios reais</strong> para Boomer/X.</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h4 class="font-bold text-red-800">3. Otimizar Margem com Geração Z</h4>
+                        <p class="text-sm text-gray-700 mt-1">Garantir presença de <strong>Farm, Nike, Vans</strong> (marcas trends) para captar o pouco que gastam.</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-5 bg-green-50 border-l-4 border-green-600 rounded-r-xl">
+                    <p class="font-bold text-green-800">
+                        🎯 <strong>Meta Final:</strong> Transformar o Boomer/X (receita) em Promotor via VIP.
+                    </p>
+                    <p class="text-sm text-green-700 mt-1">E usar a Geração Z como canal de aquisição orgânica.</p>
+                </div>
+            </div>
+        </section>
+
+         <!-- FOOTER -->
+        <footer class="text-center text-xs text-gray-500 pt-8 border-t border-gray-200">
+            <p>Relatório gerado em 07 de novembro de 2025 | Sistema de Análise de Clientes Exagerado</p>
+            <p class="mt-1">Baseado em 79 respostas validadas | Modelos estatísticos: Cluster, Logístico, Qui-Quadrado, Sentimento</p>
+        </footer>
+    </div>
+
+    <!-- BOTÃO EXPORTAR PDF -->
+    <div class="export-btn no-print">
+        <button onclick="exportReportPDF()">📄 Exportar PDF</button>
+    </div>
+
+    <script>
+        function exportReportPDF() {
+            const element = document.getElementById('report-content');
+
+            const opt = {
+                margin: [0.3, 0.3],
+                filename: 'infografico_exagerado.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    scrollY: 0
+                },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>

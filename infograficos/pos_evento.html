@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Infográfico: Estudo Pós-Evento</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* Paleta de cores do e-commerce */
         :root {
             --color-primary-green: #57da1c;
             --color-secondary-purple: #E54E88;
@@ -17,18 +17,17 @@
             --color-light-gray-bg: #F0F0F0;
             --color-white: #FFFFFF;
             --color-text-dark: #4A5568;
-            --color-light-hover: #EFEFEF;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Nunito', sans-serif; 
-            background-color: var(--color-light-gray-bg); 
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--color-light-gray-bg);
             color: var(--color-text-dark);
             line-height: 1.6;
             padding: 1rem;
@@ -156,22 +155,12 @@
 
         .card-list {
             list-style: none;
-            padding-left: 0;
         }
 
         .card-list li {
             font-size: 1.1rem;
             margin-bottom: 0.75rem;
-            padding-left: 1.5rem;
-            position: relative;
             font-weight: 600;
-        }
-
-        .card-list li::before {
-            content: '▸';
-            position: absolute;
-            left: 0;
-            font-weight: 800;
         }
 
         .trend-card {
@@ -183,13 +172,8 @@
             transition: all 0.3s ease;
         }
 
-        .trend-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
-        }
-
         .trend-icon {
-            font-size: 2.5rem;
+            font-size: 1.5rem;
             font-weight: 800;
             margin-bottom: 0.75rem;
         }
@@ -208,37 +192,15 @@
             font-weight: 600;
         }
 
-        .card-crescimento {
-            border-left-color: var(--color-primary-green);
-        }
-
-        .card-crescimento .trend-icon {
-            color: var(--color-primary-green);
-        }
-
-        .card-baixa {
-            border-left-color: var(--color-accent-yellow);
-            background-color: #fffbeb;
-        }
-
-        .card-baixa .trend-icon {
-            color: var(--color-accent-yellow);
-        }
-
-        .card-anomalia {
-            border-left-color: #ef4444;
-            background-color: #fef2f2;
-        }
-
-        .card-anomalia .trend-icon {
-            color: #ef4444;
-        }
+        .card-crescimento { border-left-color: var(--color-primary-green); }
+        .card-crescimento .trend-icon { color: var(--color-primary-green); }
+        .card-baixa { border-left-color: var(--color-accent-yellow); background-color: #fffbeb; }
+        .card-anomalia { border-left-color: #ef4444; background-color: #fef2f2; }
 
         .elasticity-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 2rem;
-            align-items: stretch;
         }
 
         .elasticity-card {
@@ -247,12 +209,6 @@
             border-radius: 1rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             border-left: 6px solid;
-            transition: all 0.3s ease;
-        }
-
-        .elasticity-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
         }
 
         .elasticity-general {
@@ -272,126 +228,51 @@
             margin-bottom: 1rem;
         }
 
-        .elasticity-general .elasticity-title {
-            color: #2563eb;
-        }
-
-        .elasticity-special .elasticity-title {
-            color: #7e22ce;
-            display: flex;
-            align-items: center;
-        }
-
-        .elasticity-subtitle {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: #7e22ce;
-            margin-bottom: 1rem;
-        }
-
         .elasticity-text {
             font-size: 1.1rem;
-            color: var(--color-text-dark);
-            line-height: 1.6;
             font-weight: 600;
+            color: var(--color-text-dark);
         }
 
         .elasticity-list {
             list-style: none;
-            padding-left: 0;
             margin-top: 1rem;
         }
 
         .elasticity-list li {
             font-size: 1.1rem;
             margin-bottom: 1rem;
-            padding-left: 1.5rem;
-            position: relative;
             font-weight: 600;
-            color: var(--color-text-dark);
         }
 
-        .elasticity-list li::before {
-            content: '▸';
-            position: absolute;
-            left: 0;
-            color: #a855f7;
-            font-weight: 800;
-        }
-
-        .footer {
+        .export-btn {
             text-align: center;
-            padding-top: 2rem;
-            border-top: 3px solid var(--color-light-gray-bg);
-            margin-top: 3rem;
+            margin: 2rem 0;
         }
 
-        .footer-title {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--color-dark-blue);
-            margin-bottom: 0.75rem;
+        .export-btn button {
+            background-color: var(--color-secondary-purple);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
         }
 
-        .footer-text {
-            font-size: 1.25rem;
-            color: var(--color-text-dark);
-            font-weight: 600;
+        .export-btn button:hover {
+            background-color: var(--color-accent-orange);
         }
 
-        @media (max-width: 768px) {
-            .main-header h1 {
-                font-size: 1.75rem;
-            }
-
-            .main-header p {
-                font-size: 1rem;
-            }
-
-            .section-title {
-                font-size: 1.5rem;
-            }
-
-            .grid-2, .grid-3, .elasticity-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .container {
-                padding: 1rem;
-            }
-        }
-
-        /* Estilos específicos para impressão/PDF */
         @media print {
-            body {
-                background-color: white;
-                padding: 0;
-            }
-
-            .container {
-                box-shadow: none;
-                max-width: 100%;
-            }
-
-            .card:hover, .trend-card:hover, .elasticity-card:hover {
-                transform: none;
-            }
-
-            button {
-                display: none !important;
-            }
-
-            .section {
-                page-break-inside: avoid;
-            }
+            button { display: none !important; }
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-    
-
-    <div class="container">
+    <div id="report-content" class="container">
         <header class="main-header">
             <h1>ANÁLISE PÓS-EVENTO PAVILHÃO OUTUBRO 2025</h1>
             <p>Visão Estratégica de Comportamento e Elasticidade de Preço</p>
@@ -404,7 +285,6 @@
             <div class="grid-2">
                 <div class="card card-receita">
                     <div class="card-header">
-                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0zM10 20v-2.83c0-.362.245-.71.554-.91l1.592-1.06c.264-.176.602-.176.866 0l1.592 1.06c.309.2.554.548.554.91V20M12 12h.01"></path></svg>
                         <h3 class="card-title">PICO DE RECEITA BRUTA</h3>
                     </div>
                     <ul class="card-list">
@@ -415,7 +295,6 @@
 
                 <div class="card card-ticket">
                     <div class="card-header">
-                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         <h3 class="card-title">PICO DE TICKET MÉDIO</h3>
                     </div>
                     <ul class="card-list">
@@ -428,23 +307,22 @@
 
         <section class="section">
             <h2 class="section-title">2. Tendências e Anomalias</h2>
-
             <div class="grid-3">
                 <div class="trend-card card-crescimento">
-                    <div class="trend-icon">↗️ Crescimento</div>
-                    <p class="trend-title">Faturamento e Volume sobem progressivamente durante a semana.</p>
+                    <div class="trend-icon">⬈ Crescimento</div>
+                    <p class="trend-title">Faturamento e volume sobem progressivamente durante a semana.</p>
                     <p class="trend-description">O pico de vendas ocorreu no penúltimo dia (25/10), impulsionado pelo fim de semana.</p>
                 </div>
 
                 <div class="trend-card card-baixa">
                     <div class="trend-icon">📉 Baixa Receita</div>
-                    <p class="trend-title">Manhãs de dias úteis (10h-15h) de Quarta a Sexta.</p>
+                    <p class="trend-title">Manhãs de dias úteis (10h-15h) de quarta a sexta.</p>
                     <p class="trend-description">O alto Ticket Médio <strong>não compensa</strong> o baixíssimo volume de transações.</p>
                 </div>
 
                 <div class="trend-card card-anomalia">
                     <div class="trend-icon">⚠️ Anomalia</div>
-                    <p class="trend-title">No Domingo, o Faturamento <strong>cai bruscamente</strong>, mas o Volume de Vendas se mantém alto.</p>
+                    <p class="trend-title">No domingo, o faturamento <strong>cai bruscamente</strong>, mas o volume de vendas se mantém alto.</p>
                     <p class="trend-description">O Ticket Médio neste dia desaba drasticamente.</p>
                 </div>
             </div>
@@ -452,26 +330,38 @@
 
         <section class="section">
             <h2 class="section-title">3. Elasticidade de Preço: A Oportunidade Luxo</h2>
-
             <div class="elasticity-grid">
                 <div class="elasticity-card elasticity-general">
                     <div class="elasticity-title">DEMANDA GERAL INELÁSTICA</div>
                     <p class="elasticity-text">Para a maioria dos produtos e lojas, a demanda é <strong>altamente inelástica</strong>.</p>
-                    <p class="elasticity-text" style="margin-top: 1rem;">Isso significa que, em geral, o consumidor é <strong>insensível a pequenas variações de preço</strong>.</p>
+                    <p class="elasticity-text" style="margin-top: 1rem;">Isso significa que o consumidor é <strong>insensível a pequenas variações de preço</strong>.</p>
                 </div>
 
                 <div class="elasticity-card elasticity-special">
-                    <div class="elasticity-title">
-                        <svg style="width: 2rem; height: 2rem; margin-right: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.505-9-1.571M12 3v11.5"></path></svg>
-                        A LOJA AREZZO É EXCEÇÃO
-                    </div>
-                    <p class="elasticity-subtitle">COMPORTAMENTO DE BEM DE VEBLEN (LUXO/STATUS)</p>
-                    <ul class="elasticity-list">
-                        <li><strong>Elasticidade Positiva:</strong> O aumento do preço unitário leva ao <strong>aumento da quantidade de vendas</strong>.</li>
-                    </ul>
+                    <div class="elasticity-title">A LOJA AREZZO É EXCEÇÃO</div>
+                    <p class="elasticity-text"><strong>Comportamento de Bem de Veblen (Luxo/Status):</strong> o aumento do preço leva ao aumento das vendas.</p>
                 </div>
             </div>
         </section>
     </div>
+
+    <div class="export-btn">
+        <button onclick="exportReportPDF()">📊 Exportar PDF</button>
+    </div>
+
+    <script>
+        function exportReportPDF() {
+            const element = document.getElementById('report-content');
+            const opt = {
+                margin: [0.5, 0.5],
+                filename: 'relatorio_pos_evento.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
 </body>
 </html>

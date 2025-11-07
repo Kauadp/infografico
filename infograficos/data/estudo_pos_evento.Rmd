@@ -242,7 +242,7 @@ dados |>
 
 Vamos analisar um gráfico de área dupla para faturamento e volume de vendas
 
-```{r}
+```{r fig.height=3.6, fig.width=6.4}
 
 dados_diarios <- dados |>
   group_by(data_emissao) |>

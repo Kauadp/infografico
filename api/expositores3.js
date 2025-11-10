@@ -76,8 +76,7 @@ export default async function handler(req, res) {
             'NumeroFuncionarios': numeroFuncionarios || null,
             'Segmento': segmento || null,
             'LocalEvento': localEvento || null,
-            'StatusAvanco': 'Pendente', // Inicialmente pendente
-            'DataCriacao': new Date().toISOString()
+            'StatusAvanco': 'Pendente' // Inicialmente pendente
           }
         })
       });

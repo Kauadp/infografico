@@ -60,6 +60,8 @@ export default async function handler(req, res) {
         });
       }
 
+      const dataCriacao = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
       const response = await fetch(baseUrl, {
         method: 'POST',
         headers: { 
@@ -76,7 +78,8 @@ export default async function handler(req, res) {
             'NumeroFuncionarios': numeroFuncionarios || null,
             'Segmento': segmento || null,
             'LocalEvento': localEvento || null,
-            'StatusAvanco': 'Pendente' // Inicialmente pendente
+            'StatusAvanco': 'Pendente',
+            'DataCriacao': dataCriacao 
           }
         })
       });

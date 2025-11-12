@@ -501,6 +501,25 @@
             </div>
         </header>
 
+        <!-- Filtro de Data -->
+        <section class="section-card" style="margin-bottom: 1.5rem;">
+            <h2 class="section-title">Filtro por Período</h2>
+            <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                <div class="form-group">
+                    <label class="form-label">Período</label>
+                    <select id="filtro-periodo" class="form-select">
+                        <option value="hoje">Hoje</option>
+                        <option value="semana">Esta Semana</option>
+                        <option value="mes">Este Mês</option>
+                        <option value="todos" selected>Todo o Período</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="button" onclick="aplicarFiltro()" class="btn-primary" style="margin-top: 1.5rem;">Aplicar Filtro</button>
+                </div>
+            </div>
+        </section>
+
         <!-- Seção de Formulário -->
         <section class="section-card">
             <h2 class="section-title">➕ Adicionar Novo Agendamento</h2>
@@ -646,8 +665,7 @@
                 const data = await response.json();
                 allData = data.records || [];
                 
-                updateKPIs();
-                renderCards();
+                aplicarFiltro(); // ← aplica o filtro atual
                 document.getElementById('kpis-section').classList.remove('hidden');
             } catch (error) {
                 console.error('Erro:', error);
@@ -700,9 +718,10 @@
 
         // Atualizar KPIs
         function updateKPIs() {
-            const total = allData.length;
-            const avancou = allData.filter(r => r.fields.StatusAvanco === 'Avançou').length;
-            const pendentes = allData.filter(r => r.fields.StatusAvanco === 'Pendente').length;
+            const dadosFiltrados = filtrarDados(allData);
+            const total = dadosFiltrados.length;
+            const avancou = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Avançou').length;
+            const pendentes = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Pendente').length;
             const taxa = total > 0 ? ((avancou / total) * 100).toFixed(1) : 0;
 
             document.getElementById('total-agendamentos').textContent = total;
@@ -714,9 +733,13 @@
         // Renderizar cards
         function renderCards() {
             const container = document.getElementById('cards-container');
-            
-            if (allData.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #6b7280;">Nenhum agendamento cadastrado ainda</p>';
+            const dadosFiltrados = filtrarDados(allData);
+
+            if (dadosFiltrados.length === 0) {
+                const msg = filtroAtual === 'todos' 
+                    ? 'Nenhum agendamento cadastrado ainda' 
+                    : 'Nenhum agendamento encontrado neste período';
+                container.innerHTML = `<p style="text-align: center; color: #6b7280;">${msg}</p>`;
                 return;
             }
 
@@ -891,33 +914,50 @@
         async function exportReport() {
             const exportBtn = document.getElementById('export-btn');
             exportBtn.disabled = true;
-            exportBtn.textContent = '📊 Gerando Relatório...';
+            exportBtn.textContent = 'Gerando Relatório...';
 
             try {
-                // Criar container do relatório
-                const reportContainer = document.createElement('div');
-                reportContainer.className = 'report-container';
-                document.body.appendChild(reportContainer);
+                // -------------------------------------------------
+                // 1. DADOS FILTRADOS (mesmo filtro usado no dashboard)
+                // -------------------------------------------------
+                const dadosFiltrados = filtrarDados(allData);
 
+                // -------------------------------------------------
+                // 2. CÁLCULO DOS KPIs (usando apenas os dados filtrados)
+                // -------------------------------------------------
+                const total = dadosFiltrados.length;
+                const avancou = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Avançou').length;
+                const naoAvancou = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Não Avançou').length;
+                const pendentes = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Pendente').length;
+                const taxaConversao = (avancou + naoAvancou > 0)
+                    ? ((avancou / (avancou + naoAvancou)) * 100).toFixed(1)
+                    : 0;
+
+                // -------------------------------------------------
+                // 3. TÍTULO DO PERÍODO
+                // -------------------------------------------------
+                const titulos = {
+                    hoje:   'Agendamentos do Dia',
+                    semana: 'Agendamentos da Semana',
+                    mes:    'Agendamentos do Mês',
+                    todos:  'Todos os Agendamentos'
+                };
+                const tituloPeriodo = titulos[filtroAtual] || 'Agendamentos';
+
+                // -------------------------------------------------
+                // 4. DATA/HORA ATUAL
+                // -------------------------------------------------
                 const dataAtual = new Date().toLocaleDateString('pt-BR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
                 });
 
-                // Calcular estatísticas
-                const total = allData.length;
-                const avancou = allData.filter(r => r.fields.StatusAvanco === 'Avançou').length;
-                const naoAvancou = allData.filter(r => r.fields.StatusAvanco === 'Não Avançou').length;
-                const pendentes = allData.filter(r => r.fields.StatusAvanco === 'Pendente').length;
-                const taxaConversao = total > 0 ? ((avancou / (avancou + naoAvancou || 1)) * 100).toFixed(1) : 0;
-
-                // Estatísticas por responsável
+                // -------------------------------------------------
+                // 5. ESTATÍSTICAS POR RESPONSÁVEL (filtrado)
+                // -------------------------------------------------
                 const porResponsavel = {};
-                allData.forEach(r => {
-                    const resp = r.fields.Responsavel;
+                dadosFiltrados.forEach(r => {
+                    const resp = r.fields.Responsavel || 'Sem responsável';
                     if (!porResponsavel[resp]) {
                         porResponsavel[resp] = { total: 0, avancou: 0, pendentes: 0 };
                     }
@@ -926,9 +966,11 @@
                     if (r.fields.StatusAvanco === 'Pendente') porResponsavel[resp].pendentes++;
                 });
 
-                // Estatísticas por segmento
+                // -------------------------------------------------
+                // 6. ESTATÍSTICAS POR SEGMENTO (filtrado)
+                // -------------------------------------------------
                 const porSegmento = {};
-                allData.forEach(r => {
+                dadosFiltrados.forEach(r => {
                     const seg = r.fields.Segmento || 'Não definido';
                     if (!porSegmento[seg]) {
                         porSegmento[seg] = { total: 0, avancou: 0 };
@@ -937,14 +979,33 @@
                     if (r.fields.StatusAvanco === 'Avançou') porSegmento[seg].avancou++;
                 });
 
+                // -------------------------------------------------
+                // 7. TOP 5 EMPRESAS POR TICKET MÉDIO (filtrado)
+                // -------------------------------------------------
+                const top5 = dadosFiltrados
+                    .filter(r => r.fields.TicketMedio)
+                    .sort((a, b) => (b.fields.TicketMedio || 0) - (a.fields.TicketMedio || 0))
+                    .slice(0, 5);
+
+                // -------------------------------------------------
+                // 8. CRIAÇÃO DO CONTAINER DO RELATÓRIO
+                // -------------------------------------------------
+                const reportContainer = document.createElement('div');
+                reportContainer.className = 'report-container';
+                document.body.appendChild(reportContainer);
+
+                // -------------------------------------------------
+                // 9. HTML DO RELATÓRIO (usando os dados filtrados)
+                // -------------------------------------------------
                 reportContainer.innerHTML = `
                     <div class="report-header">
-                        <div class="report-title">Relatório de Agendamentos e Análise Preditiva</div>
-                        <div style="opacity: 0.9; margin-top: 0.5rem;">${dataAtual}</div>
+                        <div class="report-title">Relatório de ${tituloPeriodo}</div>
+                        <div style="opacity:0.9;margin-top:0.5rem;">${dataAtual}</div>
                     </div>
 
+                    <!-- KPIs Gerais -->
                     <div class="report-section">
-                        <h3>📊 KPIs Gerais</h3>
+                        <h3>KPIs Gerais</h3>
                         <div class="report-grid">
                             <div class="report-kpi">
                                 <div class="report-kpi-value">${total}</div>
@@ -965,102 +1026,87 @@
                         </div>
                     </div>
 
+                    <!-- Desempenho por Responsável -->
                     <div class="report-section">
-                        <h3>👥 Desempenho por Responsável</h3>
+                        <h3>Desempenho por Responsável</h3>
                         <table class="report-table">
                             <thead>
                                 <tr>
-                                    <th>Responsável</th>
-                                    <th>Total</th>
-                                    <th>Avançou</th>
-                                    <th>Pendentes</th>
-                                    <th>Taxa de Conversão</th>
+                                    <th>Responsável</th><th>Total</th><th>Avançou</th><th>Pendentes</th><th>Taxa de Conversão</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${Object.entries(porResponsavel).map(([resp, stats]) => {
-                                    const taxa = stats.total > 0 ? ((stats.avancou / stats.total) * 100).toFixed(1) : 0;
-                                    return `
-                                        <tr>
-                                            <td><strong>${resp}</strong></td>
-                                            <td>${stats.total}</td>
-                                            <td>${stats.avancou}</td>
-                                            <td>${stats.pendentes}</td>
-                                            <td>${taxa}%</td>
-                                        </tr>
-                                    `;
+                                ${Object.entries(porResponsavel).map(([resp, s]) => {
+                                    const taxa = s.total > 0 ? ((s.avancou / s.total) * 100).toFixed(1) : 0;
+                                    return `<tr>
+                                        <td><strong>${resp}</strong></td>
+                                        <td>${s.total}</td>
+                                        <td>${s.avancou}</td>
+                                        <td>${s.pendentes}</td>
+                                        <td>${taxa}%</td>
+                                    </tr>`;
                                 }).join('')}
                             </tbody>
                         </table>
                     </div>
 
+                    <!-- Análise por Segmento -->
                     <div class="report-section">
-                        <h3>🏢 Análise por Segmento</h3>
+                        <h3>Análise por Segmento</h3>
                         <table class="report-table">
                             <thead>
                                 <tr>
-                                    <th>Segmento</th>
-                                    <th>Total</th>
-                                    <th>Avançou</th>
-                                    <th>Taxa de Conversão</th>
+                                    <th>Segmento</th><th>Total</th><th>Avançou</th><th>Taxa de Conversão</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${Object.entries(porSegmento).sort((a, b) => b[1].total - a[1].total).map(([seg, stats]) => {
-                                    const taxa = stats.total > 0 ? ((stats.avancou / stats.total) * 100).toFixed(1) : 0;
-                                    return `
-                                        <tr>
+                                ${Object.entries(porSegmento)
+                                    .sort((a, b) => b[1].total - a[1].total)
+                                    .map(([seg, s]) => {
+                                        const taxa = s.total > 0 ? ((s.avancou / s.total) * 100).toFixed(1) : 0;
+                                        return `<tr>
                                             <td><strong>${seg}</strong></td>
-                                            <td>${stats.total}</td>
-                                            <td>${stats.avancou}</td>
+                                            <td>${s.total}</td>
+                                            <td>${s.avancou}</td>
                                             <td>${taxa}%</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="report-section">
-                        <h3>🎯 Top 5 Empresas (Ticket Médio)</h3>
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>Posição</th>
-                                    <th>Empresa</th>
-                                    <th>Ticket Médio</th>
-                                    <th>Status</th>
-                                    <th>Responsável</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${allData
-                                    .filter(r => r.fields.TicketMedio)
-                                    .sort((a, b) => (b.fields.TicketMedio || 0) - (a.fields.TicketMedio || 0))
-                                    .slice(0, 5)
-                                    .map((record, index) => {
-                                        const f = record.fields;
-                                        const medals = ['🥇', '🥈', '🥉', '4º', '5º'];
-                                        return `
-                                            <tr>
-                                                <td style="text-align: center; font-size: 1.1rem;">${medals[index]}</td>
-                                                <td><strong>${f.Empresa}</strong></td>
-                                                <td>R$ ${f.TicketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                                                <td>${f.StatusAvanco || 'Pendente'}</td>
-                                                <td>${f.Responsavel}</td>
-                                            </tr>
-                                        `;
+                                        </tr>`;
                                     }).join('')}
                             </tbody>
                         </table>
                     </div>
 
+                    <!-- Top 5 Empresas (Ticket Médio) -->
                     <div class="report-section">
-                        <h3>🤖 Status do Modelo Preditivo</h3>
-                        <div style="background: #fef3c7; border: 2px dashed #FDBB2D; border-radius: 0.75rem; padding: 1.5rem; text-align: center;">
-                            <p style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">⚙️ Modelo em Desenvolvimento</p>
-                            <p style="color: #4A5568;">O modelo de Machine Learning será treinado com os dados coletados.</p>
-                            <p style="color: #4A5568; margin-top: 0.5rem;">Variáveis: Ticket Médio, Nº Lojas, Nº Funcionários, Segmento, Local</p>
+                        <h3>Top 5 Empresas (Ticket Médio)</h3>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Posição</th><th>Empresa</th><th>Ticket Médio</th><th>Status</th><th>Responsável</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${top5.map((r, i) => {
+                                    const f = r.fields;
+                                    const medals = ['1º', '2º', '3º', '4º', '5º'];
+                                    return `<tr>
+                                        <td style="text-align:center;font-size:1.1rem;">${medals[i]}</td>
+                                        <td><strong>${f.Empresa}</strong></td>
+                                        <td>R$ ${f.TicketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                                        <td>${f.StatusAvanco || 'Pendente'}</td>
+                                        <td>${f.Responsavel}</td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Status do Modelo Preditivo -->
+                    <div class="report-section">
+                        <h3>Status do Modelo Preditivo</h3>
+                        <div style="background:#fef3c7;border:2px dashed #FDBB2D;border-radius:0.75rem;padding:1.5rem;text-align:center;">
+                            <p style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Modelo em Desenvolvimento</p>
+                            <p style="color:#4A5568;">O modelo de Machine Learning será treinado com os dados coletados.</p>
+                            <p style="color:#4A5568;margin-top:0.5rem;">Variáveis: Ticket Médio, Nº Lojas, Nº Funcionários, Segmento, Local</p>
                         </div>
                     </div>
 
@@ -1069,10 +1115,11 @@
                     </div>
                 `;
 
-                // Aguardar renderização
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // -------------------------------------------------
+                // 10. AGUARDAR RENDERIZAÇÃO + CAPTURA COM html2canvas
+                // -------------------------------------------------
+                await new Promise(r => setTimeout(r, 500));
 
-                // Capturar e baixar
                 const canvas = await html2canvas(reportContainer, {
                     width: 1200,
                     height: reportContainer.scrollHeight,
@@ -1081,22 +1128,24 @@
                     backgroundColor: '#ffffff'
                 });
 
-                // Remover container
+                // -------------------------------------------------
+                // 11. DOWNLOAD DO PNG
+                // -------------------------------------------------
                 document.body.removeChild(reportContainer);
 
-                // Download
                 const link = document.createElement('a');
-                link.download = `relatorio_agendamentos_${new Date().toISOString().split('T')[0]}.png`;
+                link.download = `relatorio_${tituloPeriodo.toLowerCase().replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
 
                 Swal.fire('Sucesso!', 'Relatório exportado com sucesso!', 'success');
+
             } catch (error) {
-                console.error('Erro ao exportar:', error);
+                console.error('Erro ao exportar relatório:', error);
                 Swal.fire('Erro', 'Não foi possível gerar o relatório', 'error');
             } finally {
                 exportBtn.disabled = false;
-                exportBtn.textContent = '📊 Exportar Relatório PNG';
+                exportBtn.textContent = 'Exportar Relatório PNG';
             }
         }
 
@@ -1144,6 +1193,58 @@
             
             console.log('Função de treinamento será implementada quando houver dados suficientes');
         }
+
+        let filtroAtual = 'todos'; // 'hoje', 'semana', 'mes', 'todos'
+
+        function getDateRange(tipo) {
+            const hoje = new Date();
+            const inicio = new Date();
+            const fim = new Date();
+
+            if (tipo === 'hoje') {
+                inicio.setHours(0, 0, 0, 0);
+                fim.setHours(23, 59, 59, 999);
+            } else if (tipo === 'semana') {
+                const diaSemana = hoje.getDay(); // 0 = domingo
+                const diff = hoje.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); // início na segunda
+                inicio.setDate(diff);
+                inicio.setHours(0, 0, 0, 0);
+                fim.setDate(diff + 6);
+                fim.setHours(23, 59, 59, 999);
+            } else if (tipo === 'mes') {
+                inicio.setDate(1);
+                inicio.setHours(0, 0, 0, 0);
+                fim.setMonth(fim.getMonth() + 1);
+                fim.setDate(0);
+                fim.setHours(23, 59, 59, 999);
+            } else {
+                return { inicio: null, fim: null };
+            }
+
+            return {
+                inicio: inicio.toISOString().split('T')[0],
+                fim: fim.toISOString().split('T')[0]
+            };
+        }
+
+        function aplicarFiltro() {
+            filtroAtual = document.getElementById('filtro-periodo').value;
+            renderCards();
+            updateKPIs();
+        }
+
+        function filtrarDados(dados) {
+            if (filtroAtual === 'todos') return dados;
+
+            const { inicio, fim } = getDateRange(filtroAtual);
+            if (!inicio || !fim) return dados;
+
+            return dados.filter(record => {
+                const dataCriacao = record.fields.DataCriacao;
+                return dataCriacao >= inicio && dataCriacao <= fim;
+            });
+        }
+
     </script>
 </body>
 </html>

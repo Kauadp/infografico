@@ -658,12 +658,8 @@
     <h1 id="usuario-logado"></h1>
 
     <script>
-        // Define os roles permitidos para esta página
         const allowedRoles = ["comercial", "financeiro", "admin"];
-
-        // Chama a função checkAccess
         checkAccess(allowedRoles, function(user) {
-            // Atualiza a página com informações do usuário
             const info = document.getElementById("user-info");
             info.textContent = `Olá ${user.usuario}, setor: ${user.setor}`;
         });
@@ -673,8 +669,8 @@
             <h1>Dashboard de Gestão de Expositores - Rio de Janeiro</h1>
             <p>Clique nos cards para ver todas as informações</p>
             <div class="mt-4">
-                <a href="../index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
-                <button onclick="exportReport()" class="btn-export" id="export-btn">📊 Exportar Relatório PNG</button>
+                <a href="../index.html" class="btn-warning">Voltar à Página Inicial</a>
+                <button onclick="exportReport()" class="btn-export" id="export-btn">Exportar Relatório PNG</button>
             </div>
         </header>
 
@@ -716,7 +712,11 @@
         <section class="kpi-section hidden" id="kpis-section">
             <div class="kpi-card">
                 <div class="kpi-value" id="total-expositores">0</div>
-                <div class="kpi-label">Total Expositores</div>
+                <div class="kpi-label">Expositores Ocupados</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="vacancias">0</div>
+                <div class="kpi-label">Vacâncias</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-value" id="stands-confirmados">0</div>
@@ -734,12 +734,10 @@
                 <div class="kpi-value" id="receita-realizada" style="font-size: 1.8rem;">0</div>
                 <div class="kpi-label">Receita Realizada</div>
             </div>
-
             <div class="kpi-card">
                 <div class="kpi-value" id="receita-prevista" style="font-size: 1.8rem;">0</div>
                 <div class="kpi-label">Receita Prevista</div>
             </div>
-
             <div class="kpi-card">
                 <div class="kpi-value" id="receita-diferenca" style="font-size: 1.8rem;">0</div>
                 <div class="kpi-label">Diferença de Receita</div>
@@ -767,7 +765,7 @@
             <div class="modal-header">
                 <div class="modal-title" id="modal-title">Nome do Expositor</div>
                 <div class="modal-subtitle" id="modal-subtitle">Informações completas</div>
-                <button class="modal-close" id="modal-close">&times;</button>
+                <button class="modal-close" id="modal-close">×</button>
             </div>
             <div class="modal-content" id="modal-content">
             </div>
@@ -777,6 +775,7 @@
     <script>
     let allData = [];
     let filteredData = [];
+    let totalStands = 0; // Será definido com base nos dados
 
     const elements = {
         filtersSection: document.getElementById('filters-section'),
@@ -787,6 +786,7 @@
         info: document.getElementById('info'),
         cardsContainer: document.getElementById('cards-container'),
         totalExpositores: document.getElementById('total-expositores'),
+        vacancias: document.getElementById('vacancias'),
         standsConfirmados: document.getElementById('stands-confirmados'),
         contratosAssinados: document.getElementById('contratos-assinados'),
         onboardingFeito: document.getElementById('onboarding-feito'),
@@ -805,7 +805,6 @@
         modalClose: document.getElementById('modal-close'),
     };
 
-    // Mensagens utilitárias
     function showMessage(element, message) {
         element.textContent = message;
         element.classList.remove('hidden');
@@ -828,20 +827,14 @@
         showMessage(elements.info, message);
     }
 
-    // Função para converter texto "R$ 1.234,56" para número
+    // Correção: parseia "1.234,56" → 1234.56
     function parseBRL(valor) {
         if (!valor) return 0;
-        
-        // Remove R$ e espaços
-        valor = valor.toString().replace(/R\$|\s/g, '');
-        
-        // Remove pontos de milhares e converte vírgula para ponto
-        valor = valor.replace(/\./g, '').replace(',', '.');
-        
-        return parseFloat(valor) || 0;
+        const str = valor.toString().trim().replace(/R\$|\s/g, '');
+        const cleaned = str.replace(/\./g, '').replace(',', '.');
+        return parseFloat(cleaned) || 0;
     }
 
-    // Calcular soma de uma coluna
     function calcularSoma(filteredData, campo) {
         return filteredData.reduce((acc, r) => acc + parseBRL(r.fields[campo]), 0);
     }
@@ -853,7 +846,6 @@
             if (!resp.ok) throw new Error(`Erro HTTP ${resp.status}`);
             const data = await resp.json();
 
-            // Processa dados
             if (data.records && Array.isArray(data.records)) {
                 allData = data.records;
             } else if (Array.isArray(data)) {
@@ -865,9 +857,12 @@
                 allData = [{ id: 'rec1', fields: data }];
             }
 
+            // Define total de stands (pode vir de configuração ou máximo de STAND)
+            const stands = allData.map(r => r.fields['STAND']).filter(Boolean);
+            totalStands = Math.max(...stands.map(s => parseInt(s.replace(/\D/g, '')) || 0), stands.length);
+
             filteredData = [...allData];
 
-            // Mostra filtros e KPIs
             elements.filtersSection.classList.remove('hidden');
             elements.kpisSection.classList.remove('hidden');
 
@@ -932,7 +927,8 @@
     }
 
     function updateKPIs() {
-        const total = filteredData.length;
+        const ocupados = filteredData.length;
+        const vacancias = totalStands - ocupados;
         const confirmados = filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
         const contratos = filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length;
         const onboarding = filteredData.filter(r => (r.fields['ONBOARDING'] || '').toUpperCase().includes('SIM')).length;
@@ -941,7 +937,8 @@
         const diferenca = somaPrevista - somaRealizada;
         const proporcao = somaPrevista > 0 ? (somaRealizada / somaPrevista) * 100 : 0;
 
-        elements.totalExpositores.textContent = total;
+        elements.totalExpositores.textContent = ocupados;
+        elements.vacancias.textContent = vacancias;
         elements.standsConfirmados.textContent = confirmados;
         elements.contratosAssinados.textContent = contratos;
         elements.onboardingFeito.textContent = onboarding;
@@ -974,24 +971,17 @@
             const con = elements.contratoFilter.value;
             const sta = elements.statusFilter.value;
 
-            // Filtro de categoria
             if (cat && f['CATEGORIA'] !== cat) return false;
-            
-            // Filtro de expositor
             if (exp && f['Expositor..N.Fantasia'] !== exp) return false;
             
-            // Filtro de contrato
             if (con) {
                 const contratoStatus = (f['financeiro.CONTRATO.ASSINADO.'] || '').toString().trim().toUpperCase();
-                
                 if (con === 'SIM' && contratoStatus !== 'SIM') return false;
                 if (con === 'NAO' && contratoStatus === 'SIM') return false;
             }
             
-            // Filtro de status
             if (sta) {
                 const statusConfirmado = (f['STATUS'] || '').toString().trim().toUpperCase();
-                
                 if (sta === 'SIM' && statusConfirmado !== 'SIM') return false;
                 if (sta === 'NAO' && statusConfirmado !== 'SIM') return false;
             }
@@ -1023,29 +1013,23 @@
     elements.modalClose.onclick = () => elements.modalOverlay.classList.remove('active');
     elements.modalOverlay.onclick = (e) => { if(e.target.id === 'modal-overlay') elements.modalOverlay.classList.remove('active'); }
 
-    // Inicialização
     loadData();
 
-    // Função para exportar relatório
     async function exportReport() {
         const exportBtn = document.getElementById('export-btn');
         exportBtn.disabled = true;
-        exportBtn.textContent = '📊 Gerando Relatório...';
+        exportBtn.textContent = 'Gerando Relatório...';
 
         try {
-            // Criar container do relatório
             const reportContainer = document.createElement('div');
             reportContainer.className = 'report-container';
             document.body.appendChild(reportContainer);
 
-            // Calcular estatísticas
+            const ocupados = filteredData.length;
+            const vacancias = totalStands - ocupados;
             const estatisticasPorCategoria = calcularEstatisticasPorCategoria().slice(0, 5);
             const dataAtual = new Date().toLocaleDateString('pt-BR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
 
             reportContainer.innerHTML = `
@@ -1055,22 +1039,22 @@
                 </div>
 
                 <div class="report-section">
-                    <h3>📊 KPIs Gerais</h3>
+                    <h3>KPIs Gerais</h3>
                     <div class="report-kpis">
                         <div class="report-kpi">
-                            <div class="report-kpi-value">${filteredData.length}</div>
-                            <div class="report-kpi-label">Total Expositores</div>
+                            <div class="report-kpi-value">${ocupados}</div>
+                            <div class="report-kpi-label">Expositores Ocupados</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${vacancias}</div>
+                            <div class="report-kpi-label">Vacâncias</div>
                         </div>
                         <div class="report-kpi">
                             <div class="report-kpi-value">${filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length}</div>
                             <div class="report-kpi-label">Stands Confirmados</div>
                         </div>
                         <div class="report-kpi">
-                            <div class="report-kpi-value">${filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length}</div>
-                            <div class="report-kpi-label">Contratos Assinados</div>
-                        </div>
-                        <div class="report-kpi">
-                            <div class="report-kpi-value">${Math.round((filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length / filteredData.length) * 100 || 0)}%</div>
+                            <div class="report-kpi-value">${Math.round((ocupados / totalStands) * 100 || 0)}%</div>
                             <div class="report-kpi-label">Taxa de Ocupação</div>
                         </div>
                     </div>
@@ -1096,7 +1080,7 @@
                 </div>
 
                 <div class="report-section">
-                    <h3>📈 Top 5 Categorias</h3>
+                    <h3>Top 5 Categorias</h3>
                     <table class="report-table">
                         <thead>
                             <tr>
@@ -1122,7 +1106,7 @@
                 </div>
 
                 <div class="report-section">
-                    <h3>🏆 Top 3 Expositores por Receita</h3>
+                    <h3>Top 3 Expositores por Receita</h3>
                     <table class="report-table">
                         <thead>
                             <tr>
@@ -1147,7 +1131,7 @@
                                     else if (statusConfirmado === 'SIM') { status = 'vendido'; statusText = 'Confirmado'; }
                                     else { status = 'pendente'; statusText = 'Pendente'; }
 
-                                    const medals = ['🥇', '🥈', '🥉'];
+                                    const medals = ['1º', '2º', '3º'];
 
                                     return `
                                         <tr>
@@ -1168,10 +1152,7 @@
                 </div>
             `;
 
-            // Aguardar um pouco para renderização
             await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Capturar e baixar
             const canvas = await html2canvas(reportContainer, {
                 width: 1200,
                 height: reportContainer.scrollHeight,
@@ -1180,10 +1161,8 @@
                 backgroundColor: '#ffffff'
             });
 
-            // Remover container
             document.body.removeChild(reportContainer);
 
-            // Fazer download
             const link = document.createElement('a');
             link.download = `relatorio_expositores_rj_${new Date().toISOString().split('T')[0]}.png`;
             link.href = canvas.toDataURL('image/png');
@@ -1195,11 +1174,10 @@
             showError('Erro ao gerar relatório. Tente novamente.');
         } finally {
             exportBtn.disabled = false;
-            exportBtn.textContent = '📊 Exportar Relatório PNG';
+            exportBtn.textContent = 'Exportar Relatório PNG';
         }
     }
 
-    // Função auxiliar para calcular estatísticas por categoria (apenas top 5)
     function calcularEstatisticasPorCategoria() {
         const categorias = [...new Set(filteredData.map(r => r.fields?.['CATEGORIA']).filter(Boolean))];
         
@@ -1219,6 +1197,6 @@
             };
         }).sort((a, b) => b.total - a.total);
     }
-</script>
+    </script>
 </body>
 </html>

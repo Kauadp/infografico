@@ -849,7 +849,7 @@
     async function loadData() {
         elements.loading.classList.remove('hidden');
         try {
-            const resp = await fetch("/api/expositores_rj");
+            const resp = await fetch("/api/expositores4");
             if (!resp.ok) throw new Error(`Erro HTTP ${resp.status}`);
             const data = await resp.json();
 

@@ -823,9 +823,21 @@
         // === PARSE DE MOEDA BRASILEIRA (50.560,00 → 50560) ===
         function parseBRL(valor) {
             if (!valor) return 0;
+            
             let str = valor.toString().trim();
             str = str.replace(/R\$|\s/g, '');
-            str = str.replace(/\.(?=\d{3})/g, '').replace(',', '.');
+            
+            if (str.includes(',') && str.includes('.')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else if (str.includes(',')) {
+                str = str.replace(',', '.');
+            } else if (str.includes('.')) {
+                const num = parseFloat(str);
+                if (num > 1000) {
+                    str = str.replace(/\./g, '');
+                }
+            }
+
             return parseFloat(str) || 0;
         }
 

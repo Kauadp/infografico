@@ -823,22 +823,36 @@
         // === PARSE DE MOEDA BRASILEIRA (50.560,00 → 50560) ===
         function parseBRL(valor) {
             if (!valor) return 0;
-            
+
             let str = valor.toString().trim();
+
+            // Remove R$, espaços, quebras de linha
             str = str.replace(/R\$|\s/g, '');
-            
+
+            // === CASO 1: 50.560,00 → padrão BR com ponto milhar + vírgula decimal
             if (str.includes(',') && str.includes('.')) {
-                str = str.replace(/\./g, '').replace(',', '.');
-            } else if (str.includes(',')) {
+                // Remove TODOS os pontos (milhar)
+                str = str.replace(/\./g, '');
+                // Troca vírgula por ponto (decimal)
                 str = str.replace(',', '.');
-            } else if (str.includes('.')) {
-                const num = parseFloat(str);
-                if (num > 1000) {
+            }
+            // === CASO 2: 50,560.00 → erro comum (vírgula como milhar)
+            else if (str.includes(',') && !str.includes('.')) {
+                // Remove vírgulas (tratando como milhar)
+                str = str.replace(/,/g, '');
+            }
+            // === CASO 3: 50560.00 → número com ponto decimal
+            else if (str.includes('.')) {
+                // Se tem mais de 2 dígitos após o ponto → pode ser erro
+                const parts = str.split('.');
+                if (parts[1] && parts[1].length > 2) {
+                    // Provavelmente ponto é milhar → remove todos
                     str = str.replace(/\./g, '');
                 }
             }
 
-            return parseFloat(str) || 0;
+            const numero = parseFloat(str);
+            return isNaN(numero) ? 0 : numero;
         }
 
         function calcularSoma(filteredData, campo) {

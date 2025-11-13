@@ -820,29 +820,18 @@
         function showSuccess(message) { hideMessages(); showMessage(elements.success, message); }
         function showInfo(message) { hideMessages(); showMessage(elements.info, message); }
 
-        // === PARSE DE MOEDA BRASILEIRA (50.560,00 → 50560) ===
+        // === PARSE DE MOEDA (R$ 50,560.00 → 50560) ===
         function parseBRL(valor) {
             if (!valor) return 0;
-            
             let str = valor.toString().trim();
-            
-            // Remove R$ e espaços
-            str = str.replace(/R\$|\s/g, '');
-            
-            // === PADRÃO DOS SEUS DADOS: R$ 50,560.00 → vírgula = milhar, ponto = decimal
-            // Remove TODAS as vírgulas (são separadores de milhar)
-            str = str.replace(/,/g, '');
-            
-            // Substitui ponto por vírgula temporária para evitar conflito
-            // Ex: "50.560.00" → "50560.00"
-            str = str.replace(/\./g, '');
-            
-            // Agora é um número limpo: "50560.00"
+            str = str.replace(/R\$|\s/g, '');     // Remove R$ e espaços
+            str = str.replace(/,/g, '');          // Remove vírgulas (milhar)
+            str = str.replace(/\./g, '');         // Remove pontos (decimal vira inteiro)
             return parseFloat(str) || 0;
         }
 
-        function calcularSoma(filteredData, campo) {
-            return filteredData.reduce((acc, r) => acc + parseBRL(r.fields[campo]), 0);
+        function calcularSoma(dataArray, campo) {
+            return dataArray.reduce((acc, r) => acc + parseBRL(r.fields[campo]), 0);
         }
 
         function formatarMoeda(valor) {
@@ -939,15 +928,16 @@
             });
         }
 
-        // === ATUALIZAR KPIS ===
+        // === ATUALIZAR KPIS (PREVISTA INCLUI VACÂNCIAS) ===
         function updateKPIs() {
             const ocupados = filteredData.length;
             const vacancias = vacanciasCount;
             const confirmados = filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
             const contratos = filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length;
             const onboarding = filteredData.filter(r => (r.fields['ONBOARDING'] || '').toUpperCase().includes('SIM')).length;
+
             const somaRealizada = calcularSoma(filteredData, 'RECEITA.REALIZADA');
-            const somaPrevista = calcularSoma(filteredData, 'RECEITA.PREVISTA');
+            const somaPrevista = calcularSoma(allData, 'RECEITA.PREVISTA'); // INCLUI VACÂNCIAS
             const diferenca = somaPrevista - somaRealizada;
             const proporcao = somaPrevista > 0 ? (somaRealizada / somaPrevista) * 100 : 0;
 
@@ -1032,7 +1022,7 @@
         elements.modalClose.onclick = () => elements.modalOverlay.classList.remove('active');
         elements.modalOverlay.onclick = (e) => { if (e.target.id === 'modal-overlay') elements.modalOverlay.classList.remove('active'); };
 
-        // === EXPORTAR RELATÓRIO (PNG) ===
+        // === EXPORTAR RELATÓRIO (CORRETO) ===
         async function exportReport() {
             const exportBtn = document.getElementById('export-btn');
             exportBtn.disabled = true;
@@ -1083,15 +1073,15 @@
                                 <div class="report-kpi-label">Receita Realizada</div>
                             </div>
                             <div class="report-kpi">
-                                <div class="report-kpi-value" style="font-size: 1.1rem;">${formatarMoeda(calcularSoma(filteredData, 'RECEITA.PREVISTA'))}</div>
+                                <div class="report-kpi-value" style="font-size: 1.1rem;">${formatarMoeda(calcularSoma(allData, 'RECEITA.PREVISTA'))}</div>
                                 <div class="report-kpi-label">Receita Prevista</div>
                             </div>
                             <div class="report-kpi">
-                                <div class="report-kpi-value" style="font-size: 1.1rem;">${formatarMoeda(calcularSoma(filteredData, 'RECEITA.PREVISTA') - calcularSoma(filteredData, 'RECEITA.REALIZADA'))}</div>
+                                <div class="report-kpi-value" style="font-size: 1.1rem;">${formatarMoeda(calcularSoma(allData, 'RECEITA.PREVISTA') - calcularSoma(filteredData, 'RECEITA.REALIZADA'))}</div>
                                 <div class="report-kpi-label">Diferença (Falta)</div>
                             </div>
                             <div class="report-kpi">
-                                <div class="report-kpi-value">${((calcularSoma(filteredData, 'RECEITA.REALIZADA') / calcularSoma(filteredData, 'RECEITA.PREVISTA')) * 100 || 0).toFixed(1)}%</div>
+                                <div class="report-kpi-value">${((calcularSoma(filteredData, 'RECEITA.REALIZADA') / calcularSoma(allData, 'RECEITA.PREVISTA')) * 100 || 0).toFixed(1)}%</div>
                                 <div class="report-kpi-label">% Receita Realizada</div>
                             </div>
                         </div>

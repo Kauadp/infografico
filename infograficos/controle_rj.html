@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dashboard de Controle de Vendas Pavilhão Rio de Janeiro</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="shortcut icon" href="imagens/favicon.ico" type="image/x-icon">
+
+    <style>
+        /* Reset básico */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Paleta de cores */
+        :root {
+            --color-primary-green: #57da1c;
+            --color-secondary-purple: #E54E88;
+            --color-dark-blue: #222222;
+            --color-accent-orange: #f95b3c;
+            --color-accent-teal: #00BFB2;
+            --color-accent-yellow: #FDBB2D;
+            --color-light-gray-bg: #F0F0F0;
+            --color-white: #FFFFFF;
+            --color-text-dark: #4A5568;
+            --color-light-hover: #EFEFEF;
+        }
+        
+        body {
+            font-family: 'Nunito', sans-serif; 
+            background-color: var(--color-light-gray-bg); 
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .btn-warning {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: var(--color-white);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, var(--color-secondary-purple), var(--color-accent-orange));
+            color: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(229, 78, 136, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        .main-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.5rem;
+        }
+
+        .main-header p {
+            font-size: 1.125rem;
+            opacity: 0.9;
+        }
+
+        .controls-section {
+            background-color: var(--color-white);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            border-left: 6px solid var(--color-secondary-purple);
+        }
+
+        .controls-section h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-dark-blue);
+            margin-bottom: 1rem;
+        }
+
+        .filter-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: var(--color-dark-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        select, input {
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+            transition: border-color 0.3s ease;
+            width: 100%;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--color-secondary-purple);
+        }
+
+        .kpi-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background-color: var(--color-white); 
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+            border-left: 6px solid var(--color-secondary-purple);
+        }
+
+        .kpi-card:hover { 
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .kpi-value {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--color-accent-orange);
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-label {
+            font-weight: 700;
+            color: var(--color-text-dark);
+            font-size: 1.2rem;
+        }
+        
+        .grid-responsive {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .brand-card {
+            background-color: var(--color-white); 
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: left; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease; 
+            border-left: 6px solid var(--color-secondary-purple);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .brand-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-secondary-purple), var(--color-accent-orange), var(--color-accent-teal));
+        }
+
+        .brand-card:hover { 
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            border-left-color: var(--color-accent-orange);
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--color-dark-blue);
+            margin-bottom: 1rem;
+        }
+
+        .status-pill {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--color-white);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-assinado { 
+            background: linear-gradient(135deg, var(--color-primary-green), #4ade80);
+            box-shadow: 0 4px 15px rgba(87, 218, 28, 0.4);
+        }
+        .status-vendido { 
+            background: linear-gradient(135deg, var(--color-primary-green), #4ade80);
+            box-shadow: 0 4px 15px rgba(87, 218, 28, 0.4);
+        }
+        .status-pendente { 
+            background: linear-gradient(135deg, var(--color-accent-orange), #e6680a);
+            box-shadow: 0 4px 15px rgba(249, 91, 60, 0.4);
+        }
+        .status-vazio { 
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            box-shadow: 0 4px 15px rgba(107, 114, 128, 0.4);
+        }
+
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .metric-item {
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--color-text-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--color-dark-blue);
+            word-break: break-word;
+        }
+
+        .metric-value.editable {
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .metric-value.editable:hover {
+            background-color: var(--color-light-hover);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--color-white);
+            border-radius: 1rem;
+            width: 90vw;
+            max-width: 1000px;
+            height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--color-secondary-purple), var(--color-accent-orange));
+            color: var(--color-white);
+            padding: 2rem;
+            border-radius: 1rem 1rem 0 0;
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: var(--color-white);
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-content {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .field-item {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border-left: 4px solid var(--color-secondary-purple);
+        }
+
+        .field-label {
+            font-size: 0.875rem;
+            color: var(--color-text-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .field-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--color-dark-blue);
+            word-break: break-word;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .field-value:hover {
+            background-color: var(--color-light-hover);
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 1.2rem;
+            color: var(--color-text-dark);
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            border-left-color: #dc2626;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            border-left-color: #166534;
+        }
+
+        .info-box {
+            background: #e0f2fe;
+            color: #0c4a6e;
+            border-left-color: #0ea5e9;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .main-header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .metric-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-pill {
+                position: static;
+                display: inline-block;
+                margin-bottom: 1rem;
+            }
+
+            .filter-group {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-responsive {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .modal-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .kpi-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .swal2-custom-popup {
+            border-radius: 1rem !important;
+            font-family: 'Nunito', sans-serif !important;
+            background: #ffffff !important;
+            color: #222222 !important;
+        }
+
+        .swal2-custom-title {
+            font-weight: 800 !important;
+            font-size: 1.5rem !important;
+            color: #E54E88 !important;
+        }
+
+        .swal2-custom-input {
+            border: 2px solid #E54E88 !important;
+            border-radius: 0.5rem !important;
+            padding: 0.75rem !important;
+            font-weight: 600 !important;
+        }
+
+        .swal2-custom-confirm {
+            background: linear-gradient(135deg, #00BFB2, #57da1c) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            border-radius: 0.5rem !important;
+        }
+
+        .swal2-custom-cancel {
+            background: #f8f8f8 !important;
+            color: #222222 !important;
+            font-weight: 600 !important;
+            border-radius: 0.5rem !important;
+        }
+
+        .btn-export {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--color-primary-green), var(--color-accent-teal));
+            color: var(--color-white);
+            text-decoration: none;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            font-family: 'Nunito', sans-serif;
+            margin-left: 1rem;
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-export:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Estilos para o relatório */
+        .report-container {
+            position: fixed;
+            top: -9999px;
+            left: -9999px;
+            width: 1200px;
+            background: white;
+            font-family: 'Nunito', sans-serif;
+            z-index: -1;
+        }
+
+        .report-header {
+            background: linear-gradient(135deg, #E54E88, #f95b3c);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .report-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .report-section {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .report-section h3 {
+            color: #E54E88;
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #E54E88;
+            padding-bottom: 0.5rem;
+        }
+
+        .report-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .report-kpi {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            border-left: 4px solid #E54E88;
+        }
+
+        .report-kpi-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #f95b3c;
+            margin-bottom: 0.25rem;
+        }
+
+        .report-kpi-label {
+            font-size: 0.9rem;
+            color: #4A5568;
+            font-weight: 600;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .report-table th {
+            background: #E54E88;
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .report-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+        }
+
+        .report-table tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .report-footer {
+            background: #f8fafc;
+            padding: 1rem;
+            text-align: center;
+            border-radius: 0 0 1rem 1rem;
+            color: #4A5568;
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .status-assinado { background: #57da1c; }
+        .status-vendido { background: #57da1c; }
+        .status-pendente { background: #f95b3c; }
+        .status-vazio { background: #6b7280; }
+    </style>
+    <script src="./js/auth.js"></script>
+</head>
+<body>
+    <h1 id="usuario-logado"></h1>
+
+    <script>
+        // Define os roles permitidos para esta página
+        const allowedRoles = ["comercial", "financeiro", "admin"];
+
+        // Chama a função checkAccess
+        checkAccess(allowedRoles, function(user) {
+            // Atualiza a página com informações do usuário
+            const info = document.getElementById("user-info");
+            info.textContent = `Olá ${user.usuario}, setor: ${user.setor}`;
+        });
+    </script>
+    <div class="container">
+        <header class="main-header">
+            <h1>Dashboard de Gestão de Expositores - Rio de Janeiro</h1>
+            <p>Clique nos cards para ver todas as informações</p>
+            <div class="mt-4">
+                <a href="../index.html" class="btn-warning">⬅ Voltar à Página Inicial</a>
+                <button onclick="exportReport()" class="btn-export" id="export-btn">📊 Exportar Relatório PNG</button>
+            </div>
+        </header>
+
+        <!-- Filtros -->
+        <section class="controls-section hidden" id="filters-section">
+            <h3>Filtros</h3>
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label class="filter-label">Categoria</label>
+                    <select id="categoria-filter">
+                        <option value="">Todas as Categorias</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Expositor</label>
+                    <select id="expositor-filter">
+                        <option value="">Todos os Expositores</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Status do Contrato</label>
+                    <select id="contrato-filter">
+                        <option value="">Todos os Status</option>
+                        <option value="SIM">Assinado</option>
+                        <option value="NAO">Não Assinado</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label class="filter-label">Status</label>
+                    <select id="status-filter">
+                        <option value="">Todos</option>
+                        <option value="SIM">Confirmado</option>
+                        <option value="NAO">Não Confirmado</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section class="kpi-section hidden" id="kpis-section">
+            <div class="kpi-card">
+                <div class="kpi-value" id="total-expositores">0</div>
+                <div class="kpi-label">Total Expositores</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="stands-confirmados">0</div>
+                <div class="kpi-label">Stands Confirmados</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="contratos-assinados">0</div>
+                <div class="kpi-label">Contratos Assinados</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="onboarding-feito">0</div>
+                <div class="kpi-label">Onboarding Feito</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="receita-realizada" style="font-size: 1.8rem;">0</div>
+                <div class="kpi-label">Receita Realizada</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-value" id="receita-prevista" style="font-size: 1.8rem;">0</div>
+                <div class="kpi-label">Receita Prevista</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-value" id="receita-diferenca" style="font-size: 1.8rem;">0</div>
+                <div class="kpi-label">Diferença de Receita</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value" id="receita-proporcao">0</div>
+                <div class="kpi-label">Proporção de Receita Realizada</div>
+            </div>
+        </section>
+
+        <div id="loading" class="loading hidden">
+            Carregando dados...
+        </div>
+
+        <div id="error" class="message error hidden"></div>
+        <div id="success" class="message success hidden"></div>
+        <div id="info" class="message info-box hidden"></div>
+
+        <main id="cards-container" class="grid-responsive">
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Nome do Expositor</div>
+                <div class="modal-subtitle" id="modal-subtitle">Informações completas</div>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-content" id="modal-content">
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let allData = [];
+    let filteredData = [];
+
+    const elements = {
+        filtersSection: document.getElementById('filters-section'),
+        kpisSection: document.getElementById('kpis-section'),
+        loading: document.getElementById('loading'),
+        error: document.getElementById('error'),
+        success: document.getElementById('success'),
+        info: document.getElementById('info'),
+        cardsContainer: document.getElementById('cards-container'),
+        totalExpositores: document.getElementById('total-expositores'),
+        standsConfirmados: document.getElementById('stands-confirmados'),
+        contratosAssinados: document.getElementById('contratos-assinados'),
+        onboardingFeito: document.getElementById('onboarding-feito'),
+        receitaRealizada: document.getElementById('receita-realizada'),
+        receitaPrevista: document.getElementById('receita-prevista'),
+        receitaDiferenca: document.getElementById('receita-diferenca'),
+        receitaProporcao: document.getElementById('receita-proporcao'),
+        categoriaFilter: document.getElementById('categoria-filter'),
+        expositorFilter: document.getElementById('expositor-filter'),
+        contratoFilter: document.getElementById('contrato-filter'),
+        statusFilter: document.getElementById('status-filter'),
+        modalOverlay: document.getElementById('modal-overlay'),
+        modalTitle: document.getElementById('modal-title'),
+        modalSubtitle: document.getElementById('modal-subtitle'),
+        modalContent: document.getElementById('modal-content'),
+        modalClose: document.getElementById('modal-close'),
+    };
+
+    // Mensagens utilitárias
+    function showMessage(element, message) {
+        element.textContent = message;
+        element.classList.remove('hidden');
+    }
+    function hideMessages() {
+        elements.error.classList.add('hidden');
+        elements.success.classList.add('hidden');
+        elements.info.classList.add('hidden');
+    }
+    function showError(message) {
+        hideMessages();
+        showMessage(elements.error, message);
+    }
+    function showSuccess(message) {
+        hideMessages();
+        showMessage(elements.success, message);
+    }
+    function showInfo(message) {
+        hideMessages();
+        showMessage(elements.info, message);
+    }
+
+    // Função para converter texto "R$ 1.234,56" para número
+    function parseBRL(valor) {
+        if (!valor) return 0;
+        
+        // Remove R$ e espaços
+        valor = valor.toString().replace(/R\$|\s/g, '');
+        
+        // Remove pontos de milhares e converte vírgula para ponto
+        valor = valor.replace(/\./g, '').replace(',', '.');
+        
+        return parseFloat(valor) || 0;
+    }
+
+    // Calcular soma de uma coluna
+    function calcularSoma(filteredData, campo) {
+        return filteredData.reduce((acc, r) => acc + parseBRL(r.fields[campo]), 0);
+    }
+
+    async function loadData() {
+        elements.loading.classList.remove('hidden');
+        try {
+            const resp = await fetch("/api/expositores_rj");
+            if (!resp.ok) throw new Error(`Erro HTTP ${resp.status}`);
+            const data = await resp.json();
+
+            // Processa dados
+            if (data.records && Array.isArray(data.records)) {
+                allData = data.records;
+            } else if (Array.isArray(data)) {
+                allData = data.map((item, index) => ({
+                    id: item.id || `rec${index + 1}`,
+                    fields: item.fields || item
+                }));
+            } else {
+                allData = [{ id: 'rec1', fields: data }];
+            }
+
+            filteredData = [...allData];
+
+            // Mostra filtros e KPIs
+            elements.filtersSection.classList.remove('hidden');
+            elements.kpisSection.classList.remove('hidden');
+
+            updateKPIs();
+            renderCards(filteredData);
+            setupFilters();
+
+        } catch (err) {
+            console.error(err);
+            showError("Erro ao carregar dados da API.");
+        } finally {
+            elements.loading.classList.add('hidden');
+        }
+    }
+
+    function renderCards(dataToRender = filteredData) {
+        const container = elements.cardsContainer;
+        container.innerHTML = '';
+
+        if (!dataToRender.length) {
+            container.innerHTML = `<div class="info-box" style="grid-column: 1 / -1;">Nenhum expositor encontrado.</div>`;
+            return;
+        }
+
+        dataToRender.forEach(record => {
+            const fields = record.fields || {};
+            const contratoStatus = (fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase();
+            const statusConfirmado = (fields['STATUS'] || '').toUpperCase();
+
+            let status = 'vazio';
+            let statusText = 'N/A';
+            if (contratoStatus === 'SIM') { 
+                status = 'assinado'; 
+                statusText = 'Assinado'; 
+            } else if (statusConfirmado === 'SIM') { 
+                status = 'vendido'; 
+                statusText = 'Confirmado'; 
+            } else { 
+                status = 'pendente'; 
+                statusText = 'Pendente'; 
+            }
+
+            const card = document.createElement('div');
+            card.className = 'brand-card';
+            card.onclick = () => openModal(record);
+            card.innerHTML = `
+                <div class="brand-name">${fields['Expositor..N.Fantasia'] || 'Nome Vazio'}</div>
+                <div class="status-pill status-${status}">${statusText}</div>
+                <div class="metric-row">
+                    <div class="metric-item">
+                        <div class="metric-label">Stand</div>
+                        <div class="metric-value">${fields['STAND'] || 'N/A'}</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">Área</div>
+                        <div class="metric-value">${fields['ÁREA.M.'] || 'N/A'} ${fields['ÁREA.M.'] ? 'm²' : ''}</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function updateKPIs() {
+        const total = filteredData.length;
+        const confirmados = filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
+        const contratos = filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length;
+        const onboarding = filteredData.filter(r => (r.fields['ONBOARDING'] || '').toUpperCase().includes('SIM')).length;
+        const somaRealizada = calcularSoma(filteredData, 'RECEITA.REALIZADA');
+        const somaPrevista = calcularSoma(filteredData, 'RECEITA.PREVISTA');
+        const diferenca = somaPrevista - somaRealizada;
+        const proporcao = somaPrevista > 0 ? (somaRealizada / somaPrevista) * 100 : 0;
+
+        elements.totalExpositores.textContent = total;
+        elements.standsConfirmados.textContent = confirmados;
+        elements.contratosAssinados.textContent = contratos;
+        elements.onboardingFeito.textContent = onboarding;
+        elements.receitaRealizada.textContent = somaRealizada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        elements.receitaPrevista.textContent = somaPrevista.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        elements.receitaDiferenca.textContent = diferenca.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        elements.receitaProporcao.textContent = proporcao.toFixed(2) + '%';
+    }
+
+    function setupFilters() {
+        const categorias = [...new Set(allData.map(r => r.fields?.['CATEGORIA']).filter(Boolean))].sort();
+        elements.categoriaFilter.innerHTML = '<option value="">Todas as Categorias</option>';
+        categorias.forEach(c => elements.categoriaFilter.appendChild(new Option(c, c)));
+
+        const expositores = [...new Set(allData.map(r => r.fields?.['Expositor..N.Fantasia']).filter(Boolean))].sort();
+        elements.expositorFilter.innerHTML = '<option value="">Todos os Expositores</option>';
+        expositores.forEach(e => elements.expositorFilter.appendChild(new Option(e, e)));
+
+        elements.categoriaFilter.addEventListener('change', applyFilters);
+        elements.expositorFilter.addEventListener('change', applyFilters);
+        elements.contratoFilter.addEventListener('change', applyFilters);
+        elements.statusFilter.addEventListener('change', applyFilters);
+    }
+
+    function applyFilters() {
+        filteredData = allData.filter(r => {
+            const f = r.fields || {};
+            const cat = elements.categoriaFilter.value;
+            const exp = elements.expositorFilter.value;
+            const con = elements.contratoFilter.value;
+            const sta = elements.statusFilter.value;
+
+            // Filtro de categoria
+            if (cat && f['CATEGORIA'] !== cat) return false;
+            
+            // Filtro de expositor
+            if (exp && f['Expositor..N.Fantasia'] !== exp) return false;
+            
+            // Filtro de contrato
+            if (con) {
+                const contratoStatus = (f['financeiro.CONTRATO.ASSINADO.'] || '').toString().trim().toUpperCase();
+                
+                if (con === 'SIM' && contratoStatus !== 'SIM') return false;
+                if (con === 'NAO' && contratoStatus === 'SIM') return false;
+            }
+            
+            // Filtro de status
+            if (sta) {
+                const statusConfirmado = (f['STATUS'] || '').toString().trim().toUpperCase();
+                
+                if (sta === 'SIM' && statusConfirmado !== 'SIM') return false;
+                if (sta === 'NAO' && statusConfirmado !== 'SIM') return false;
+            }
+
+            return true;
+        });
+
+        renderCards(filteredData);
+        updateKPIs();
+    }
+
+    function openModal(record) {
+        const fields = record.fields || {};
+        elements.modalTitle.textContent = fields['Expositor..N.Fantasia'] || 'Nome Vazio';
+        elements.modalSubtitle.textContent = `ID: ${record.id}`;
+        elements.modalContent.innerHTML = '';
+        Object.keys(fields).forEach(fn => {
+            let val = fields[fn]; 
+            if (Array.isArray(val)) val = val.join(', ');
+            if (!val) val = 'N/A';
+            const div = document.createElement('div');
+            div.className = 'field-item';
+            div.innerHTML = `<div class="field-label">${fn}</div><div class="field-value">${val}</div>`;
+            elements.modalContent.appendChild(div);
+        });
+        elements.modalOverlay.classList.add('active');
+    }
+
+    elements.modalClose.onclick = () => elements.modalOverlay.classList.remove('active');
+    elements.modalOverlay.onclick = (e) => { if(e.target.id === 'modal-overlay') elements.modalOverlay.classList.remove('active'); }
+
+    // Inicialização
+    loadData();
+
+    // Função para exportar relatório
+    async function exportReport() {
+        const exportBtn = document.getElementById('export-btn');
+        exportBtn.disabled = true;
+        exportBtn.textContent = '📊 Gerando Relatório...';
+
+        try {
+            // Criar container do relatório
+            const reportContainer = document.createElement('div');
+            reportContainer.className = 'report-container';
+            document.body.appendChild(reportContainer);
+
+            // Calcular estatísticas
+            const estatisticasPorCategoria = calcularEstatisticasPorCategoria().slice(0, 5);
+            const dataAtual = new Date().toLocaleDateString('pt-BR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            reportContainer.innerHTML = `
+                <div class="report-header">
+                    <div class="report-title">Relatório de Gestão de Expositores</div>
+                    <div class="report-subtitle">Pavilhão Rio de Janeiro - ${dataAtual}</div>
+                </div>
+
+                <div class="report-section">
+                    <h3>📊 KPIs Gerais</h3>
+                    <div class="report-kpis">
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${filteredData.length}</div>
+                            <div class="report-kpi-label">Total Expositores</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length}</div>
+                            <div class="report-kpi-label">Stands Confirmados</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length}</div>
+                            <div class="report-kpi-label">Contratos Assinados</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${Math.round((filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length / filteredData.length) * 100 || 0)}%</div>
+                            <div class="report-kpi-label">Taxa de Ocupação</div>
+                        </div>
+                    </div>
+
+                    <div class="report-kpis">
+                        <div class="report-kpi">
+                            <div class="report-kpi-value" style="font-size: 1.1rem;">${calcularSoma(filteredData, 'RECEITA.REALIZADA').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                            <div class="report-kpi-label">Receita Realizada</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value" style="font-size: 1.1rem;">${calcularSoma(filteredData, 'RECEITA.PREVISTA').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                            <div class="report-kpi-label">Receita Prevista</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value" style="font-size: 1.1rem;">${(calcularSoma(filteredData, 'RECEITA.PREVISTA') - calcularSoma(filteredData, 'RECEITA.REALIZADA')).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                            <div class="report-kpi-label">Diferença (Falta)</div>
+                        </div>
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${((calcularSoma(filteredData, 'RECEITA.REALIZADA') / calcularSoma(filteredData, 'RECEITA.PREVISTA')) * 100 || 0).toFixed(1)}%</div>
+                            <div class="report-kpi-label">% Receita Realizada</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>📈 Top 5 Categorias</h3>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Categoria</th>
+                                <th>Total</th>
+                                <th>Confirmados</th>
+                                <th>Taxa</th>
+                                <th>Receita Realizada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${estatisticasPorCategoria.map(cat => `
+                                <tr>
+                                    <td><strong>${cat.categoria}</strong></td>
+                                    <td>${cat.total}</td>
+                                    <td>${cat.confirmados}</td>
+                                    <td>${cat.taxaOcupacao}%</td>
+                                    <td>${cat.receita}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-section">
+                    <h3>🏆 Top 3 Expositores por Receita</h3>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Posição</th>
+                                <th>Expositor</th>
+                                <th>Status</th>
+                                <th>Stand</th>
+                                <th>Receita Realizada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredData
+                                .sort((a, b) => parseBRL(b.fields['RECEITA.REALIZADA']) - parseBRL(a.fields['RECEITA.REALIZADA']))
+                                .slice(0, 3)
+                                .map((record, index) => {
+                                    const fields = record.fields || {};
+                                    const contratoStatus = (fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase();
+                                    const statusConfirmado = (fields['STATUS'] || '').toUpperCase();
+                                    
+                                    let status = 'vazio', statusText = 'N/A';
+                                    if (contratoStatus === 'SIM') { status = 'assinado'; statusText = 'Assinado'; }
+                                    else if (statusConfirmado === 'SIM') { status = 'vendido'; statusText = 'Confirmado'; }
+                                    else { status = 'pendente'; statusText = 'Pendente'; }
+
+                                    const medals = ['🥇', '🥈', '🥉'];
+
+                                    return `
+                                        <tr>
+                                            <td style="text-align: center; font-size: 1.2rem;">${medals[index]} ${index + 1}º</td>
+                                            <td><strong>${fields['Expositor..N.Fantasia'] || 'N/A'}</strong></td>
+                                            <td><span class="status-badge status-${status}">${statusText}</span></td>
+                                            <td>${fields['STAND'] || 'N/A'}</td>
+                                            <td><strong>${parseBRL(fields['RECEITA.REALIZADA']).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-footer">
+                    Relatório gerado automaticamente pelo Sistema de Gestão de Expositores - ${dataAtual}
+                </div>
+            `;
+
+            // Aguardar um pouco para renderização
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Capturar e baixar
+            const canvas = await html2canvas(reportContainer, {
+                width: 1200,
+                height: reportContainer.scrollHeight,
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+
+            // Remover container
+            document.body.removeChild(reportContainer);
+
+            // Fazer download
+            const link = document.createElement('a');
+            link.download = `relatorio_expositores_rj_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            showSuccess('Relatório exportado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao exportar relatório:', error);
+            showError('Erro ao gerar relatório. Tente novamente.');
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.textContent = '📊 Exportar Relatório PNG';
+        }
+    }
+
+    // Função auxiliar para calcular estatísticas por categoria (apenas top 5)
+    function calcularEstatisticasPorCategoria() {
+        const categorias = [...new Set(filteredData.map(r => r.fields?.['CATEGORIA']).filter(Boolean))];
+        
+        return categorias.map(categoria => {
+            const dadosCategoria = filteredData.filter(r => r.fields?.['CATEGORIA'] === categoria);
+            const total = dadosCategoria.length;
+            const confirmados = dadosCategoria.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
+            const taxaOcupacao = total > 0 ? Math.round((confirmados / total) * 100) : 0;
+            const receita = calcularSoma(dadosCategoria, 'RECEITA.REALIZADA');
+
+            return {
+                categoria,
+                total,
+                confirmados,
+                taxaOcupacao,
+                receita: receita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            };
+        }).sort((a, b) => b.total - a.total);
+    }
+</script>
+</body>
+</html>

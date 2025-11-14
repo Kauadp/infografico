@@ -174,6 +174,56 @@
             font-size: 1rem;
         }
 
+        .responsaveis-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .responsavel-card {
+            background: var(--color-white);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-left: 6px solid var(--color-accent-teal);
+        }
+
+        .responsavel-nome {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--color-dark-blue);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .responsavel-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .metric-item {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--color-text-dark);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--color-dark-blue);
+        }
+
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -215,73 +265,11 @@
             text-transform: uppercase;
         }
 
-        .status-avancou {
-            background: linear-gradient(135deg, var(--color-primary-green), #4ade80);
-        }
-
-        .status-nao-avancou {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
-
-        .status-pendente {
-            background: linear-gradient(135deg, var(--color-accent-orange), #e6680a);
-        }
-
         .metric-row {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
             margin: 1rem 0;
-        }
-
-        .metric-item {
-            background: #f8fafc;
-            border-radius: 0.5rem;
-            padding: 0.75rem;
-            border: 1px solid #e2e8f0;
-        }
-
-        .metric-label {
-            font-size: 0.75rem;
-            color: var(--color-text-dark);
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .metric-value {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--color-dark-blue);
-        }
-
-        .probability-section {
-            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-top: 1rem;
-            border: 2px solid var(--color-accent-teal);
-        }
-
-        .probability-label {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--color-dark-blue);
-            margin-bottom: 0.5rem;
-        }
-
-        .probability-value {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--color-accent-teal);
-        }
-
-        .ml-placeholder {
-            background: #fef3c7;
-            border: 2px dashed var(--color-accent-yellow);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            text-align: center;
-            color: var(--color-dark-blue);
         }
 
         .modal-overlay {
@@ -385,7 +373,7 @@
             color: var(--color-text-dark);
         }
 
-        /* Estilos para o relatório exportável */
+        /* Relatório */
         .report-container {
             position: fixed;
             top: -9999px;
@@ -423,7 +411,7 @@
 
         .report-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
@@ -476,16 +464,11 @@
         }
 
         @media (max-width: 768px) {
-            .form-grid {
+            .form-grid, .responsaveis-section, .kpi-section, .cards-grid {
                 grid-template-columns: 1fr;
             }
-            
-            .cards-grid {
+            .report-grid {
                 grid-template-columns: 1fr;
-            }
-            
-            .kpi-section {
-                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -493,17 +476,17 @@
 <body>
     <div class="container">
         <header class="main-header">
-            <h1>🎯 Dashboard de Agendamentos e Análise Preditiva</h1>
-            <p>Gerencie agendamentos e preveja probabilidades de avanço</p>
+            <h1>Dashboard de Agendamentos e Análise Preditiva</h1>
+            <p>Divisão por Responsável + Funil + Queda</p>
             <div>
-                <a href="index.html" class="btn-warning">⬅ Voltar</a>
-                <button onclick="exportReport()" class="btn-export" id="export-btn">📊 Exportar Relatório PNG</button>
+                <a href="index.html" class="btn-warning">Voltar</a>
+                <button onclick="exportReport()" class="btn-export" id="export-btn">Exportar Relatório PNG</button>
             </div>
         </header>
 
-        <!-- Filtro de Data -->
+        <!-- Filtros -->
         <section class="section-card" style="margin-bottom: 1.5rem;">
-            <h2 class="section-title">Filtro por Período</h2>
+            <h2 class="section-title">Filtros</h2>
             <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
                 <div class="form-group">
                     <label class="form-label">Período</label>
@@ -515,14 +498,26 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <button type="button" onclick="aplicarFiltro()" class="btn-primary" style="margin-top: 1.5rem;">Aplicar Filtro</button>
+                    <label class="form-label">Responsável</label>
+                    <select id="filtro-responsavel" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="Erick">Erick</option>
+                        <option value="Kauã">Kauã</option>
+                        <option value="Bruna Azevedo">Bruna Azevedo</option>
+                        <option value="Matheus">Matheus</option>
+                        <option value="Eliane">Eliane</option>
+                        <option value="Priscila Prado">Priscila Prado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="button" onclick="aplicarFiltro()" class="btn-primary" style="margin-top: 1.5rem;">Aplicar</button>
                 </div>
             </div>
         </section>
 
-        <!-- Seção de Formulário -->
+        <!-- Formulário -->
         <section class="section-card">
-            <h2 class="section-title">➕ Adicionar Novo Agendamento</h2>
+            <h2 class="section-title">Adicionar Novo Agendamento</h2>
             <form id="agendamentoForm">
                 <div class="form-grid">
                     <div class="form-group">
@@ -537,32 +532,36 @@
                             <option value="Priscila Prado">Priscila Prado</option>
                         </select>
                     </div>
-                    
                     <div class="form-group">
-                        <label class="form-label">Nome da Empresa *</label>
-                        <input type="text" id="empresa" class="form-input" placeholder="Digite o nome" required>
+                        <label class="form-label">Empresa *</label>
+                        <input type="text" id="empresa" class="form-input" required>
                     </div>
-                    
                     <div class="form-group">
-                        <label class="form-label">Data da Reunião *</label>
+                        <label class="form-label">Data Reunião *</label>
                         <input type="date" id="dataReuniao" class="form-input" required>
                     </div>
-
+                    <div class="form-group">
+                        <label class="form-label">Status Negociação</label>
+                        <select id="statusNegociacao" class="form-select">
+                            <option value="Reunião Agendada" selected>Reunião Agendada</option>
+                            <option value="Reunião Realizada">Reunião Realizada</option>
+                            <option value="Proposta Enviada">Proposta Enviada</option>
+                            <option value="Contrato Enviado">Contrato Enviado</option>
+                            <option value="Contrato Assinado">Contrato Assinado</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label class="form-label">Ticket Médio (R$)</label>
-                        <input type="number" id="ticketMedio" class="form-input" placeholder="0.00" step="0.01">
+                        <input type="number" id="ticketMedio" class="form-input" step="0.01">
                     </div>
-
                     <div class="form-group">
-                        <label class="form-label">Número de Lojas</label>
-                        <input type="number" id="numeroLojas" class="form-input" placeholder="0">
+                        <label class="form-label">Nº Lojas</label>
+                        <input type="number" id="numeroLojas" class="form-input">
                     </div>
-
                     <div class="form-group">
-                        <label class="form-label">Número de Funcionários</label>
-                        <input type="number" id="numeroFuncionarios" class="form-input" placeholder="0">
+                        <label class="form-label">Nº Funcionários</label>
+                        <input type="number" id="numeroFuncionarios" class="form-input">
                     </div>
-
                     <div class="form-group">
                         <label class="form-label">Segmento</label>
                         <select id="segmento" class="form-select">
@@ -572,682 +571,293 @@
                             <option value="Acessórios">Acessórios</option>
                             <option value="Infantil">Infantil</option>
                             <option value="Decoração">Decoração</option>
-                            <option value="Cosméticos">Cosmético</option>
+                            <option value="Cosméticos">Cosméticos</option>
                             <option value="Esportivo">Esportivo</option>
                             <option value="Outros">Outros</option>
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label class="form-label">Local do Evento</label>
-                        <input type="text" id="localEvento" class="form-input" placeholder="Cidade/Estado">
+                        <label class="form-label">Local</label>
+                        <input type="text" id="localEvento" class="form-input">
                     </div>
                 </div>
-                
-                <button type="submit" class="btn-primary">✅ Adicionar Agendamento</button>
+                <button type="submit" class="btn-primary">Adicionar</button>
             </form>
         </section>
 
-        <!-- KPIs -->
+        <!-- KPIs Gerais -->
         <section class="kpi-section hidden" id="kpis-section">
-            <div class="kpi-card">
-                <div class="kpi-value" id="total-agendamentos">0</div>
-                <div class="kpi-label">Total Agendamentos</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="total-avancou">0</div>
-                <div class="kpi-label">Avançaram</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="total-pendentes">0</div>
-                <div class="kpi-label">Pendentes</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="taxa-conversao">0%</div>
-                <div class="kpi-label">Taxa de Conversão</div>
-            </div>
+            <div class="kpi-card"><div class="kpi-value" id="total-agendamentos">0</div><div class="kpi-label">Total</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="total-avancou">0</div><div class="kpi-label">Fechados</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="total-pendentes">0</div><div class="kpi-label">Pendentes</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="taxa-conversao">0%</div><div class="kpi-label">Taxa</div></div>
         </section>
 
-        <!-- Placeholder para Modelo ML -->
-        <section class="section-card" id="ml-section">
-            <h2 class="section-title">🤖 Modelo de Predição (Em Desenvolvimento)</h2>
-            <div class="ml-placeholder">
-                <h3 style="font-weight: 800; margin-bottom: 1rem;">⚙️ Área Reservada para Machine Learning</h3>
-                <p style="margin-bottom: 0.5rem;">Quando implementado, o modelo irá analisar:</p>
-                <ul style="list-style: none; padding: 0;">
-                    <li>✓ Ticket Médio</li>
-                    <li>✓ Número de Lojas</li>
-                    <li>✓ Número de Funcionários</li>
-                    <li>✓ Segmento da Empresa</li>
-                    <li>✓ Local do Evento</li>
-                    <li>✓ Histórico de Conversões</li>
-                </ul>
-                <p style="margin-top: 1rem; font-weight: 700;">🎯 Previsão: Probabilidade de Avanço (0-100%)</p>
-            </div>
-        </section>
-
-        <!-- Loading -->
-        <div id="loading" class="loading hidden">Carregando dados...</div>
-
-        <!-- Cards de Empresas -->
+        <!-- KPIs por Responsável -->
         <section class="section-card">
-            <h2 class="section-title">📋 Quadro de Agendamentos</h2>
+            <h2 class="section-title">Desempenho por Responsável</h2>
+            <div id="responsaveis-container" class="responsaveis-section"></div>
+        </section>
+
+        <!-- Cards -->
+        <section class="section-card">
+            <h2 class="section-title">Quadro de Agendamentos</h2>
             <div id="cards-container" class="cards-grid"></div>
         </section>
     </div>
 
-    <!-- Modal para Edição -->
+    <!-- Modal -->
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal">
             <div class="modal-header">
                 <div class="modal-title" id="modal-title">Empresa</div>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button class="modal-close" onclick="closeModal()">×</button>
             </div>
             <div class="modal-content" id="modal-content"></div>
         </div>
     </div>
 
     <script>
-        let allData = [];
-        let currentRecordId = null;
+        let allData = [], currentRecordId = null, filtroAtual = 'todos', filtroResp = '';
         const API_URL = '/api/expositores3';
 
-        // Configurar data padrão
         document.getElementById('dataReuniao').valueAsDate = new Date();
 
-        // Carregar dados
         async function loadData() {
-            const loading = document.getElementById('loading');
-            loading.classList.remove('hidden');
-
+            const loading = document.getElementById('loading') || document.createElement('div');
+            loading.className = 'loading'; loading.textContent = 'Carregando...'; document.body.appendChild(loading);
             try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error('Erro ao carregar dados');
-                
-                const data = await response.json();
+                const res = await fetch(API_URL);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
                 allData = data.records || [];
-                
-                aplicarFiltro(); // ← aplica o filtro atual
+                aplicarFiltro();
                 document.getElementById('kpis-section').classList.remove('hidden');
-            } catch (error) {
-                console.error('Erro:', error);
-                Swal.fire('Erro', 'Não foi possível carregar os dados', 'error');
-            } finally {
-                loading.classList.add('hidden');
-            }
+            } catch { Swal.fire('Erro', 'Falha ao carregar', 'error'); }
+            finally { if (document.body.contains(loading)) document.body.removeChild(loading); }
         }
 
-        // Adicionar novo agendamento
         document.getElementById('agendamentoForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const dados = {
                 responsavel: document.getElementById('responsavel').value,
                 empresa: document.getElementById('empresa').value,
                 dataReuniao: document.getElementById('dataReuniao').value,
+                statusNegociacao: document.getElementById('statusNegociacao').value,
                 ticketMedio: parseFloat(document.getElementById('ticketMedio').value) || null,
                 numeroLojas: parseInt(document.getElementById('numeroLojas').value) || null,
                 numeroFuncionarios: parseInt(document.getElementById('numeroFuncionarios').value) || null,
                 segmento: document.getElementById('segmento').value || null,
                 localEvento: document.getElementById('localEvento').value || null
             };
-
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dados)
-                });
-
-                if (!response.ok) throw new Error('Erro ao criar agendamento');
-
-                Swal.fire('Sucesso!', 'Agendamento criado com sucesso', 'success');
-                
-                // Limpar campos não obrigatórios
-                document.getElementById('empresa').value = '';
-                document.getElementById('ticketMedio').value = '';
-                document.getElementById('numeroLojas').value = '';
-                document.getElementById('numeroFuncionarios').value = '';
-                document.getElementById('segmento').value = '';
-                document.getElementById('localEvento').value = '';
-                
+                const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
+                if (!res.ok) throw new Error();
+                Swal.fire('Sucesso!', 'Criado', 'success');
+                ['empresa','ticketMedio','numeroLojas','numeroFuncionarios','segmento','localEvento'].forEach(id => document.getElementById(id).value = '');
                 loadData();
-            } catch (error) {
-                console.error('Erro:', error);
-                Swal.fire('Erro', 'Não foi possível criar o agendamento', 'error');
-            }
+            } catch { Swal.fire('Erro', 'Falha', 'error'); }
         });
 
-        // Atualizar KPIs
-        function updateKPIs() {
-            const dadosFiltrados = filtrarDados(allData);
-            const total = dadosFiltrados.length;
-            const avancou = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Avançou').length;
-            const pendentes = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Pendente').length;
-            const taxa = total > 0 ? ((avancou / total) * 100).toFixed(1) : 0;
+        function getStatusColor(status) {
+            const cores = {
+                'Reunião Agendada': 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                'Reunião Realizada': 'linear-gradient(135deg, #10b981, #059669)',
+                'Proposta Enviada': 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                'Contrato Enviado': 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                'Contrato Assinado': 'linear-gradient(135deg, #22c55e, #16a34a)'
+            };
+            return cores[status] || '#9ca3af';
+        }
 
+        function renderResponsaveis() {
+            const dados = filtrarDados(allData);
+            const porResp = {};
+            dados.forEach(r => {
+                const resp = r.fields.Responsavel || 'Sem responsável';
+                if (!porResp[resp]) porResp[resp] = { total: 0, avancou: 0, pendentes: 0 };
+                porResp[resp].total++;
+                if (r.fields.StatusAvanco === 'Avançou') porResp[resp].avancou++;
+                if (r.fields.StatusAvanco === 'Pendente') porResp[resp].pendentes++;
+            });
+
+            const container = document.getElementById('responsaveis-container');
+            container.innerHTML = Object.entries(porResp).map(([nome, s]) => {
+                const taxa = s.total > 0 ? (s.avancou / s.total * 100).toFixed(1) : 0;
+                return `<div class="responsavel-card">
+                    <div class="responsavel-nome">${nome}</div>
+                    <div class="responsavel-metrics">
+                        <div class="metric-item"><div class="metric-label">Total</div><div class="metric-value">${s.total}</div></div>
+                        <div class="metric-item"><div class="metric-label">Fechados</div><div class="metric-value">${s.avancou}</div></div>
+                        <div class="metric-item"><div class="metric-label">Pendentes</div><div class="metric-value">${s.pendentes}</div></div>
+                        <div class="metric-item"><div class="metric-label">Taxa</div><div class="metric-value">${taxa}%</div></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderCards() {
+            const dados = filtrarDados(allData);
+            const container = document.getElementById('cards-container');
+            if (!dados.length) {
+                container.innerHTML = `<p style="text-align:center;color:#6b7280;">Nenhum agendamento</p>`;
+                return;
+            }
+            container.innerHTML = dados.map(r => {
+                const f = r.fields;
+                return `<div class="empresa-card" onclick="openModal('${r.id}')">
+                    <div class="empresa-nome">${f.Empresa}</div>
+                    <div class="status-badge" style="background:${getStatusColor(f['Status Negociação'])};">${f['Status Negociação']}</div>
+                    <div class="metric-row">
+                        <div class="metric-item"><div class="metric-label">Responsável</div><div class="metric-value">${f.Responsavel}</div></div>
+                        <div class="metric-item"><div class="metric-label">Data</div><div class="metric-value">${new Date(f.DataReuniao).toLocaleDateString('pt-BR')}</div></div>
+                    </div>
+                    ${f.TicketMedio ? `<div class="metric-row"><div class="metric-item"><div class="metric-label">Ticket</div><div class="metric-value">R$ ${f.TicketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div></div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function updateKPIs() {
+            const dados = filtrarDados(allData);
+            const total = dados.length;
+            const fechados = dados.filter(r => r.fields.StatusAvanco === 'Avançou').length;
+            const pendentes = total - fechados - dados.filter(r => r.fields.StatusAvanco === 'Não Avançou').length;
+            const taxa = total > 0 ? (fechados / total * 100).toFixed(1) : 0;
             document.getElementById('total-agendamentos').textContent = total;
-            document.getElementById('total-avancou').textContent = avancou;
+            document.getElementById('total-avancou').textContent = fechados;
             document.getElementById('total-pendentes').textContent = pendentes;
             document.getElementById('taxa-conversao').textContent = taxa + '%';
         }
 
-        // Renderizar cards
-        function renderCards() {
-            const container = document.getElementById('cards-container');
-            const dadosFiltrados = filtrarDados(allData);
-
-            if (dadosFiltrados.length === 0) {
-                const msg = filtroAtual === 'todos' 
-                    ? 'Nenhum agendamento cadastrado ainda' 
-                    : 'Nenhum agendamento encontrado neste período';
-                container.innerHTML = `<p style="text-align: center; color: #6b7280;">${msg}</p>`;
-                return;
-            }
-
-            container.innerHTML = allData.map(record => {
-                const f = record.fields;
-                const status = f.StatusAvanco || 'Pendente';
-                const statusClass = status === 'Avançou' ? 'status-avancou' : 
-                                   status === 'Não Avançou' ? 'status-nao-avancou' : 'status-pendente';
-
-                return `
-                    <div class="empresa-card" onclick="openModal('${record.id}')">
-                        <div class="empresa-nome">${f.Empresa}</div>
-                        <div class="status-badge ${statusClass}">${status}</div>
-                        
-                        <div class="metric-row">
-                            <div class="metric-item">
-                                <div class="metric-label">Responsável</div>
-                                <div class="metric-value">${f.Responsavel}</div>
-                            </div>
-                            <div class="metric-item">
-                                <div class="metric-label">Data Reunião</div>
-                                <div class="metric-value">${new Date(f.DataReuniao).toLocaleDateString('pt-BR')}</div>
-                            </div>
-                        </div>
-
-                        ${f.TicketMedio || f.NumeroLojas ? `
-                        <div class="metric-row">
-                            ${f.TicketMedio ? `
-                            <div class="metric-item">
-                                <div class="metric-label">Ticket Médio</div>
-                                <div class="metric-value">R$ ${f.TicketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
-                            </div>` : ''}
-                            ${f.NumeroLojas ? `
-                            <div class="metric-item">
-                                <div class="metric-label">Nº Lojas</div>
-                                <div class="metric-value">${f.NumeroLojas}</div>
-                            </div>` : ''}
-                        </div>` : ''}
-
-                        ${status === 'Pendente' ? `
-                        <div class="probability-section">
-                            <div class="probability-label">🤖 Probabilidade de Avanço</div>
-                            <div class="probability-value">--% (Modelo em treinamento)</div>
-                        </div>` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Abrir modal
-        function openModal(recordId) {
-            currentRecordId = recordId;
-            const record = allData.find(r => r.id === recordId);
-            if (!record) return;
-
-            const f = record.fields;
+        function openModal(id) {
+            currentRecordId = id;
+            const r = allData.find(x => x.id === id);
+            const f = r.fields;
             document.getElementById('modal-title').textContent = f.Empresa;
-            
             const fields = [
                 { label: 'Responsável', value: f.Responsavel, key: 'Responsavel' },
                 { label: 'Data Reunião', value: new Date(f.DataReuniao).toLocaleDateString('pt-BR'), key: 'DataReuniao' },
-                { label: 'Status de Avanço', value: f.StatusAvanco || 'Pendente', key: 'StatusAvanco', editable: true },
+                { label: 'Status Negociação', value: f['Status Negociação'], key: 'Status Negociação', editable: true },
+                { label: 'Status Avanço', value: f.StatusAvanco || 'Pendente', key: 'StatusAvanco', editable: true },
                 { label: 'Ticket Médio', value: f.TicketMedio ? `R$ ${f.TicketMedio.toFixed(2)}` : 'N/A', key: 'TicketMedio', editable: true },
-                { label: 'Número de Lojas', value: f.NumeroLojas || 'N/A', key: 'NumeroLojas', editable: true },
-                { label: 'Número de Funcionários', value: f.NumeroFuncionarios || 'N/A', key: 'NumeroFuncionarios', editable: true },
+                { label: 'Nº Lojas', value: f.NumeroLojas || 'N/A', key: 'NumeroLojas', editable: true },
+                { label: 'Nº Funcionários', value: f.NumeroFuncionarios || 'N/A', key: 'NumeroFuncionarios', editable: true },
                 { label: 'Segmento', value: f.Segmento || 'N/A', key: 'Segmento', editable: true },
-                { label: 'Local do Evento', value: f.LocalEvento || 'N/A', key: 'LocalEvento', editable: true }
+                { label: 'Local', value: f.LocalEvento || 'N/A', key: 'LocalEvento', editable: true }
             ];
-
             document.getElementById('modal-content').innerHTML = fields.map(field => `
                 <div class="field-group">
                     <label class="field-label">${field.label}</label>
-                    <div class="field-value" ${field.editable ? `onclick="editField('${field.key}', '${field.value}')"` : ''}>
-                        ${field.value}
-                    </div>
+                    <div class="field-value" ${field.editable ? `onclick="editField('${field.key}', '${field.value}')"` : ''}>${field.value}</div>
                 </div>
             `).join('');
-
             document.getElementById('modal-overlay').classList.add('active');
         }
 
-        // Fechar modal
-        function closeModal() {
-            document.getElementById('modal-overlay').classList.remove('active');
-            currentRecordId = null;
-        }
+        function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
 
-        // Editar campo
-        async function editField(fieldKey, currentValue) {
-            let inputType = 'text';
-            let inputOptions = {};
-
-            // Configurar tipo de input baseado no campo
-            if (fieldKey === 'StatusAvanco') {
+        async function editField(key, value) {
+            let inputType = 'text', options = {};
+            if (key === 'Status Negociação') {
                 inputType = 'select';
-                inputOptions = {
-                    'Pendente': 'Pendente',
-                    'Avançou': 'Avançou',
-                    'Não Avançou': 'Não Avançou'
-                };
-            } else if (fieldKey === 'Segmento') {
+                options = { 'Reunião Agendada': 'Reunião Agendada', 'Reunião Realizada': 'Reunião Realizada', 'Proposta Enviada': 'Proposta Enviada', 'Contrato Enviado': 'Contrato Enviado', 'Contrato Assinado': 'Contrato Assinado' };
+            } else if (key === 'StatusAvanco') {
                 inputType = 'select';
-                inputOptions = {
-                    'Moda': 'Moda',
-                    'Calçados': 'Calçados',
-                    'Acessórios': 'Acessórios',
-                    'Infantil': 'Infantil',
-                    'Decoração': 'Decoração',
-                    'Cosméticos': 'Cosméticos',
-                    'Esportivo': 'Esportivo',
-                    'Outros': 'Outros'
-                };
-            } else if (fieldKey === 'TicketMedio') {
-                inputType = 'number';
-            } else if (fieldKey === 'NumeroLojas' || fieldKey === 'NumeroFuncionarios') {
-                inputType = 'number';
+                options = { 'Pendente': 'Pendente', 'Avançou': 'Avançou', 'Não Avançou': 'Não Avançou' };
             }
-
-            const { value: newValue } = await Swal.fire({
-                title: `Editar ${fieldKey}`,
-                input: inputType,
-                inputOptions: inputOptions,
-                inputValue: currentValue.replace('R$ ', '').replace('N/A', ''),
-                showCancelButton: true,
-                confirmButtonText: 'Salvar',
-                cancelButtonText: 'Cancelar',
-                customClass: {
-                    popup: 'swal2-custom-popup',
-                    title: 'swal2-custom-title',
-                    input: 'swal2-custom-input',
-                    confirmButton: 'swal2-custom-confirm',
-                    cancelButton: 'swal2-custom-cancel'
+            const { value: novo } = await Swal.fire({ title: `Editar ${key}`, input: inputType, inputOptions: options, inputValue: value.replace(/R\$ |\N\/A/g, ''), showCancelButton: true });
+            if (novo !== undefined) {
+                let processed = novo;
+                if (['TicketMedio'].includes(key)) processed = parseFloat(novo);
+                if (['NumeroLojas','NumeroFuncionarios'].includes(key)) processed = parseInt(novo);
+                if (key === 'Status Negociação' && novo === 'Contrato Assinado') {
+                    await fetch(API_URL, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recordId: currentRecordId, fields: { 'StatusAvanco': 'Avançou' } }) });
                 }
-            });
-
-            if (newValue !== undefined && newValue !== '') {
-                await updateField(fieldKey, newValue);
+                await fetch(API_URL, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recordId: currentRecordId, fields: { [key]: processed } }) });
+                Swal.fire('Sucesso!', 'Atualizado', 'success');
+                loadData(); closeModal();
             }
         }
 
-        // Atualizar campo no Airtable
-        async function updateField(fieldKey, value) {
-            try {
-                // Converter valores numéricos
-                let processedValue = value;
-                if (fieldKey === 'TicketMedio') {
-                    processedValue = parseFloat(value);
-                } else if (fieldKey === 'NumeroLojas' || fieldKey === 'NumeroFuncionarios') {
-                    processedValue = parseInt(value);
-                }
-
-                const response = await fetch(API_URL, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        recordId: currentRecordId,
-                        fields: { [fieldKey]: processedValue }
-                    })
-                });
-
-                if (!response.ok) throw new Error('Erro ao atualizar');
-
-                Swal.fire('Sucesso!', 'Campo atualizado com sucesso', 'success');
-                loadData();
-                closeModal();
-            } catch (error) {
-                console.error('Erro:', error);
-                Swal.fire('Erro', 'Não foi possível atualizar o campo', 'error');
-            }
-        }
-
-        // Exportar relatório em PNG
         async function exportReport() {
-            const exportBtn = document.getElementById('export-btn');
-            exportBtn.disabled = true;
-            exportBtn.textContent = 'Gerando Relatório...';
-
+            const btn = document.getElementById('export-btn'); btn.disabled = true; btn.textContent = 'Gerando...';
             try {
-                // -------------------------------------------------
-                // 1. DADOS FILTRADOS (mesmo filtro usado no dashboard)
-                // -------------------------------------------------
-                const dadosFiltrados = filtrarDados(allData);
-
-                // -------------------------------------------------
-                // 2. CÁLCULO DOS KPIs (usando apenas os dados filtrados)
-                // -------------------------------------------------
-                const total = dadosFiltrados.length;
-                const avancou = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Avançou').length;
-                const naoAvancou = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Não Avançou').length;
-                const pendentes = dadosFiltrados.filter(r => r.fields.StatusAvanco === 'Pendente').length;
-                const taxaConversao = (avancou + naoAvancou > 0)
-                    ? ((avancou / (avancou + naoAvancou)) * 100).toFixed(1)
-                    : 0;
-
-                // -------------------------------------------------
-                // 3. TÍTULO DO PERÍODO
-                // -------------------------------------------------
-                const titulos = {
-                    hoje:   'Agendamentos do Dia',
-                    semana: 'Agendamentos da Semana',
-                    mes:    'Agendamentos do Mês',
-                    todos:  'Todos os Agendamentos'
-                };
-                const tituloPeriodo = titulos[filtroAtual] || 'Agendamentos';
-
-                // -------------------------------------------------
-                // 4. DATA/HORA ATUAL
-                // -------------------------------------------------
-                const dataAtual = new Date().toLocaleDateString('pt-BR', {
-                    year: 'numeric', month: 'long', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                });
-
-                // -------------------------------------------------
-                // 5. ESTATÍSTICAS POR RESPONSÁVEL (filtrado)
-                // -------------------------------------------------
-                const porResponsavel = {};
-                dadosFiltrados.forEach(r => {
+                const dados = filtrarDados(allData);
+                const etapas = ['Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada', 'Contrato Enviado', 'Contrato Assinado'];
+                const contagem = etapas.map(e => dados.filter(r => r.fields['Status Negociação'] === e).length);
+                const queda = etapas.map(e => dados.filter(r => r.fields['Status Negociação'] === e && r.fields.StatusAvanco === 'Não Avançou').length);
+                const porResp = {};
+                dados.forEach(r => {
                     const resp = r.fields.Responsavel || 'Sem responsável';
-                    if (!porResponsavel[resp]) {
-                        porResponsavel[resp] = { total: 0, avancou: 0, pendentes: 0 };
-                    }
-                    porResponsavel[resp].total++;
-                    if (r.fields.StatusAvanco === 'Avançou') porResponsavel[resp].avancou++;
-                    if (r.fields.StatusAvanco === 'Pendente') porResponsavel[resp].pendentes++;
+                    if (!porResp[resp]) porResp[resp] = { total: 0, avancou: 0 };
+                    porResp[resp].total++;
+                    if (r.fields.StatusAvanco === 'Avançou') porResp[resp].avancou++;
                 });
+                const dataAtual = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-                // -------------------------------------------------
-                // 6. ESTATÍSTICAS POR SEGMENTO (filtrado)
-                // -------------------------------------------------
-                const porSegmento = {};
-                dadosFiltrados.forEach(r => {
-                    const seg = r.fields.Segmento || 'Não definido';
-                    if (!porSegmento[seg]) {
-                        porSegmento[seg] = { total: 0, avancou: 0 };
-                    }
-                    porSegmento[seg].total++;
-                    if (r.fields.StatusAvanco === 'Avançou') porSegmento[seg].avancou++;
-                });
-
-                // -------------------------------------------------
-                // 7. TOP 5 EMPRESAS POR TICKET MÉDIO (filtrado)
-                // -------------------------------------------------
-                const top5 = dadosFiltrados
-                    .filter(r => r.fields.TicketMedio)
-                    .sort((a, b) => (b.fields.TicketMedio || 0) - (a.fields.TicketMedio || 0))
-                    .slice(0, 5);
-
-                // -------------------------------------------------
-                // 8. CRIAÇÃO DO CONTAINER DO RELATÓRIO
-                // -------------------------------------------------
-                const reportContainer = document.createElement('div');
-                reportContainer.className = 'report-container';
-                document.body.appendChild(reportContainer);
-
-                // -------------------------------------------------
-                // 9. HTML DO RELATÓRIO (usando os dados filtrados)
-                // -------------------------------------------------
-                reportContainer.innerHTML = `
-                    <div class="report-header">
-                        <div class="report-title">Relatório de ${tituloPeriodo}</div>
-                        <div style="opacity:0.9;margin-top:0.5rem;">${dataAtual}</div>
-                    </div>
-
-                    <!-- KPIs Gerais -->
-                    <div class="report-section">
-                        <h3>KPIs Gerais</h3>
-                        <div class="report-grid">
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${total}</div>
-                                <div class="report-kpi-label">Total Agendamentos</div>
-                            </div>
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${avancou}</div>
-                                <div class="report-kpi-label">Avançaram</div>
-                            </div>
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${pendentes}</div>
-                                <div class="report-kpi-label">Pendentes</div>
-                            </div>
-                            <div class="report-kpi">
-                                <div class="report-kpi-value">${taxaConversao}%</div>
-                                <div class="report-kpi-label">Taxa de Conversão</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Desempenho por Responsável -->
-                    <div class="report-section">
-                        <h3>Desempenho por Responsável</h3>
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>Responsável</th><th>Total</th><th>Avançou</th><th>Pendentes</th><th>Taxa de Conversão</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${Object.entries(porResponsavel).map(([resp, s]) => {
-                                    const taxa = s.total > 0 ? ((s.avancou / s.total) * 100).toFixed(1) : 0;
-                                    return `<tr>
-                                        <td><strong>${resp}</strong></td>
-                                        <td>${s.total}</td>
-                                        <td>${s.avancou}</td>
-                                        <td>${s.pendentes}</td>
-                                        <td>${taxa}%</td>
-                                    </tr>`;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Análise por Segmento -->
-                    <div class="report-section">
-                        <h3>Análise por Segmento</h3>
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>Segmento</th><th>Total</th><th>Avançou</th><th>Taxa de Conversão</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${Object.entries(porSegmento)
-                                    .sort((a, b) => b[1].total - a[1].total)
-                                    .map(([seg, s]) => {
-                                        const taxa = s.total > 0 ? ((s.avancou / s.total) * 100).toFixed(1) : 0;
-                                        return `<tr>
-                                            <td><strong>${seg}</strong></td>
-                                            <td>${s.total}</td>
-                                            <td>${s.avancou}</td>
-                                            <td>${taxa}%</td>
-                                        </tr>`;
-                                    }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Top 5 Empresas (Ticket Médio) -->
-                    <div class="report-section">
-                        <h3>Top 5 Empresas (Ticket Médio)</h3>
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>Posição</th><th>Empresa</th><th>Ticket Médio</th><th>Status</th><th>Responsável</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${top5.map((r, i) => {
-                                    const f = r.fields;
-                                    const medals = ['1º', '2º', '3º', '4º', '5º'];
-                                    return `<tr>
-                                        <td style="text-align:center;font-size:1.1rem;">${medals[i]}</td>
-                                        <td><strong>${f.Empresa}</strong></td>
-                                        <td>R$ ${f.TicketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                                        <td>${f.StatusAvanco || 'Pendente'}</td>
-                                        <td>${f.Responsavel}</td>
-                                    </tr>`;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Status do Modelo Preditivo -->
-                    <div class="report-section">
-                        <h3>Status do Modelo Preditivo</h3>
-                        <div style="background:#fef3c7;border:2px dashed #FDBB2D;border-radius:0.75rem;padding:1.5rem;text-align:center;">
-                            <p style="font-weight:700;font-size:1.1rem;margin-bottom:0.5rem;">Modelo em Desenvolvimento</p>
-                            <p style="color:#4A5568;">O modelo de Machine Learning será treinado com os dados coletados.</p>
-                            <p style="color:#4A5568;margin-top:0.5rem;">Variáveis: Ticket Médio, Nº Lojas, Nº Funcionários, Segmento, Local</p>
-                        </div>
-                    </div>
-
-                    <div class="report-footer">
-                        Relatório gerado automaticamente pelo Sistema de Análise Preditiva - ${dataAtual}
-                    </div>
+                const container = document.createElement('div'); container.className = 'report-container'; document.body.appendChild(container);
+                container.innerHTML = `
+                    <div class="report-header"><div class="report-title">Relatório de Agendamentos</div><div style="opacity:0.9;margin-top:0.5rem;">${dataAtual}</div></div>
+                    <div class="report-section"><h3>Funil</h3><div class="report-grid">
+                        ${etapas.map((e,i) => `<div class="report-kpi"><div class="report-kpi-value">${contagem[i]}</div><div class="report-kpi-label">${e}</div></div>`).join('')}
+                    </div></div>
+                    <div class="report-section"><h3>Queda por Etapa</h3><table class="report-table">
+                        <thead><tr><th>Etapa</th><th>Total</th><th>Não Avançou</th><th>%</th></tr></thead>
+                        <tbody>${etapas.map((e,i) => {
+                            const t = contagem[i], q = queda[i], taxa = t > 0 ? (q/t*100).toFixed(1) : 0;
+                            return `<tr><td><strong>${e}</strong></td><td>${t}</td><td style="color:#ef4444;">${q}</td><td>${taxa}%</td></tr>`;
+                        }).join('')}</tbody>
+                    </table></div>
+                    <div class="report-section"><h3>Desempenho por Responsável</h3><table class="report-table">
+                        <thead><tr><th>Responsável</th><th>Total</th><th>Fechados</th><th>Taxa</th></tr></thead>
+                        <tbody>${Object.entries(porResp).map(([n,s]) => {
+                            const taxa = s.total > 0 ? (s.avancou/s.total*100).toFixed(1) : 0;
+                            return `<tr><td><strong>${n}</strong></td><td>${s.total}</td><td>${s.avancou}</td><td>${taxa}%</td></tr>`;
+                        }).join('')}</tbody>
+                    </table></div>
+                    <div class="report-footer">Gerado em ${dataAtual}</div>
                 `;
 
-                // -------------------------------------------------
-                // 10. AGUARDAR RENDERIZAÇÃO + CAPTURA COM html2canvas
-                // -------------------------------------------------
                 await new Promise(r => setTimeout(r, 500));
-
-                const canvas = await html2canvas(reportContainer, {
-                    width: 1200,
-                    height: reportContainer.scrollHeight,
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff'
-                });
-
-                // -------------------------------------------------
-                // 11. DOWNLOAD DO PNG
-                // -------------------------------------------------
-                document.body.removeChild(reportContainer);
-
-                const link = document.createElement('a');
-                link.download = `relatorio_${tituloPeriodo.toLowerCase().replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-
-                Swal.fire('Sucesso!', 'Relatório exportado com sucesso!', 'success');
-
-            } catch (error) {
-                console.error('Erro ao exportar relatório:', error);
-                Swal.fire('Erro', 'Não foi possível gerar o relatório', 'error');
-            } finally {
-                exportBtn.disabled = false;
-                exportBtn.textContent = 'Exportar Relatório PNG';
-            }
+                const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+                document.body.removeChild(container);
+                const link = document.createElement('a'); link.download = `relatorio_${new Date().toISOString().split('T')[0]}.png`; link.href = canvas.toDataURL(); link.click();
+                Swal.fire('Sucesso!', 'Exportado!', 'success');
+            } catch { Swal.fire('Erro', 'Falha', 'error'); }
+            finally { btn.disabled = false; btn.textContent = 'Exportar Relatório PNG'; }
         }
 
-        // Fechar modal ao clicar fora
-        document.getElementById('modal-overlay').addEventListener('click', (e) => {
-            if (e.target.id === 'modal-overlay') closeModal();
-        });
-
-        // Inicializar
-        loadData();
-
-        // ========================================
-        // ÁREA RESERVADA PARA MODELO DE ML
-        // ========================================
-        
-        // Função placeholder para predição (será implementada futuramente)
-        function predictProbability(empresaData) {
-            // TODO: Implementar modelo de Machine Learning
-            // Exemplo de estrutura:
-            /*
-            const features = [
-                empresaData.TicketMedio || 0,
-                empresaData.NumeroLojas || 0,
-                empresaData.NumeroFuncionarios || 0,
-                encodeSegmento(empresaData.Segmento),
-                encodeLocal(empresaData.LocalEvento)
-            ];
-            
-            // Carregar modelo treinado (TensorFlow.js, ONNX, etc)
-            const probability = model.predict(features);
-            return probability;
-            */
-            
-            return null; // Retorna null enquanto modelo não está treinado
-        }
-
-        // Função para treinar modelo quando houver dados suficientes
-        async function trainModel() {
-            // TODO: Implementar treinamento do modelo
-            // Requisitos:
-            // - Mínimo de dados para treino (ex: 100 registros com StatusAvanco definido)
-            // - Split treino/teste
-            // - Validação cruzada
-            // - Métricas de performance (accuracy, precision, recall, F1-score)
-            
-            console.log('Função de treinamento será implementada quando houver dados suficientes');
-        }
-
-        let filtroAtual = 'todos'; // 'hoje', 'semana', 'mes', 'todos'
-
-        function getDateRange(tipo) {
-            const hoje = new Date();
-            const inicio = new Date();
-            const fim = new Date();
-
-            if (tipo === 'hoje') {
-                inicio.setHours(0, 0, 0, 0);
-                fim.setHours(23, 59, 59, 999);
-            } else if (tipo === 'semana') {
-                const diaSemana = hoje.getDay(); // 0 = domingo
-                const diff = hoje.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); // início na segunda
-                inicio.setDate(diff);
-                inicio.setHours(0, 0, 0, 0);
-                fim.setDate(diff + 6);
-                fim.setHours(23, 59, 59, 999);
-            } else if (tipo === 'mes') {
-                inicio.setDate(1);
-                inicio.setHours(0, 0, 0, 0);
-                fim.setMonth(fim.getMonth() + 1);
-                fim.setDate(0);
-                fim.setHours(23, 59, 59, 999);
-            } else {
-                return { inicio: null, fim: null };
-            }
-
-            return {
-                inicio: inicio.toISOString().split('T')[0],
-                fim: fim.toISOString().split('T')[0]
-            };
+        function getDateRange(t) {
+            const hoje = new Date(), inicio = new Date(), fim = new Date();
+            if (t === 'hoje') { inicio.setHours(0,0,0,0); fim.setHours(23,59,59,999); }
+            else if (t === 'semana') { const d = hoje.getDay(); const diff = hoje.getDate() - d + (d===0?-6:1); inicio.setDate(diff); inicio.setHours(0,0,0,0); fim.setDate(diff+6); fim.setHours(23,59,59,999); }
+            else if (t === 'mes') { inicio.setDate(1); inicio.setHours(0,0,0,0); fim.setMonth(fim.getMonth()+1); fim.setDate(0); fim.setHours(23,59,59,999); }
+            else return { inicio: null, fim: null };
+            return { inicio: inicio.toISOString().split('T')[0], fim: fim.toISOString().split('T')[0] };
         }
 
         function aplicarFiltro() {
             filtroAtual = document.getElementById('filtro-periodo').value;
+            filtroResp = document.getElementById('filtro-responsavel').value;
+            renderResponsaveis();
             renderCards();
             updateKPIs();
         }
 
-        function filtrarDados(dados) {
-            if (filtroAtual === 'todos') return dados;
-
-            const { inicio, fim } = getDateRange(filtroAtual);
-            if (!inicio || !fim) return dados;
-
-            return dados.filter(record => {
-                const dataCriacao = record.fields.DataCriacao;
-                return dataCriacao >= inicio && dataCriacao <= fim;
-            });
+        function filtrarDados(d) {
+            let dados = d;
+            if (filtroAtual !== 'todos') {
+                const { inicio, fim } = getDateRange(filtroAtual);
+                dados = dados.filter(r => r.fields.DataCriacao >= inicio && r.fields.DataCriacao <= fim);
+            }
+            if (filtroResp) {
+                dados = dados.filter(r => r.fields.Responsavel === filtroResp);
+            }
+            return dados;
         }
 
+        document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
+        loadData();
     </script>
 </body>
 </html>

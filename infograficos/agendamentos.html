@@ -780,51 +780,160 @@
         }
 
         async function exportReport() {
-            const btn = document.getElementById('export-btn'); btn.disabled = true; btn.textContent = 'Gerando...';
+            const btn = document.getElementById('export-btn'); 
+            btn.disabled = true; btn.textContent = 'Gerando...';
             try {
                 const dados = filtrarDados(allData);
                 const etapas = ['Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada', 'Contrato Enviado', 'Contrato Assinado'];
+                
+                // 1. CONTAGEM GERAL
                 const contagem = etapas.map(e => dados.filter(r => r.fields['Status Negociação'] === e).length);
                 const queda = etapas.map(e => dados.filter(r => r.fields['Status Negociação'] === e && r.fields.StatusAvanco === 'Não Avançou').length);
-                const porResp = {};
+
+                // 2. CRUZAMENTO: RESPONSÁVEL x ETAPA
+                const porRespEtapa = {};
                 dados.forEach(r => {
                     const resp = r.fields.Responsavel || 'Sem responsável';
-                    if (!porResp[resp]) porResp[resp] = { total: 0, avancou: 0 };
-                    porResp[resp].total++;
-                    if (r.fields.StatusAvanco === 'Avançou') porResp[resp].avancou++;
+                    const etapa = r.fields['Status Negociação'];
+                    if (!porRespEtapa[resp]) porRespEtapa[resp] = {};
+                    porRespEtapa[resp][etapa] = (porRespEtapa[resp][etapa] || 0) + 1;
                 });
-                const dataAtual = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-                const container = document.createElement('div'); container.className = 'report-container'; document.body.appendChild(container);
+                // 3. LISTA DE EMPRESAS
+                const listaEmpresas = dados.map(r => {
+                    const f = r.fields;
+                    return {
+                        empresa: f.Empresa,
+                        responsavel: f.Responsavel,
+                        status: f['Status Negociação'],
+                        data: new Date(f.DataReuniao).toLocaleDateString('pt-BR'),
+                        ticket: f.TicketMedio ? `R$ ${f.TicketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'
+                    };
+                });
+
+                const dataAtual = new Date().toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' });
+
+                const container = document.createElement('div');
+                container.className = 'report-container';
+                document.body.appendChild(container);
+
                 container.innerHTML = `
-                    <div class="report-header"><div class="report-title">Relatório de Agendamentos</div><div style="opacity:0.9;margin-top:0.5rem;">${dataAtual}</div></div>
-                    <div class="report-section"><h3>Funil</h3><div class="report-grid">
-                        ${etapas.map((e,i) => `<div class="report-kpi"><div class="report-kpi-value">${contagem[i]}</div><div class="report-kpi-label">${e}</div></div>`).join('')}
-                    </div></div>
-                    <div class="report-section"><h3>Queda por Etapa</h3><table class="report-table">
-                        <thead><tr><th>Etapa</th><th>Total</th><th>Não Avançou</th><th>%</th></tr></thead>
-                        <tbody>${etapas.map((e,i) => {
-                            const t = contagem[i], q = queda[i], taxa = t > 0 ? (q/t*100).toFixed(1) : 0;
-                            return `<tr><td><strong>${e}</strong></td><td>${t}</td><td style="color:#ef4444;">${q}</td><td>${taxa}%</td></tr>`;
-                        }).join('')}</tbody>
-                    </table></div>
-                    <div class="report-section"><h3>Desempenho por Responsável</h3><table class="report-table">
-                        <thead><tr><th>Responsável</th><th>Total</th><th>Fechados</th><th>Taxa</th></tr></thead>
-                        <tbody>${Object.entries(porResp).map(([n,s]) => {
-                            const taxa = s.total > 0 ? (s.avancou/s.total*100).toFixed(1) : 0;
-                            return `<tr><td><strong>${n}</strong></td><td>${s.total}</td><td>${s.avancou}</td><td>${taxa}%</td></tr>`;
-                        }).join('')}</tbody>
-                    </table></div>
-                    <div class="report-footer">Gerado em ${dataAtual}</div>
+                    <div class="report-header">
+                        <div class="report-title">Relatório Completo de Agendamentos</div>
+                        <div style="opacity:0.9;margin-top:0.5rem;">${dataAtual}</div>
+                    </div>
+
+                    <!-- 1. FUNIL GERAL -->
+                    <div class="report-section">
+                        <h3>Funil de Negociação (Total)</h3>
+                        <div class="report-grid">
+                            ${etapas.map((e,i) => `
+                                <div class="report-kpi">
+                                    <div class="report-kpi-value">${contagem[i]}</div>
+                                    <div class="report-kpi-label">${e}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- 2. QUEDA POR ETAPA -->
+                    <div class="report-section">
+                        <h3>Queda por Etapa</h3>
+                        <table class="report-table">
+                            <thead><tr><th>Etapa</th><th>Total</th><th>Não Avançou</th><th>% Queda</th></tr></thead>
+                            <tbody>
+                                ${etapas.map((e,i) => {
+                                    const t = contagem[i], q = queda[i], taxa = t > 0 ? (q/t*100).toFixed(1) : 0;
+                                    return `<tr>
+                                        <td><strong>${e}</strong></td>
+                                        <td>${t}</td>
+                                        <td style="color:#ef4444;">${q}</td>
+                                        <td>${taxa}%</td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 3. CRUZAMENTO: RESPONSÁVEL x ETAPA -->
+                    <div class="report-section">
+                        <h3>Funil por Responsável</h3>
+                        <table class="report-table" style="font-size:0.9rem;">
+                            <thead>
+                                <tr>
+                                    <th>Responsável</th>
+                                    ${etapas.map(e => `<th>${e.split(' ')[0]}<br><small>${e.split(' ').slice(1).join(' ')}</small></th>`).join('')}
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(porRespEtapa).map(([resp, etapasMap]) => {
+                                    const total = Object.values(etapasMap).reduce((a,b) => a+b, 0);
+                                    return `<tr>
+                                        <td><strong>${resp}</strong></td>
+                                        ${etapas.map(e => `<td>${etapasMap[e] || 0}</td>`).join('')}
+                                        <td><strong>${total}</strong></td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 4. LISTA DE EMPRESAS -->
+                    <div class="report-section">
+                        <h3>Lista de Empresas</h3>
+                        <table class="report-table" style="font-size:0.85rem;">
+                            <thead><tr><th>Empresa</th><th>Responsável</th><th>Status</th><th>Data</th><th>Ticket</th></tr></thead>
+                            <tbody>
+                                ${listaEmpresas.length ? listaEmpresas.map(e => `
+                                    <tr>
+                                        <td>${e.empresa}</td>
+                                        <td>${e.responsavel}</td>
+                                        <td>${e.status}</td>
+                                        <td>${e.data}</td>
+                                        <td>${e.ticket}</td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="5" style="text-align:center;color:#6b7280;">Nenhum registro</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="report-footer">
+                        Gerado automaticamente em ${dataAtual}
+                    </div>
                 `;
 
-                await new Promise(r => setTimeout(r, 500));
-                const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+                // Aguarda renderização
+                await new Promise(r => setTimeout(r, 600));
+
+                const canvas = await html2canvas(container, { 
+                    scale: 2, 
+                    useCORS: true, 
+                    backgroundColor: '#fff',
+                    logging: false
+                });
+
                 document.body.removeChild(container);
-                const link = document.createElement('a'); link.download = `relatorio_${new Date().toISOString().split('T')[0]}.png`; link.href = canvas.toDataURL(); link.click();
-                Swal.fire('Sucesso!', 'Exportado!', 'success');
-            } catch { Swal.fire('Erro', 'Falha', 'error'); }
-            finally { btn.disabled = false; btn.textContent = 'Exportar Relatório PNG'; }
+
+                const link = document.createElement('a');
+                link.download = `relatorio_completo_${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Relatório Exportado!',
+                    text: 'Funil por responsável + lista de empresas',
+                    timer: 2000
+                });
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Erro', 'Falha ao gerar relatório', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Exportar Relatório PNG';
+            }
         }
 
         function getDateRange(t) {

@@ -624,7 +624,7 @@
         document.getElementById('dataReuniao').valueAsDate = new Date();
 
         async function loadData() {
-            const loading = document.getElementById('loading') || document.createElement('div');
+            const loading = document.createElement('div');
             loading.className = 'loading'; loading.textContent = 'Carregando...'; document.body.appendChild(loading);
             try {
                 const res = await fetch(API_URL);
@@ -634,7 +634,7 @@
                 aplicarFiltro();
                 document.getElementById('kpis-section').classList.remove('hidden');
             } catch { Swal.fire('Erro', 'Falha ao carregar', 'error'); }
-            finally { if (document.body.contains(loading)) document.body.removeChild(loading); }
+            finally { document.body.removeChild(loading); }
         }
 
         document.getElementById('agendamentoForm').addEventListener('submit', async (e) => {
@@ -643,7 +643,7 @@
                 responsavel: document.getElementById('responsavel').value,
                 empresa: document.getElementById('empresa').value,
                 dataReuniao: document.getElementById('dataReuniao').value,
-                statusNegociacao: document.getElementById('statusNegociacao').value,
+                statusNegociacao: document.getElementById('statusNegociacao').value || 'Reunião Agendada',
                 ticketMedio: parseFloat(document.getElementById('ticketMedio').value) || null,
                 numeroLojas: parseInt(document.getElementById('numeroLojas').value) || null,
                 numeroFuncionarios: parseInt(document.getElementById('numeroFuncionarios').value) || null,
@@ -707,7 +707,7 @@
                 const f = r.fields;
                 return `<div class="empresa-card" onclick="openModal('${r.id}')">
                     <div class="empresa-nome">${f.Empresa}</div>
-                    <div class="status-badge" style="background:${getStatusColor(f['Status Negociação'])};">${f['Status Negociação']}</div>
+                    <div class="status-badge" style="background:${getStatusColor(f.statusNegociacao)};">${f.statusNegociacao || 'Pendente'}</div>
                     <div class="metric-row">
                         <div class="metric-item"><div class="metric-label">Responsável</div><div class="metric-value">${f.Responsavel}</div></div>
                         <div class="metric-item"><div class="metric-label">Data</div><div class="metric-value">${new Date(f.DataReuniao).toLocaleDateString('pt-BR')}</div></div>
@@ -737,7 +737,7 @@
             const fields = [
                 { label: 'Responsável', value: f.Responsavel, key: 'Responsavel' },
                 { label: 'Data Reunião', value: new Date(f.DataReuniao).toLocaleDateString('pt-BR'), key: 'DataReuniao' },
-                { label: 'Status Negociação', value: f['Status Negociação'], key: 'Status Negociação', editable: true },
+                { label: 'Status Negociação', value: f.statusNegociacao || 'Pendente', key: 'statusNegociacao', editable: true },
                 { label: 'Status Avanço', value: f.StatusAvanco || 'Pendente', key: 'StatusAvanco', editable: true },
                 { label: 'Ticket Médio', value: f.TicketMedio ? `R$ ${f.TicketMedio.toFixed(2)}` : 'N/A', key: 'TicketMedio', editable: true },
                 { label: 'Nº Lojas', value: f.NumeroLojas || 'N/A', key: 'NumeroLojas', editable: true },
@@ -758,9 +758,15 @@
 
         async function editField(key, value) {
             let inputType = 'text', options = {};
-            if (key === 'Status Negociação') {
+            if (key === 'statusNegociacao') {
                 inputType = 'select';
-                options = { 'Reunião Agendada': 'Reunião Agendada', 'Reunião Realizada': 'Reunião Realizada', 'Proposta Enviada': 'Proposta Enviada', 'Contrato Enviado': 'Contrato Enviado', 'Contrato Assinado': 'Contrato Assinado' };
+                options = {
+                    'Reunião Agendada': 'Reunião Agendada',
+                    'Reunião Realizada': 'Reunião Realizada',
+                    'Proposta Enviada': 'Proposta Enviada',
+                    'Contrato Enviado': 'Contrato Enviado',
+                    'Contrato Assinado': 'Contrato Assinado'
+                };
             } else if (key === 'StatusAvanco') {
                 inputType = 'select';
                 options = { 'Pendente': 'Pendente', 'Avançou': 'Avançou', 'Não Avançou': 'Não Avançou' };
@@ -770,7 +776,7 @@
                 let processed = novo;
                 if (['TicketMedio'].includes(key)) processed = parseFloat(novo);
                 if (['NumeroLojas','NumeroFuncionarios'].includes(key)) processed = parseInt(novo);
-                if (key === 'Status Negociação' && novo === 'Contrato Assinado') {
+                if (key === 'statusNegociacao' && novo === 'Contrato Assinado') {
                     await fetch(API_URL, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recordId: currentRecordId, fields: { 'StatusAvanco': 'Avançou' } }) });
                 }
                 await fetch(API_URL, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recordId: currentRecordId, fields: { [key]: processed } }) });
@@ -786,26 +792,23 @@
                 const dados = filtrarDados(allData);
                 const etapas = ['Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada', 'Contrato Enviado', 'Contrato Assinado'];
                 
-                // 1. CONTAGEM GERAL
-                const contagem = etapas.map(e => dados.filter(r => r.fields['Status Negociação'] === e).length);
-                const queda = etapas.map(e => dados.filter(r => r.fields['Status Negociação'] === e && r.fields.StatusAvanco === 'Não Avançou').length);
+                const contagem = etapas.map(e => dados.filter(r => r.fields.statusNegociacao === e).length);
+                const queda = etapas.map(e => dados.filter(r => r.fields.statusNegociacao === e && r.fields.StatusAvanco === 'Não Avançou').length);
 
-                // 2. CRUZAMENTO: RESPONSÁVEL x ETAPA
                 const porRespEtapa = {};
                 dados.forEach(r => {
                     const resp = r.fields.Responsavel || 'Sem responsável';
-                    const etapa = r.fields['Status Negociação'];
+                    const etapa = r.fields.statusNegociacao;
                     if (!porRespEtapa[resp]) porRespEtapa[resp] = {};
                     porRespEtapa[resp][etapa] = (porRespEtapa[resp][etapa] || 0) + 1;
                 });
 
-                // 3. LISTA DE EMPRESAS
                 const listaEmpresas = dados.map(r => {
                     const f = r.fields;
                     return {
                         empresa: f.Empresa,
                         responsavel: f.Responsavel,
-                        status: f['Status Negociação'],
+                        status: f.statusNegociacao || '-',
                         data: new Date(f.DataReuniao).toLocaleDateString('pt-BR'),
                         ticket: f.TicketMedio ? `R$ ${f.TicketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'
                     };
@@ -823,7 +826,6 @@
                         <div style="opacity:0.9;margin-top:0.5rem;">${dataAtual}</div>
                     </div>
 
-                    <!-- 1. FUNIL GERAL -->
                     <div class="report-section">
                         <h3>Funil de Negociação (Total)</h3>
                         <div class="report-grid">
@@ -836,7 +838,6 @@
                         </div>
                     </div>
 
-                    <!-- 2. QUEDA POR ETAPA -->
                     <div class="report-section">
                         <h3>Queda por Etapa</h3>
                         <table class="report-table">
@@ -855,7 +856,6 @@
                         </table>
                     </div>
 
-                    <!-- 3. CRUZAMENTO: RESPONSÁVEL x ETAPA -->
                     <div class="report-section">
                         <h3>Funil por Responsável</h3>
                         <table class="report-table" style="font-size:0.9rem;">
@@ -879,7 +879,6 @@
                         </table>
                     </div>
 
-                    <!-- 4. LISTA DE EMPRESAS -->
                     <div class="report-section">
                         <h3>Lista de Empresas</h3>
                         <table class="report-table" style="font-size:0.85rem;">
@@ -898,38 +897,22 @@
                         </table>
                     </div>
 
-                    <div class="report-footer">
-                        Gerado automaticamente em ${dataAtual}
-                    </div>
+                    <div class="report-footer">Gerado em ${dataAtual}</div>
                 `;
 
-                // Aguarda renderização
                 await new Promise(r => setTimeout(r, 600));
-
-                const canvas = await html2canvas(container, { 
-                    scale: 2, 
-                    useCORS: true, 
-                    backgroundColor: '#fff',
-                    logging: false
-                });
-
+                const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#fff' });
                 document.body.removeChild(container);
 
                 const link = document.createElement('a');
-                link.download = `relatorio_completo_${new Date().toISOString().split('T')[0]}.png`;
-                link.href = canvas.toDataURL('image/png');
+                link.download = `relatorio_${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL();
                 link.click();
 
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Relatório Exportado!',
-                    text: 'Funil por responsável + lista de empresas',
-                    timer: 2000
-                });
-
+                Swal.fire('Sucesso!', 'Relatório exportado!', 'success');
             } catch (err) {
                 console.error(err);
-                Swal.fire('Erro', 'Falha ao gerar relatório', 'error');
+                Swal.fire('Erro', 'Falha ao gerar', 'error');
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Exportar Relatório PNG';

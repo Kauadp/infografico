@@ -791,7 +791,6 @@
             try {
                 const dados = filtrarDados(allData);
                 
-                // ORDEM CORRETA DO FUNIL
                 const etapas = [
                     'Reunião Agendada',
                     'Reunião Realizada',
@@ -800,55 +799,37 @@
                     'Contrato Assinado'
                 ];
 
-                // MAPEAR STATUS → ÍNDICE (para cálculo cumulativo)
                 const statusToIndex = {};
                 etapas.forEach((etapa, i) => statusToIndex[etapa] = i);
 
-                // CONTAGEM CUMULATIVA
+                // 1. FUNIL CUMULATIVO
                 const contagemCumulativa = new Array(etapas.length).fill(0);
-                const quedaPorEtapa = new Array(etapas.length).fill(0);
-
                 dados.forEach(r => {
-                    const status = r.fields.statusNegociacao;
-                    const avanco = r.fields.StatusAvanco;
-                    const idx = statusToIndex[status];
+                    const idx = statusToIndex[r.fields.statusNegociacao];
+                    if (idx === undefined) return;
+                    for (let i = 0; i <= idx; i++) contagemCumulativa[i]++;
+                });
 
-                    if (idx === undefined) return; // ignora status inválido
-
-                    // Contabiliza em todas as etapas ANTERIORES + atual
-                    for (let i = 0; i <= idx; i++) {
-                        contagemCumulativa[i]++;
-                    }
-
-                    // Queda: só conta se parou antes de avançar
-                    if (avanco === 'Não Avançou') {
-                        // Encontra a última etapa que ele "chegou"
-                        for (let i = idx; i >= 0; i--) {
-                            if (etapas[i] === status) {
-                                quedaPorEtapa[i]++;
-                                break;
-                            }
-                        }
+                // 2. QUEDA: QUEM TEM StatusAvanco = 'Não Avançou'
+                const naoAvancouPorEtapa = new Array(etapas.length).fill(0);
+                dados.forEach(r => {
+                    if (r.fields.StatusAvanco === 'Não Avançou') {
+                        const idx = statusToIndex[r.fields.statusNegociacao];
+                        if (idx !== undefined) naoAvancouPorEtapa[idx]++;
                     }
                 });
 
-                // CRUZAMENTO: RESPONSÁVEL x ETAPA (CUMULATIVO TAMBÉM!)
+                // 3. FUNIL POR RESPONSÁVEL (CUMULATIVO)
                 const porRespEtapa = {};
                 dados.forEach(r => {
                     const resp = r.fields.Responsavel || 'Sem responsável';
-                    const status = r.fields.statusNegociacao;
-                    const idx = statusToIndex[status];
+                    const idx = statusToIndex[r.fields.statusNegociacao];
                     if (idx === undefined) return;
-
                     if (!porRespEtapa[resp]) porRespEtapa[resp] = new Array(etapas.length).fill(0);
-
-                    // Conta cumulativamente
-                    for (let i = 0; i <= idx; i++) {
-                        porRespEtapa[resp][i]++;
-                    }
+                    for (let i = 0; i <= idx; i++) porRespEtapa[resp][i]++;
                 });
 
-                // LISTA DE EMPRESAS
+                // 4. LISTA DE EMPRESAS
                 const listaEmpresas = dados.map(r => {
                     const f = r.fields;
                     return {
@@ -888,15 +869,15 @@
                         </p>
                     </div>
 
-                    <!-- QUEDA POR ETAPA -->
+                    <!-- QUEDA POR ETAPA (BASEADO EM CAMPO EXPLÍCITO) -->
                     <div class="report-section">
-                        <h3>Queda por Etapa</h3>
+                        <h3>Queda por Etapa (StatusAvanco = "Não Avançou")</h3>
                         <table class="report-table">
                             <thead><tr><th>Etapa</th><th>Chegaram</th><th>Não Avançaram</th><th>% Queda</th></tr></thead>
                             <tbody>
                                 ${etapas.map((e,i) => {
                                     const total = contagemCumulativa[i];
-                                    const q = i > 0 ? (contagemCumulativa[i-1] - contagemCumulativa[i]) : 0;
+                                    const q = naoAvancouPorEtapa[i];
                                     const taxa = total > 0 ? (q / total * 100).toFixed(1) : 0;
                                     return `<tr>
                                         <td><strong>${e}</strong></td>
@@ -909,7 +890,7 @@
                         </table>
                     </div>
 
-                    <!-- FUNIL POR RESPONSÁVEL (CUMULATIVO) -->
+                    <!-- FUNIL POR RESPONSÁVEL -->
                     <div class="report-section">
                         <h3>Funil por Responsável (Cumulativo)</h3>
                         <table class="report-table" style="font-size:0.9rem;">
@@ -920,7 +901,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${Object.entries(porRespEtapa).map(([resp, valores]) => {
+                                ${Object.entries(porRespEtapa).sort((a,b) => a[0].localeCompare(b[0])).map(([resp, valores]) => {
                                     return `<tr>
                                         <td><strong>${resp}</strong></td>
                                         ${valores.map(v => `<td>${v}</td>`).join('')}
@@ -949,7 +930,7 @@
                         </table>
                     </div>
 
-                    <div class="report-footer">Gerado em ${dataAtual} • Funil com contagem cumulativa</div>
+                    <div class="report-footer">Gerado em ${dataAtual} • Queda baseada em StatusAvanco</div>
                 `;
 
                 await new Promise(r => setTimeout(r, 600));
@@ -957,20 +938,14 @@
                 document.body.removeChild(container);
 
                 const link = document.createElement('a');
-                link.download = `funil_cumulativo_${new Date().toISOString().split('T')[0]}.png`;
+                link.download = `relatorio_correto_${new Date().toISOString().split('T')[0]}.png`;
                 link.href = canvas.toDataURL();
                 link.click();
 
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Relatório Gerado!',
-                    text: 'Funil com contagem cumulativa',
-                    timer: 2000
-                });
-
+                Swal.fire('Sucesso!', 'Relatório corrigido!', 'success');
             } catch (err) {
                 console.error(err);
-                Swal.fire('Erro', 'Falha ao gerar relatório', 'error');
+                Swal.fire('Erro', 'Falha ao gerar', 'error');
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Exportar Relatório PNG';

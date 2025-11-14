@@ -790,19 +790,65 @@
             btn.disabled = true; btn.textContent = 'Gerando...';
             try {
                 const dados = filtrarDados(allData);
-                const etapas = ['Reunião Agendada', 'Reunião Realizada', 'Proposta Enviada', 'Contrato Enviado', 'Contrato Assinado'];
                 
-                const contagem = etapas.map(e => dados.filter(r => r.fields.statusNegociacao === e).length);
-                const queda = etapas.map(e => dados.filter(r => r.fields.statusNegociacao === e && r.fields.StatusAvanco === 'Não Avançou').length);
+                // ORDEM CORRETA DO FUNIL
+                const etapas = [
+                    'Reunião Agendada',
+                    'Reunião Realizada',
+                    'Proposta Enviada',
+                    'Contrato Enviado',
+                    'Contrato Assinado'
+                ];
 
+                // MAPEAR STATUS → ÍNDICE (para cálculo cumulativo)
+                const statusToIndex = {};
+                etapas.forEach((etapa, i) => statusToIndex[etapa] = i);
+
+                // CONTAGEM CUMULATIVA
+                const contagemCumulativa = new Array(etapas.length).fill(0);
+                const quedaPorEtapa = new Array(etapas.length).fill(0);
+
+                dados.forEach(r => {
+                    const status = r.fields.statusNegociacao;
+                    const avanco = r.fields.StatusAvanco;
+                    const idx = statusToIndex[status];
+
+                    if (idx === undefined) return; // ignora status inválido
+
+                    // Contabiliza em todas as etapas ANTERIORES + atual
+                    for (let i = 0; i <= idx; i++) {
+                        contagemCumulativa[i]++;
+                    }
+
+                    // Queda: só conta se parou antes de avançar
+                    if (avanco === 'Não Avançou') {
+                        // Encontra a última etapa que ele "chegou"
+                        for (let i = idx; i >= 0; i--) {
+                            if (etapas[i] === status) {
+                                quedaPorEtapa[i]++;
+                                break;
+                            }
+                        }
+                    }
+                });
+
+                // CRUZAMENTO: RESPONSÁVEL x ETAPA (CUMULATIVO TAMBÉM!)
                 const porRespEtapa = {};
                 dados.forEach(r => {
                     const resp = r.fields.Responsavel || 'Sem responsável';
-                    const etapa = r.fields.statusNegociacao;
-                    if (!porRespEtapa[resp]) porRespEtapa[resp] = {};
-                    porRespEtapa[resp][etapa] = (porRespEtapa[resp][etapa] || 0) + 1;
+                    const status = r.fields.statusNegociacao;
+                    const idx = statusToIndex[status];
+                    if (idx === undefined) return;
+
+                    if (!porRespEtapa[resp]) porRespEtapa[resp] = new Array(etapas.length).fill(0);
+
+                    // Conta cumulativamente
+                    for (let i = 0; i <= idx; i++) {
+                        porRespEtapa[resp][i]++;
+                    }
                 });
 
+                // LISTA DE EMPRESAS
                 const listaEmpresas = dados.map(r => {
                     const f = r.fields;
                     return {
@@ -812,7 +858,7 @@
                         data: new Date(f.DataReuniao).toLocaleDateString('pt-BR'),
                         ticket: f.TicketMedio ? `R$ ${f.TicketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'
                     };
-                });
+                }).sort((a, b) => a.empresa.localeCompare(b.empresa));
 
                 const dataAtual = new Date().toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' });
 
@@ -822,32 +868,39 @@
 
                 container.innerHTML = `
                     <div class="report-header">
-                        <div class="report-title">Relatório Completo de Agendamentos</div>
+                        <div class="report-title">Relatório de Funil de Negociação</div>
                         <div style="opacity:0.9;margin-top:0.5rem;">${dataAtual}</div>
                     </div>
 
+                    <!-- FUNIL CUMULATIVO -->
                     <div class="report-section">
-                        <h3>Funil de Negociação (Total)</h3>
+                        <h3>Funil de Negociação (Cumulativo)</h3>
                         <div class="report-grid">
                             ${etapas.map((e,i) => `
                                 <div class="report-kpi">
-                                    <div class="report-kpi-value">${contagem[i]}</div>
+                                    <div class="report-kpi-value">${contagemCumulativa[i]}</div>
                                     <div class="report-kpi-label">${e}</div>
                                 </div>
                             `).join('')}
                         </div>
+                        <p style="text-align:center;font-size:0.85rem;color:#6b7280;margin-top:0.5rem;">
+                            *Cada número inclui todos os leads que já passaram por essa etapa
+                        </p>
                     </div>
 
+                    <!-- QUEDA POR ETAPA -->
                     <div class="report-section">
                         <h3>Queda por Etapa</h3>
                         <table class="report-table">
-                            <thead><tr><th>Etapa</th><th>Total</th><th>Não Avançou</th><th>% Queda</th></tr></thead>
+                            <thead><tr><th>Etapa</th><th>Chegaram</th><th>Não Avançaram</th><th>% Queda</th></tr></thead>
                             <tbody>
                                 ${etapas.map((e,i) => {
-                                    const t = contagem[i], q = queda[i], taxa = t > 0 ? (q/t*100).toFixed(1) : 0;
+                                    const total = contagemCumulativa[i];
+                                    const q = i > 0 ? (contagemCumulativa[i-1] - contagemCumulativa[i]) : 0;
+                                    const taxa = total > 0 ? (q / total * 100).toFixed(1) : 0;
                                     return `<tr>
                                         <td><strong>${e}</strong></td>
-                                        <td>${t}</td>
+                                        <td>${total}</td>
                                         <td style="color:#ef4444;">${q}</td>
                                         <td>${taxa}%</td>
                                     </tr>`;
@@ -856,29 +909,28 @@
                         </table>
                     </div>
 
+                    <!-- FUNIL POR RESPONSÁVEL (CUMULATIVO) -->
                     <div class="report-section">
-                        <h3>Funil por Responsável</h3>
+                        <h3>Funil por Responsável (Cumulativo)</h3>
                         <table class="report-table" style="font-size:0.9rem;">
                             <thead>
                                 <tr>
                                     <th>Responsável</th>
                                     ${etapas.map(e => `<th>${e.split(' ')[0]}<br><small>${e.split(' ').slice(1).join(' ')}</small></th>`).join('')}
-                                    <th>Total</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${Object.entries(porRespEtapa).map(([resp, etapasMap]) => {
-                                    const total = Object.values(etapasMap).reduce((a,b) => a+b, 0);
+                                ${Object.entries(porRespEtapa).map(([resp, valores]) => {
                                     return `<tr>
                                         <td><strong>${resp}</strong></td>
-                                        ${etapas.map(e => `<td>${etapasMap[e] || 0}</td>`).join('')}
-                                        <td><strong>${total}</strong></td>
+                                        ${valores.map(v => `<td>${v}</td>`).join('')}
                                     </tr>`;
                                 }).join('')}
                             </tbody>
                         </table>
                     </div>
 
+                    <!-- LISTA DE EMPRESAS -->
                     <div class="report-section">
                         <h3>Lista de Empresas</h3>
                         <table class="report-table" style="font-size:0.85rem;">
@@ -897,7 +949,7 @@
                         </table>
                     </div>
 
-                    <div class="report-footer">Gerado em ${dataAtual}</div>
+                    <div class="report-footer">Gerado em ${dataAtual} • Funil com contagem cumulativa</div>
                 `;
 
                 await new Promise(r => setTimeout(r, 600));
@@ -905,14 +957,20 @@
                 document.body.removeChild(container);
 
                 const link = document.createElement('a');
-                link.download = `relatorio_${new Date().toISOString().split('T')[0]}.png`;
+                link.download = `funil_cumulativo_${new Date().toISOString().split('T')[0]}.png`;
                 link.href = canvas.toDataURL();
                 link.click();
 
-                Swal.fire('Sucesso!', 'Relatório exportado!', 'success');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Relatório Gerado!',
+                    text: 'Funil com contagem cumulativa',
+                    timer: 2000
+                });
+
             } catch (err) {
                 console.error(err);
-                Swal.fire('Erro', 'Falha ao gerar', 'error');
+                Swal.fire('Erro', 'Falha ao gerar relatório', 'error');
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Exportar Relatório PNG';

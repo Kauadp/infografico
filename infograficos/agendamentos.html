@@ -855,7 +855,7 @@
 
                     <!-- FUNIL CUMULATIVO -->
                     <div class="report-section">
-                        <h3>Funil de Negociação (Cumulativo)</h3>
+                        <h3>Funil de Negociação</h3>
                         <div class="report-grid">
                             ${etapas.map((e,i) => `
                                 <div class="report-kpi">
@@ -871,7 +871,7 @@
 
                     <!-- QUEDA POR ETAPA (BASEADO EM CAMPO EXPLÍCITO) -->
                     <div class="report-section">
-                        <h3>Queda por Etapa (StatusAvanco = "Não Avançou")</h3>
+                        <h3>Queda por Etapa</h3>
                         <table class="report-table">
                             <thead><tr><th>Etapa</th><th>Chegaram</th><th>Não Avançaram</th><th>% Queda</th></tr></thead>
                             <tbody>
@@ -892,7 +892,7 @@
 
                     <!-- FUNIL POR RESPONSÁVEL -->
                     <div class="report-section">
-                        <h3>Funil por Responsável (Cumulativo)</h3>
+                        <h3>Funil por Responsável</h3>
                         <table class="report-table" style="font-size:0.9rem;">
                             <thead>
                                 <tr>
@@ -930,7 +930,7 @@
                         </table>
                     </div>
 
-                    <div class="report-footer">Gerado em ${dataAtual} • Queda baseada em StatusAvanco</div>
+                    <div class="report-footer">Gerado em ${dataAtual}</div>
                 `;
 
                 await new Promise(r => setTimeout(r, 600));

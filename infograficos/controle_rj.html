@@ -1051,6 +1051,15 @@
                             <div class="report-kpi-value">${filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length}</div>
                             <div class="report-kpi-label">Contratos Assinados</div>
                         </div>
+
+                        <div class="report-kpi">
+                            <div class="report-kpi-value">${filteredData.filter(r => {
+                                const val = (r.fields['ONBOARDING'] || '').toString().trim();
+                                return val === 'SIM' || val === 'Marcado';
+                            }).length}</div>
+                            <div class="report-kpi-label">Onboarding Realizado</div>
+                        </div>
+
                     </div>
 
                     <div class="report-kpis">

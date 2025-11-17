@@ -924,8 +924,18 @@
 
         // NOVA KPI: Onboarding Realizado (SIM ou Marcado)
         const onboardingRealizado = filteredData.filter(r => {
-            const val = (r.fields['ONBOARDING'] || '').trim();
-            return val === 'SIM' || val === 'Marcado';
+            const onboarding = (r.fields['ONBOARDING'] || '').toString().trim();
+            if (!onboarding) return false;
+
+            const valor = onboarding.toUpperCase();
+
+            // Só conta como realizado se tiver essas palavras-chave
+            return (
+                valor.includes('FEITO') ||
+                valor.includes('CONCLUÍDO') ||
+                valor.includes('REALIZADO') ||
+                valor.includes('SIM') && !valor.includes('MARCADO') // "Sim" só conta se NÃO tiver "marcado"
+            );
         }).length;
 
         const somaRealizada = calcularSoma(filteredData, 'RECEITA.REALIZADA');

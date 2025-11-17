@@ -1063,10 +1063,22 @@
                         </div>
 
                         <div class="report-kpi">
-                            <div class="report-kpi-value">${filteredData.filter(r => {
-                                const val = (r.fields['ONBOARDING'] || '').toString().trim();
-                                return val === 'SIM' || val === 'Marcado';
-                            }).length}</div>
+                            <div class="report-kpi-value">
+                                ${filteredData.filter(r => {
+                                    const onboarding = (r.fields['ONBOARDING'] || '').toString().trim();
+                                    if (!onboarding) return false;
+                                    
+                                    const valor = onboarding.toUpperCase();
+                                    
+                                    return (
+                                        valor.includes('FEITO') ||
+                                        valor.includes('CONCLUÍDO') ||
+                                        valor.includes('REALIZADO') ||
+                                        valor.includes('CONCLUIDO') ||
+                                        (valor.includes('SIM') && !valor.includes('MARCADO'))
+                                    );
+                                }).length}
+                            </div>
                             <div class="report-kpi-label">Onboarding Realizado</div>
                         </div>
 

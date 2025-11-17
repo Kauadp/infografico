@@ -623,9 +623,57 @@
 
         document.getElementById('dataReuniao').valueAsDate = new Date();
 
+        // NOVA FUNÇÃO: pega dataStatus ou DataCriacao como fallback
+        function getDataMovimentacao(registro) {
+            return registro.fields.dataStatus || registro.fields.DataCriacao || new Date().toISOString().split('T')[0];
+        }
+
+        // FILTRO ATUALIZADO – usa dataStatus (movimentação real)
+        function filtrarDados(d) {
+            let dados = d;
+
+            // Filtro por responsável
+            if (filtroResp) {
+                dados = dados.filter(r => r.fields.Responsavel === filtroResp);
+            }
+
+            // Todo o período = sem filtro de data
+            if (filtroAtual === 'todos') return dados;
+
+            const hoje = new Date();
+            const inicio = new Date();
+            const fim = new Date();
+
+            if (filtroAtual === 'hoje') {
+                inicio.setHours(0, 0, 0, 0);
+                fim.setHours(23, 59, 59, 999);
+            } else if (filtroAtual === 'semana') {
+                const dia = hoje.getDay();
+                const diff = hoje.getDate() - dia + (dia === 0 ? -6 : 1); // segunda-feira
+                inicio.setDate(diff);
+                inicio.setHours(0, 0, 0, 0);
+                fim.setDate(diff + 6);
+                fim.setHours(23, 59, 59, 999);
+            } else if (filtroAtual === 'mes') {
+                inicio.setDate(1);
+                inicio.setHours(0, 0, 0, 0);
+                fim.setMonth(fim.getMonth() + 1);
+                fim.setDate(0);
+                fim.setHours(23, 59, 59, 999);
+            }
+
+            return dados.filter(r => {
+                const dataMov = getDataMovimentacao(r);
+                const data = new Date(dataMov);
+                return data >= inicio && data <= fim;
+            });
+        }
+
         async function loadData() {
             const loading = document.createElement('div');
-            loading.className = 'loading'; loading.textContent = 'Carregando...'; document.body.appendChild(loading);
+            loading.className = 'loading'; 
+            loading.textContent = 'Carregando...'; 
+            document.body.appendChild(loading);
             try {
                 const res = await fetch(API_URL);
                 if (!res.ok) throw new Error();
@@ -633,8 +681,11 @@
                 allData = data.records || [];
                 aplicarFiltro();
                 document.getElementById('kpis-section').classList.remove('hidden');
-            } catch { Swal.fire('Erro', 'Falha ao carregar', 'error'); }
-            finally { document.body.removeChild(loading); }
+            } catch { 
+                Swal.fire('Erro', 'Falha ao carregar', 'error'); 
+            } finally { 
+                document.body.removeChild(loading); 
+            }
         }
 
         document.getElementById('agendamentoForm').addEventListener('submit', async (e) => {
@@ -651,12 +702,18 @@
                 localEvento: document.getElementById('localEvento').value || null
             };
             try {
-                const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
+                const res = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(dados) 
+                });
                 if (!res.ok) throw new Error();
                 Swal.fire('Sucesso!', 'Criado', 'success');
                 ['empresa','ticketMedio','numeroLojas','numeroFuncionarios','segmento','localEvento'].forEach(id => document.getElementById(id).value = '');
                 loadData();
-            } catch { Swal.fire('Erro', 'Falha', 'error'); }
+            } catch { 
+                Swal.fire('Erro', 'Falha', 'error'); 
+            }
         });
 
         function getStatusColor(status) {
@@ -686,7 +743,7 @@
                 const taxa = s.total > 0 ? (s.avancou / s.total * 100).toFixed(1) : 0;
                 return `<div class="responsavel-card">
                     <div class="responsavel-nome">${nome}</div>
-                    <div class="responsavel-metrics">
+                    <div class="responsaveis-metrics">
                         <div class="metric-item"><div class="metric-label">Total</div><div class="metric-value">${s.total}</div></div>
                         <div class="metric-item"><div class="metric-label">Fechados</div><div class="metric-value">${s.avancou}</div></div>
                         <div class="metric-item"><div class="metric-label">Pendentes</div><div class="metric-value">${s.pendentes}</div></div>
@@ -712,7 +769,7 @@
                         <div class="metric-item"><div class="metric-label">Responsável</div><div class="metric-value">${f.Responsavel}</div></div>
                         <div class="metric-item"><div class="metric-label">Data</div><div class="metric-value">${new Date(f.DataReuniao).toLocaleDateString('pt-BR')}</div></div>
                     </div>
-                    ${f.TicketMedio ? `<div class="metric-row"><div class="metric-item"><div class="metric-label">Ticket</div><div class="metric-value">R$ ${f.TicketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div></div>` : ''}
+                    ${f.TicketMedio ? `<div class="metric-row"><div class="metric-item"><div class="metric-label">Ticket</div><div class="metric-value">R$ ${Number(f.TicketMedio).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div></div>` : ''}
                 </div>`;
             }).join('');
         }
@@ -721,7 +778,8 @@
             const dados = filtrarDados(allData);
             const total = dados.length;
             const fechados = dados.filter(r => r.fields.StatusAvanco === 'Avançou').length;
-            const pendentes = total - fechados - dados.filter(r => r.fields.StatusAvanco === 'Não Avançou').length;
+            const perdidos = dados.filter(r => r.fields.StatusAvanco === 'Não Avançou').length;
+            const pendentes = total - fechados - perdidos;
             const taxa = total > 0 ? (fechados / total * 100).toFixed(1) : 0;
             document.getElementById('total-agendamentos').textContent = total;
             document.getElementById('total-avancou').textContent = fechados;
@@ -739,7 +797,7 @@
                 { label: 'Data Reunião', value: new Date(f.DataReuniao).toLocaleDateString('pt-BR'), key: 'DataReuniao' },
                 { label: 'Status Negociação', value: f.statusNegociacao || 'Pendente', key: 'statusNegociacao', editable: true },
                 { label: 'Status Avanço', value: f.StatusAvanco || 'Pendente', key: 'StatusAvanco', editable: true },
-                { label: 'Ticket Médio', value: f.TicketMedio ? `R$ ${f.TicketMedio.toFixed(2)}` : 'N/A', key: 'TicketMedio', editable: true },
+                { label: 'Ticket Médio', value: f.TicketMedio ? `R$ ${Number(f.TicketMedio).toFixed(2)}` : 'N/A', key: 'TicketMedio', editable: true },
                 { label: 'Nº Lojas', value: f.NumeroLojas || 'N/A', key: 'NumeroLojas', editable: true },
                 { label: 'Nº Funcionários', value: f.NumeroFuncionarios || 'N/A', key: 'NumeroFuncionarios', editable: true },
                 { label: 'Segmento', value: f.Segmento || 'N/A', key: 'Segmento', editable: true },
@@ -748,13 +806,15 @@
             document.getElementById('modal-content').innerHTML = fields.map(field => `
                 <div class="field-group">
                     <label class="field-label">${field.label}</label>
-                    <div class="field-value" ${field.editable ? `onclick="editField('${field.key}', '${field.value}')"` : ''}>${field.value}</div>
+                    <div class="field-value" ${field.editable ? `onclick="editField('${field.key}', '${field.value.replace(/'/g, "\\'")}')"` : ''}>${field.value}</div>
                 </div>
             `).join('');
             document.getElementById('modal-overlay').classList.add('active');
         }
 
-        function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
+        function closeModal() { 
+            document.getElementById('modal-overlay').classList.remove('active'); 
+        }
 
         async function editField(key, value) {
             let inputType = 'text', options = {};
@@ -771,17 +831,35 @@
                 inputType = 'select';
                 options = { 'Pendente': 'Pendente', 'Avançou': 'Avançou', 'Não Avançou': 'Não Avançou' };
             }
-            const { value: novo } = await Swal.fire({ title: `Editar ${key}`, input: inputType, inputOptions: options, inputValue: value.replace(/R\$ |\N\/A/g, ''), showCancelButton: true });
+            const { value: novo } = await Swal.fire({ 
+                title: `Editar ${key}`, 
+                input: inputType, 
+                inputOptions: options, 
+                inputValue: value.replace(/R\$ |\N\/A/g, ''), 
+                showCancelButton: true 
+            });
             if (novo !== undefined) {
                 let processed = novo;
-                if (['TicketMedio'].includes(key)) processed = parseFloat(novo);
-                if (['NumeroLojas','NumeroFuncionarios'].includes(key)) processed = parseInt(novo);
+                if (['TicketMedio'].includes(key)) processed = parseFloat(novo) || null;
+                if (['NumeroLojas','NumeroFuncionarios'].includes(key)) processed = parseInt(novo) || null;
+
+                await fetch(API_URL, { 
+                    method: 'PATCH', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ recordId: currentRecordId, fields: { [key]: processed } }) 
+                });
+
                 if (key === 'statusNegociacao' && novo === 'Contrato Assinado') {
-                    await fetch(API_URL, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recordId: currentRecordId, fields: { 'StatusAvanco': 'Avançou' } }) });
+                    await fetch(API_URL, { 
+                        method: 'PATCH', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ recordId: currentRecordId, fields: { StatusAvanco: 'Avançou' } }) 
+                    });
                 }
-                await fetch(API_URL, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recordId: currentRecordId, fields: { [key]: processed } }) });
+
                 Swal.fire('Sucesso!', 'Atualizado', 'success');
-                loadData(); closeModal();
+                loadData(); 
+                closeModal();
             }
         }
 
@@ -790,70 +868,43 @@
             btn.disabled = true; btn.textContent = 'Gerando...';
             try {
                 const dados = filtrarDados(allData);
-                
-                const etapas = [
-                    'Reunião Agendada',
-                    'Reunião Realizada',
-                    'Proposta Enviada',
-                    'Contrato Enviado',
-                    'Contrato Assinado'
-                ];
+                const etapas = ['Reunião Agendada','Reunião Realizada','Proposta Enviada','Contrato Enviado','Contrato Assinado'];
+                const statusToIndex = {}; etapas.forEach((e,i)=>statusToIndex[e]=i);
 
-                const statusToIndex = {};
-                etapas.forEach((etapa, i) => statusToIndex[etapa] = i);
+                const contagemCumulativa = new Array(5).fill(0);
+                dados.forEach(r => { const i = statusToIndex[r.fields.statusNegociacao]; if(i!==undefined) for(let j=0;j<=i;j++) contagemCumulativa[j]++; });
 
-                // 1. FUNIL CUMULATIVO
-                const contagemCumulativa = new Array(etapas.length).fill(0);
-                dados.forEach(r => {
-                    const idx = statusToIndex[r.fields.statusNegociacao];
-                    if (idx === undefined) return;
-                    for (let i = 0; i <= idx; i++) contagemCumulativa[i]++;
-                });
+                const naoAvancouPorEtapa = new Array(5).fill(0);
+                dados.forEach(r => { if(r.fields.StatusAvanco==='Não Avançou'){ const i=statusToIndex[r.fields.statusNegociacao]; if(i!==undefined) naoAvancouPorEtapa[i]++; }});
 
-                // 2. QUEDA: QUEM TEM StatusAvanco = 'Não Avançou'
-                const naoAvancouPorEtapa = new Array(etapas.length).fill(0);
-                dados.forEach(r => {
-                    if (r.fields.StatusAvanco === 'Não Avançou') {
-                        const idx = statusToIndex[r.fields.statusNegociacao];
-                        if (idx !== undefined) naoAvancouPorEtapa[idx]++;
-                    }
-                });
-
-                // 3. FUNIL POR RESPONSÁVEL (CUMULATIVO)
                 const porRespEtapa = {};
                 dados.forEach(r => {
                     const resp = r.fields.Responsavel || 'Sem responsável';
-                    const idx = statusToIndex[r.fields.statusNegociacao];
-                    if (idx === undefined) return;
-                    if (!porRespEtapa[resp]) porRespEtapa[resp] = new Array(etapas.length).fill(0);
-                    for (let i = 0; i <= idx; i++) porRespEtapa[resp][i]++;
+                    const i = statusToIndex[r.fields.statusNegociacao];
+                    if(i===undefined) return;
+                    if(!porRespEtapa[resp]) porRespEtapa[resp] = new Array(5).fill(0);
+                    for(let j=0;j<=i;j++) porRespEtapa[resp][j]++;
                 });
 
-                // 4. LISTA DE EMPRESAS
-                const listaEmpresas = dados.map(r => {
-                    const f = r.fields;
-                    return {
-                        empresa: f.Empresa,
-                        responsavel: f.Responsavel,
-                        status: f.statusNegociacao || '-',
-                        data: new Date(f.DataReuniao).toLocaleDateString('pt-BR'),
-                        ticket: f.TicketMedio ? `R$ ${f.TicketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'
-                    };
-                }).sort((a, b) => a.empresa.localeCompare(b.empresa));
+                const listaEmpresas = dados.map(r=>({
+                    empresa:r.fields.Empresa,
+                    responsavel:r.fields.Responsavel,
+                    status:r.fields.statusNegociacao||'-',
+                    data:new Date(r.fields.DataReuniao).toLocaleDateString('pt-BR'),
+                    ticket:r.fields.TicketMedio?`R$ ${Number(r.fields.TicketMedio).toLocaleString('pt-BR',{minimumFractionDigits:2})}`:'-'
+                })).sort((a,b)=>a.empresa.localeCompare(b.empresa));
 
-                const dataAtual = new Date().toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' });
-
-                const container = document.createElement('div');
-                container.className = 'report-container';
+                const dataAtual = new Date().toLocaleString('pt-BR',{dateStyle:'full',timeStyle:'short'});
+                const container = document.createElement('div'); 
+                container.className='report-container'; 
                 document.body.appendChild(container);
 
                 container.innerHTML = `
                     <div class="report-header">
                         <div class="report-title">Relatório de Funil de Negociação</div>
-                        <div style="opacity:0.9;margin-top:0.5rem;">${dataAtual}</div>
+                        <div style="opacity:0.9;margin-top:0.5rem;">${dataAtual} • Baseado em dataStatus</div>
                     </div>
 
-                    <!-- FUNIL CUMULATIVO -->
                     <div class="report-section">
                         <h3>Funil de Negociação</h3>
                         <div class="report-grid">
@@ -864,68 +915,39 @@
                                 </div>
                             `).join('')}
                         </div>
-                        <p style="text-align:center;font-size:0.85rem;color:#6b7280;margin-top:0.5rem;">
-                            *Cada número inclui todos os leads que já passaram por essa etapa
-                        </p>
                     </div>
 
-                    <!-- QUEDA POR ETAPA (BASEADO EM CAMPO EXPLÍCITO) -->
                     <div class="report-section">
                         <h3>Queda por Etapa</h3>
                         <table class="report-table">
                             <thead><tr><th>Etapa</th><th>Chegaram</th><th>Não Avançaram</th><th>% Queda</th></tr></thead>
                             <tbody>
                                 ${etapas.map((e,i) => {
-                                    const total = contagemCumulativa[i];
+                                    const total =  contagemCumulativa[i];
                                     const q = naoAvancouPorEtapa[i];
                                     const taxa = total > 0 ? (q / total * 100).toFixed(1) : 0;
-                                    return `<tr>
-                                        <td><strong>${e}</strong></td>
-                                        <td>${total}</td>
-                                        <td style="color:#ef4444;">${q}</td>
-                                        <td>${taxa}%</td>
-                                    </tr>`;
+                                    return `<tr><td><strong>${e}</strong></td><td>${total}</td><td style="color:#ef4444;">${q}</td><td>${taxa}%</td></tr>`;
                                 }).join('')}
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- FUNIL POR RESPONSÁVEL -->
                     <div class="report-section">
                         <h3>Funil por Responsável</h3>
                         <table class="report-table" style="font-size:0.9rem;">
-                            <thead>
-                                <tr>
-                                    <th>Responsável</th>
-                                    ${etapas.map(e => `<th>${e.split(' ')[0]}<br><small>${e.split(' ').slice(1).join(' ')}</small></th>`).join('')}
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Responsável</th>${etapas.map(e=>`<th>${e.split(' ')[0]}<br><small>${e.split(' ').slice(1).join(' ')}</small></th>`).join('')}</tr></thead>
                             <tbody>
-                                ${Object.entries(porRespEtapa).sort((a,b) => a[0].localeCompare(b[0])).map(([resp, valores]) => {
-                                    return `<tr>
-                                        <td><strong>${resp}</strong></td>
-                                        ${valores.map(v => `<td>${v}</td>`).join('')}
-                                    </tr>`;
-                                }).join('')}
+                                ${Object.entries(porRespEtapa).sort((a,b)=>a[0].localeCompare(b[0])).map(([resp,v])=>`<tr><td><strong>${resp}</strong></td>${v.map(n=>`<td>${n}</td>`).join('')}</tr>`).join('')}
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- LISTA DE EMPRESAS -->
                     <div class="report-section">
                         <h3>Lista de Empresas</h3>
                         <table class="report-table" style="font-size:0.85rem;">
                             <thead><tr><th>Empresa</th><th>Responsável</th><th>Status</th><th>Data</th><th>Ticket</th></tr></thead>
                             <tbody>
-                                ${listaEmpresas.length ? listaEmpresas.map(e => `
-                                    <tr>
-                                        <td>${e.empresa}</td>
-                                        <td>${e.responsavel}</td>
-                                        <td>${e.status}</td>
-                                        <td>${e.data}</td>
-                                        <td>${e.ticket}</td>
-                                    </tr>
-                                `).join('') : '<tr><td colspan="5" style="text-align:center;color:#6b7280;">Nenhum registro</td></tr>'}
+                                ${listaEmpresas.map(e=>`<tr><td>${e.empresa}</td><td>${e.responsavel}</td><td>${e.status}</td><td>${e.data}</td><td>${e.ticket}</td></tr>`).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -936,29 +958,18 @@
                 await new Promise(r => setTimeout(r, 600));
                 const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#fff' });
                 document.body.removeChild(container);
-
                 const link = document.createElement('a');
-                link.download = `relatorio_correto_${new Date().toISOString().split('T')[0]}.png`;
+                link.download = `relatorio_${new Date().toISOString().split('T')[0]}.png`;
                 link.href = canvas.toDataURL();
                 link.click();
-
-                Swal.fire('Sucesso!', 'Relatório corrigido!', 'success');
+                Swal.fire('Pronto!', 'Relatório gerado com sucesso', 'success');
             } catch (err) {
                 console.error(err);
-                Swal.fire('Erro', 'Falha ao gerar', 'error');
+                Swal.fire('Erro', 'Falha ao gerar relatório', 'error');
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Exportar Relatório PNG';
             }
-        }
-
-        function getDateRange(t) {
-            const hoje = new Date(), inicio = new Date(), fim = new Date();
-            if (t === 'hoje') { inicio.setHours(0,0,0,0); fim.setHours(23,59,59,999); }
-            else if (t === 'semana') { const d = hoje.getDay(); const diff = hoje.getDate() - d + (d===0?-6:1); inicio.setDate(diff); inicio.setHours(0,0,0,0); fim.setDate(diff+6); fim.setHours(23,59,59,999); }
-            else if (t === 'mes') { inicio.setDate(1); inicio.setHours(0,0,0,0); fim.setMonth(fim.getMonth()+1); fim.setDate(0); fim.setHours(23,59,59,999); }
-            else return { inicio: null, fim: null };
-            return { inicio: inicio.toISOString().split('T')[0], fim: fim.toISOString().split('T')[0] };
         }
 
         function aplicarFiltro() {
@@ -969,19 +980,10 @@
             updateKPIs();
         }
 
-        function filtrarDados(d) {
-            let dados = d;
-            if (filtroAtual !== 'todos') {
-                const { inicio, fim } = getDateRange(filtroAtual);
-                dados = dados.filter(r => r.fields.DataCriacao >= inicio && r.fields.DataCriacao <= fim);
-            }
-            if (filtroResp) {
-                dados = dados.filter(r => r.fields.Responsavel === filtroResp);
-            }
-            return dados;
-        }
+        document.getElementById('modal-overlay').addEventListener('click', e => { 
+            if (e.target.id === 'modal-overlay') closeModal(); 
+        });
 
-        document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
         loadData();
     </script>
 </body>

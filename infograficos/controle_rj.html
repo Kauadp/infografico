@@ -774,6 +774,11 @@
         let totalStands = 0;
         let vacanciasCount = 0;
 
+        function $(id) {
+            const el = document.getElementById(id);
+            return el || { textContent: '', classList: { add: ()=>{}, remove: ()=>{} }, value: '', addEventListener: ()=>{} };
+        }
+
         const elements = {
             filtersSection: document.getElementById('filters-section'),
             kpisSection: document.getElementById('kpis-section'),
@@ -782,19 +787,24 @@
             success: document.getElementById('success'),
             info: document.getElementById('info'),
             cardsContainer: document.getElementById('cards-container'),
+
+            // KPIs que você quer manter
             totalExpositores: document.getElementById('total-expositores'),
             vacancias: document.getElementById('vacancias'),
-            standsConfirmados: document.getElementById('stands-confirmados'),
             contratosAssinados: document.getElementById('contratos-assinados'),
             onboardingFeito: document.getElementById('onboarding-feito'),
             receitaRealizada: document.getElementById('receita-realizada'),
             receitaPrevista: document.getElementById('receita-prevista'),
             receitaDiferenca: document.getElementById('receita-diferenca'),
             receitaProporcao: document.getElementById('receita-proporcao'),
+
+            // Filtros
             categoriaFilter: document.getElementById('categoria-filter'),
             expositorFilter: document.getElementById('expositor-filter'),
             contratoFilter: document.getElementById('contrato-filter'),
             statusFilter: document.getElementById('status-filter'),
+
+            // Modal
             modalOverlay: document.getElementById('modal-overlay'),
             modalTitle: document.getElementById('modal-title'),
             modalSubtitle: document.getElementById('modal-subtitle'),
@@ -959,7 +969,6 @@
 
             elements.totalExpositores.textContent = ocupados;
             elements.vacancias.textContent = vacanciasCount;
-            elements.standsConfirmados.textContent = confirmados;
             elements.contratosAssinados.textContent = contratos;
             elements.onboardingFeito.textContent = onboardingRealizado;
 
@@ -1086,7 +1095,6 @@
                         <div class="report-kpis">
                             <div class="report-kpi"><div class="report-kpi-value">${ocupados}</div><div class="report-kpi-label">Expositores Ocupados</div></div>
                             <div class="report-kpi"><div class="report-kpi-value">${vacanciasCount}</div><div class="report-kpi-label">Vacâncias</div></div>
-                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length}</div><div class="report-kpi-label">Stands Confirmados</div></div>
                             <div class="report-kpi"><div class="report-kpi-value">${contratosAssinadosCount}</div><div class="report-kpi-label">Contratos Assinados</div></div>
                             <div class="report-kpi"><div class="report-kpi-value">${onboardingRealizado}</div><div class="report-kpi-label">Onboarding Realizado</div></div>
                         </div>

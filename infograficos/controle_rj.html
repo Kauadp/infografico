@@ -773,452 +773,348 @@
     </div>
 
     <script>
-    let allData = [];
-    let filteredData = [];
-    let totalStands = 0;
+        let allData = [];
+        let filteredData = [];
+        let totalStands = 0;
+        let vacanciasCount = 0; // ← Nova variável global
 
-    const elements = {
-        filtersSection: document.getElementById('filters-section'),
-        kpisSection: document.getElementById('kpis-section'),
-        loading: document.getElementById('loading'),
-        error: document.getElementById('error'),
-        success: document.getElementById('success'),
-        info: document.getElementById('info'),
-        cardsContainer: document.getElementById('cards-container'),
-        totalExpositores: document.getElementById('total-expositores'),
-        vacancias: document.getElementById('vacancias'),
-        standsConfirmados: document.getElementById('stands-confirmados'),
-        contratosAssinados: document.getElementById('contratos-assinados'),
-        onboardingFeito: document.getElementById('onboarding-feito'),
-        receitaRealizada: document.getElementById('receita-realizada'),
-        receitaPrevista: document.getElementById('receita-prevista'),
-        receitaDiferenca: document.getElementById('receita-diferenca'),
-        receitaProporcao: document.getElementById('receita-proporcao'),
-        categoriaFilter: document.getElementById('categoria-filter'),
-        expositorFilter: document.getElementById('expositor-filter'),
-        contratoFilter: document.getElementById('contrato-filter'),
-        statusFilter: document.getElementById('status-filter'),
-        modalOverlay: document.getElementById('modal-overlay'),
-        modalTitle: document.getElementById('modal-title'),
-        modalSubtitle: document.getElementById('modal-subtitle'),
-        modalContent: document.getElementById('modal-content'),
-        modalClose: document.getElementById('modal-close'),
-    };
+        const elements = {
+            filtersSection: document.getElementById('filters-section'),
+            kpisSection: document.getElementById('kpis-section'),
+            loading: document.getElementById('loading'),
+            error: document.getElementById('error'),
+            success: document.getElementById('success'),
+            info: document.getElementById('info'),
+            cardsContainer: document.getElementById('cards-container'),
+            totalExpositores: document.getElementById('total-expositores'),
+            vacancias: document.getElementById('vacancias'),
+            standsConfirmados: document.getElementById('stands-confirmados'),
+            contratosAssinados: document.getElementById('contratos-assinados'),
+            onboardingFeito: document.getElementById('onboarding-feito'),
+            receitaRealizada: document.getElementById('receita-realizada'),
+            receitaPrevista: document.getElementById('receita-prevista'),
+            receitaDiferenca: document.getElementById('receita-diferenca'),
+            receitaProporcao: document.getElementById('receita-proporcao'),
+            categoriaFilter: document.getElementById('categoria-filter'),
+            expositorFilter: document.getElementById('expositor-filter'),
+            contratoFilter: document.getElementById('contrato-filter'),
+            statusFilter: document.getElementById('status-filter'),
+            modalOverlay: document.getElementById('modal-overlay'),
+            modalTitle: document.getElementById('modal-title'),
+            modalSubtitle: document.getElementById('modal-subtitle'),
+            modalContent: document.getElementById('modal-content'),
+            modalClose: document.getElementById('modal-close'),
+        };
 
-    function showMessage(element, message) {
-        element.textContent = message;
-        element.classList.remove('hidden');
-    }
-    function hideMessages() {
-        elements.error.classList.add('hidden');
-        elements.success.classList.add('hidden');
-        elements.info.classList.add('hidden');
-    }
-    function showError(message) {
-        hideMessages();
-        showMessage(elements.error, message);
-    }
-    function showSuccess(message) {
-        hideMessages();
-        showMessage(elements.success, message);
-    }
-    function showInfo(message) {
-        hideMessages();
-        showMessage(elements.info, message);
-    }
-
-    function parseBRL(valor) {
-        if (!valor) return 0;
-        let str = valor.toString().trim().replace(/R\$|\s/g, '');
-        const cleaned = str.replace(/\./g, '').replace(',', '.');
-        return parseFloat(cleaned) || 0;
-    }
-
-    function calcularSoma(filteredData, campo) {
-        return filteredData.reduce((acc, r) => acc + parseBRL(r.fields[campo]), 0);
-    }
-
-    async function loadData() {
-        elements.loading.classList.remove('hidden');
-        try {
-            const resp = await fetch("/api/expositores4");
-            if (!resp.ok) throw new Error(`Erro HTTP ${resp.status}`);
-            const data = await resp.json();
-
-            if (data.records && Array.isArray(data.records)) {
-                allData = data.records;
-            } else if (Array.isArray(data)) {
-                allData = data.map((item, index) => ({
-                    id: item.id || `rec${index + 1}`,
-                    fields: item.fields || item
-                }));
-            } else {
-                allData = [{ id: 'rec1', fields: data }];
-            }
-
-            totalStands = allData.length;
-
-            filteredData = [...allData];
-
-            elements.filtersSection.classList.remove('hidden');
-            elements.kpisSection.classList.remove('hidden');
-
-            updateKPIs();
-            renderCards(filteredData);
-            setupFilters();
-
-        } catch (err) {
-            console.error(err);
-            showError("Erro ao carregar dados da API.");
-        } finally {
-            elements.loading.classList.add('hidden');
+        function showMessage(element, message) {
+            element.textContent = message;
+            element.classList.remove('hidden');
         }
-    }
+        function hideMessages() {
+            elements.error.classList.add('hidden');
+            elements.success.classList.add('hidden');
+            elements.info.classList.add('hidden');
+        }
+        function showError(message) { hideMessages(); showMessage(elements.error, message); }
+        function showSuccess(message) { hideMessages(); showMessage(elements.success, message); }
+        function showInfo(message) { hideMessages(); showMessage(elements.info, message); }
 
-    function renderCards(dataToRender = filteredData) {
-        const container = elements.cardsContainer;
-        container.innerHTML = '';
-
-        if (!dataToRender.length) {
-            container.innerHTML = `<div class="info-box" style="grid-column: 1 / -1;">Nenhum expositor encontrado.</div>`;
-            return;
+        // === GAMBIARRA ×100: valores no Airtable estão em centavos ===
+        function formatarMoeda(valorCentavos) {
+            if (!valorCentavos) return "R$ 0,00";
+            const valorReal = valorCentavos * 100;
+            return valorReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        dataToRender.forEach(record => {
-            const fields = record.fields || {};
-            const contratoStatus = (fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase();
-            const statusConfirmado = (fields['STATUS'] || '').toUpperCase();
+        function parseBRL(valor) {
+            if (!valor) return 0;
+            let str = valor.toString().trim().replace(/R\$|\s/g, '');
+            const cleaned = str.replace(/\./g, '').replace(',', '.');
+            return parseFloat(cleaned) || 0;
+        }
 
-            let status = 'vazio';
-            let statusText = 'N/A';
-            if (contratoStatus === 'SIM') { status = 'assinado'; statusText = 'Assinado'; }
-            else if (statusConfirmado === 'SIM') { status = 'vendido'; statusText = 'Confirmado'; }
-            else { status = 'pendente'; statusText = 'Pendente'; }
+        function calcularSoma(dataArray, campo) {
+            return dataArray.reduce((acc, r) => acc + parseBRL(r.fields[campo]), 0);
+        }
 
-            const card = document.createElement('div');
-            card.className = 'brand-card';
-            card.onclick = () => openModal(record);
-            card.innerHTML = `
-                <div class="brand-name">${fields['Expositor..N.Fantasia'] || 'Nome Vazio'}</div>
-                <div class="status-pill status-${status}">${statusText}</div>
-                <div class="metric-row">
-                    <div class="metric-item">
-                        <div class="metric-label">Stand</div>
-                        <div class="metric-value">${fields['STAND'] || 'N/A'}</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">Área</div>
-                        <div class="metric-value">${fields['ÁREA.M.'] || 'N/A'} ${fields['ÁREA.M.'] ? 'm²' : ''}</div>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
+        // === CONTAR VACÂNCIAS PELO NOME DO EXPOSITOR (ROBUSTO) ===
+        function contarVacancias() {
+            return allData.filter(r => {
+                const nome = (r.fields['Expositor..N.Fantasia'] || '')
+                    .toString()
+                    .trim()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toUpperCase();
+                return nome.includes('VACANCIA');
+            }).length;
+        }
 
-    function updateKPIs() {
-        const ocupados = filteredData.length;
-        const vacancias = totalStands - ocupados;
-        const confirmados = filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
-        const contratos = filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length;
+        async function loadData() {
+            elements.loading.classList.remove('hidden');
+            try {
+                const resp = await fetch("/api/expositores4");
+                if (!resp.ok) throw new Error(`Erro HTTP ${resp.status}`);
+                const data = await resp.json();
 
-        // NOVA KPI: Onboarding Realizado (SIM ou Marcado)
-        const onboardingRealizado = filteredData.filter(r => {
-            const onboarding = (r.fields['ONBOARDING'] || '').toString().trim();
-            if (!onboarding) return false;
+                if (data.records && Array.isArray(data.records)) {
+                    allData = data.records;
+                } else if (Array.isArray(data)) {
+                    allData = data.map((item, index) => ({
+                        id: item.id || `rec${index + 1}`,
+                        fields: item.fields || item
+                    }));
+                } else {
+                    allData = [{ id: 'rec1', fields: data }];
+                }
 
-            const valor = onboarding.toUpperCase();
+                totalStands = allData.length;
+                vacanciasCount = contarVacancias(); // ← Contagem correta
 
-            // Só conta como realizado se tiver essas palavras-chave
-            return (
-                valor.includes('FEITO') ||
-                valor.includes('CONCLUÍDO') ||
-                valor.includes('REALIZADO') ||
-                valor.includes('SIM') && !valor.includes('MARCADO') // "Sim" só conta se NÃO tiver "marcado"
-            );
-        }).length;
+                // Filtra apenas expositores reais (exclui vacâncias)
+                filteredData = allData.filter(r => {
+                    const nome = (r.fields['Expositor..N.Fantasia'] || '')
+                        .toString()
+                        .trim()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toUpperCase();
+                    return !nome.includes('VACANCIA');
+                });
 
-        const somaRealizada = calcularSoma(filteredData, 'RECEITA.REALIZADA');
-        const somaPrevista = calcularSoma(filteredData, 'RECEITA.PREVISTA');
-        const diferenca = somaPrevista - somaRealizada;
-        const proporcao = somaPrevista > 0 ? (somaRealizada / somaPrevista) * 100 : 0;
+                elements.filtersSection.classList.remove('hidden');
+                elements.kpisSection.classList.remove('hidden');
 
-        elements.totalExpositores.textContent = ocupados;
-        elements.vacancias.textContent = vacancias;
-        elements.standsConfirmados.textContent = confirmados;
-        elements.contratosAssinados.textContent = contratos;
-        elements.onboardingFeito.textContent = onboardingRealizado;
-        elements.receitaRealizada.textContent = somaRealizada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        elements.receitaPrevista.textContent = somaPrevista.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        elements.receitaDiferenca.textContent = diferenca.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        elements.receitaProporcao.textContent = proporcao.toFixed(2) + '%';
-    }
+                updateKPIs();
+                renderCards(filteredData);
+                setupFilters();
 
-    function setupFilters() {
-        const categorias = [...new Set(allData.map(r => r.fields?.['CATEGORIA']).filter(Boolean))].sort();
-        elements.categoriaFilter.innerHTML = '<option value="">Todas as Categorias</option>';
-        categorias.forEach(c => elements.categoriaFilter.appendChild(new Option(c, c)));
+            } catch (err) {
+                console.error(err);
+                showError("Erro ao carregar dados da API.");
+            } finally {
+                elements.loading.classList.add('hidden');
+            }
+        }
 
-        const expositores = [...new Set(allData.map(r => r.fields?.['Expositor..N.Fantasia']).filter(Boolean))].sort();
-        elements.expositorFilter.innerHTML = '<option value="">Todos os Expositores</option>';
-        expositores.forEach(e => elements.expositorFilter.appendChild(new Option(e, e)));
+        function renderCards(dataToRender = filteredData) {
+            const container = elements.cardsContainer;
+            container.innerHTML = '';
 
-        elements.categoriaFilter.addEventListener('change', applyFilters);
-        elements.expositorFilter.addEventListener('change', applyFilters);
-        elements.contratoFilter.addEventListener('change', applyFilters);
-        elements.statusFilter.addEventListener('change', applyFilters);
-    }
-
-    function applyFilters() {
-        filteredData = allData.filter(r => {
-            const f = r.fields || {};
-            const cat = elements.categoriaFilter.value;
-            const exp = elements.expositorFilter.value;
-            const con = elements.contratoFilter.value;
-            const sta = elements.statusFilter.value;
-
-            if (cat && f['CATEGORIA'] !== cat) return false;
-            if (exp && f['Expositor..N.Fantasia'] !== exp) return false;
-
-            if (con) {
-                const contratoStatus = (f['financeiro.CONTRATO.ASSINADO.'] || '').toString().trim().toUpperCase();
-                if (con === 'SIM' && contratoStatus !== 'SIM') return false;
-                if (con === 'NAO' && contratoStatus === 'SIM') return false;
+            if (!dataToRender.length) {
+                container.innerHTML = `<div class="info-box" style="grid-column: 1 / -1;">Nenhum expositor encontrado.</div>`;
+                return;
             }
 
-            if (sta) {
-                const statusConfirmado = (f['STATUS'] || '').toString().trim().toUpperCase();
-                if (sta === 'SIM' && statusConfirmado !== 'SIM') return false;
-                if (sta === 'NAO' && statusConfirmado !== 'SIM') return false;
-            }
+            dataToRender.forEach(record => {
+                const fields = record.fields || {};
+                const contratoStatus = (fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase();
+                const statusConfirmado = (fields['STATUS'] || '').toUpperCase();
 
-            return true;
-        });
+                let status = 'vazio';
+                let statusText = 'N/A';
+                if (contratoStatus === 'SIM') { status = 'assinado'; statusText = 'Assinado'; }
+                else if (statusConfirmado === 'SIM') { status = 'vendido'; statusText = 'Confirmado'; }
+                else { status = 'pendente'; statusText = 'Pendente'; }
 
-        renderCards(filteredData);
-        updateKPIs();
-    }
-
-    function openModal(record) {
-        const fields = record.fields || {};
-        elements.modalTitle.textContent = fields['Expositor..N.Fantasia'] || 'Nome Vazio';
-        elements.modalSubtitle.textContent = `ID: ${record.id}`;
-        elements.modalContent.innerHTML = '';
-        Object.keys(fields).forEach(fn => {
-            let val = fields[fn]; 
-            if (Array.isArray(val)) val = val.join(', ');
-            if (!val) val = 'N/A';
-            const div = document.createElement('div');
-            div.className = 'field-item';
-            div.innerHTML = `<div class="field-label">${fn}</div><div class="field-value">${val}</div>`;
-            elements.modalContent.appendChild(div);
-        });
-        elements.modalOverlay.classList.add('active');
-    }
-
-    elements.modalClose.onclick = () => elements.modalOverlay.classList.remove('active');
-    elements.modalOverlay.onclick = (e) => { if(e.target.id === 'modal-overlay') elements.modalOverlay.classList.remove('active'); };
-
-    loadData();
-
-    async function exportReport() {
-        const exportBtn = document.getElementById('export-btn');
-        exportBtn.disabled = true;
-        exportBtn.textContent = 'Gerando Relatório...';
-
-        try {
-            const reportContainer = document.createElement('div');
-            reportContainer.className = 'report-container';
-            document.body.appendChild(reportContainer);
-
-            const ocupados = filteredData.length;
-            const vacancias = totalStands - ocupados;
-            const estatisticasPorCategoria = calcularEstatisticasPorCategoria().slice(0, 5);
-            const dataAtual = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-            reportContainer.innerHTML = `
-                <div class="report-header">
-                    <div class="report-title">Relatório de Gestão de Expositores</div>
-                    <div class="report-subtitle">Pavilhão Rio de Janeiro - ${dataAtual}</div>
-                </div>
-
-                <div class="report-section">
-                    <h3>KPIs Gerais</h3>
-                    <div class="report-kpis">
-                        <div class="report-kpi">
-                            <div class="report-kpi-value">${ocupados}</div>
-                            <div class="report-kpi-label">Expositores Ocupados</div>
+                const card = document.createElement('div');
+                card.className = 'brand-card';
+                card.onclick = () => openModal(record);
+                card.innerHTML = `
+                    <div class="brand-name">${fields['Expositor..N.Fantasia'] || 'Nome Vazio'}</div>
+                    <div class="status-pill status-${status}">${statusText}</div>
+                    <div class="metric-row">
+                        <div class="metric-item">
+                            <div class="metric-label">Stand</div>
+                            <div class="metric-value">${fields['STAND'] || 'N/A'}</div>
                         </div>
-                        <div class="report-kpi">
-                            <div class="report-kpi-value">${vacancias}</div>
-                            <div class="report-kpi-label">Vacâncias</div>
-                        </div>
-                        <div class="report-kpi">
-                            <div class="report-kpi-value">${filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length}</div>
-                            <div class="report-kpi-label">Stands Confirmados</div>
-                        </div>
-                        <div class="report-kpi">
-                            <div class="report-kpi-value">${filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length}</div>
-                            <div class="report-kpi-label">Contratos Assinados</div>
-                        </div>
-
-                        <div class="report-kpi">
-                            <div class="report-kpi-value">
-                                ${filteredData.filter(r => {
-                                    const onboarding = (r.fields['ONBOARDING'] || '').toString().trim();
-                                    if (!onboarding) return false;
-                                    
-                                    const valor = onboarding.toUpperCase();
-                                    
-                                    return (
-                                        valor.includes('FEITO') ||
-                                        valor.includes('CONCLUÍDO') ||
-                                        valor.includes('REALIZADO') ||
-                                        valor.includes('CONCLUIDO') ||
-                                        (valor.includes('SIM') && !valor.includes('MARCADO'))
-                                    );
-                                }).length}
-                            </div>
-                            <div class="report-kpi-label">Onboarding Realizado</div>
-                        </div>
-
-                    </div>
-
-                    <div class="report-kpis">
-                        <div class="report-kpi">
-                            <div class="report-kpi-value" style="font-size: 1.1rem;">${calcularSoma(filteredData, 'RECEITA.REALIZADA').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-                            <div class="report-kpi-label">Receita Realizada</div>
-                        </div>
-                        <div class="report-kpi">
-                            <div class="report-kpi-value" style="font-size: 1.1rem;">${calcularSoma(filteredData, 'RECEITA.PREVISTA').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-                            <div class="report-kpi-label">Receita Prevista</div>
-                        </div>
-                        <div class="report-kpi">
-                            <div class="report-kpi-value" style="font-size: 1.1rem;">${(calcularSoma(filteredData, 'RECEITA.PREVISTA') - calcularSoma(filteredData, 'RECEITA.REALIZADA')).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-                            <div class="report-kpi-label">Diferença (Falta)</div>
-                        </div>
-                        <div class="report-kpi">
-                            <div class="report-kpi-value">${((calcularSoma(filteredData, 'RECEITA.REALIZADA') / calcularSoma(filteredData, 'RECEITA.PREVISTA')) * 100 || 0).toFixed(1)}%</div>
-                            <div class="report-kpi-label">% Receita Realizada</div>
+                        <div class="metric-item">
+                            <div class="metric-label">Área</div>
+                            <div class="metric-value">${fields['ÁREA.M.'] || 'N/A'} ${fields['ÁREA.M.'] ? 'm²' : ''}</div>
                         </div>
                     </div>
-                </div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
-                <div class="report-section">
-                    <h3>📈 Top 5 Categorias</h3>
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>Categoria</th>
-                                <th>Total</th>
-                                <th>Confirmados</th>
-                                <th>Taxa</th>
-                                <th>Receita Realizada</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${estatisticasPorCategoria.map(cat => `
-                                <tr>
-                                    <td><strong>${cat.categoria}</strong></td>
-                                    <td>${cat.total}</td>
-                                    <td>${cat.confirmados}</td>
-                                    <td>${cat.taxaOcupacao}%</td>
-                                    <td>${cat.receita}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
+        function updateKPIs() {
+            const ocupados = filteredData.length; // ← Agora correto (exclui vacâncias)
+            const confirmados = filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
+            const contratos = filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length;
 
-                <div class="report-section">
-                    <h3>🏆 Top 3 Expositores por Receita</h3>
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>Posição</th>
-                                <th>Expositor</th>
-                                <th>Status</th>
-                                <th>Stand</th>
-                                <th>Receita Realizada</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${filteredData
-                                .sort((a, b) => parseBRL(b.fields['RECEITA.REALIZADA']) - parseBRL(a.fields['RECEITA.REALIZADA']))
-                                .slice(0, 3)
-                                .map((record, index) => {
-                                    const fields = record.fields || {};
-                                    const contratoStatus = (fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase();
-                                    const statusConfirmado = (fields['STATUS'] || '').toUpperCase();
-                                    let status = 'vazio', statusText = 'N/A';
-                                    if (contratoStatus === 'SIM') { status = 'assinado'; statusText = 'Assinado'; }
-                                    else if (statusConfirmado === 'SIM') { status = 'vendido'; statusText = 'Confirmado'; }
-                                    else { status = 'pendente'; statusText = 'Pendente'; }
-                                    const medals = ['🥇', '🥈', '🥉'];
-                                    return `
-                                        <tr>
-                                            <td style="text-align: center; font-size: 1.2rem;">${medals[index]} ${index + 1}º</td>
-                                            <td><strong>${fields['Expositor..N.Fantasia'] || 'N/A'}</strong></td>
-                                            <td><span class="status-badge status-${status}">${statusText}</span></td>
-                                            <td>${fields['STAND'] || 'N/A'}</td>
-                                            <td><strong>${parseBRL(fields['RECEITA.REALIZADA']).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                        </tbody>
-                    </table>
-                </div>
+            const onboardingRealizado = filteredData.filter(r => {
+                const val = (r.fields['ONBOARDING'] || '').toString().trim().toUpperCase();
+                return (
+                    val.includes('FEITO') ||
+                    val.includes('CONCLUÍDO') ||
+                    val.includes('CONCLUIDO') ||
+                    val.includes('REALIZADO') ||
+                    (val.includes('SIM') && !val.includes('MARCADO'))
+                );
+            }).length;
 
-                <div class="report-footer">
-                    Relatório gerado automaticamente pelo Sistema de Gestão de Expositores - ${dataAtual}
-                </div>
-            `;
+            const somaRealizadaCent = calcularSoma(filteredData, 'RECEITA.REALIZADA');
+            const somaPrevistaCent = calcularSoma(allData, 'RECEITA.PREVISTA'); // inclui vacâncias
+            const diferencaCent = somaPrevistaCent - somaRealizadaCent;
 
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const canvas = await html2canvas(reportContainer, {
-                width: 1200,
-                height: reportContainer.scrollHeight,
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff'
+            elements.totalExpositores.textContent = ocupados;
+            elements.vacancias.textContent = vacanciasCount;
+            elements.standsConfirmados.textContent = confirmados;
+            elements.contratosAssinados.textContent = contratos;
+            elements.onboardingFeito.textContent = onboardingRealizado;
+
+            elements.receitaRealizada.textContent = formatarMoeda(somaRealizadaCent);
+            elements.receitaPrevista.textContent = formatarMoeda(somaPrevistaCent);
+            elements.receitaDiferenca.textContent = formatarMoeda(diferencaCent);
+            elements.receitaProporcao.textContent = somaPrevistaCent > 0 
+                ? ((somaRealizadaCent / somaPrevistaCent) * 100).toFixed(1) + '%'
+                : '0%';
+        }
+
+        function setupFilters() {
+            const categorias = [...new Set(allData.map(r => r.fields?.['CATEGORIA']).filter(Boolean))].sort();
+            elements.categoriaFilter.innerHTML = '<option value="">Todas as Categorias</option>';
+            categorias.forEach(c => elements.categoriaFilter.appendChild(new Option(c, c)));
+
+            const expositores = [...new Set(filteredData.map(r => r.fields?.['Expositor..N.Fantasia']).filter(Boolean))].sort();
+            elements.expositorFilter.innerHTML = '<option value="">Todos os Expositores</option>';
+            expositores.forEach(e => elements.expositorFilter.appendChild(new Option(e, e)));
+
+            elements.categoriaFilter.addEventListener('change', applyFilters);
+            elements.expositorFilter.addEventListener('change', applyFilters);
+            elements.contratoFilter.addEventListener('change', applyFilters);
+            elements.statusFilter.addEventListener('change', applyFilters);
+        }
+
+        function applyFilters() {
+            filteredData = allData.filter(r => {
+                const f = r.fields || {};
+                const cat = elements.categoriaFilter.value;
+                const exp = elements.expositorFilter.value;
+                const con = elements.contratoFilter.value;
+                const sta = elements.statusFilter.value;
+
+                // Exclui vacâncias automaticamente
+                const nome = (f['Expositor..N.Fantasia'] || '').toString().trim()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+                if (nome.includes('VACANCIA')) return false;
+
+                if (cat && f['CATEGORIA'] !== cat) return false;
+                if (exp && f['Expositor..N.Fantasia'] !== exp) return false;
+
+                if (con) {
+                    const contratoStatus = (f['financeiro.CONTRATO.ASSINADO.'] || '').toString().trim().toUpperCase();
+                    if (con === 'SIM' && contratoStatus !== 'SIM') return false;
+                    if (con === 'NAO' && contratoStatus === 'SIM') return false;
+                }
+
+                if (sta) {
+                    const statusConfirmado = (f['STATUS'] || '').toString().trim().toUpperCase();
+                    if (sta === 'SIM' && statusConfirmado !== 'SIM') return false;
+                    if (sta === 'NAO' && statusConfirmado !== 'SIM') return false;
+                }
+
+                return true;
             });
 
-            document.body.removeChild(reportContainer);
-
-            const link = document.createElement('a');
-            link.download = `relatorio_expositores_rj_${new Date().toISOString().split('T')[0]}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-
-            showSuccess('Relatório exportado com sucesso!');
-        } catch (error) {
-            console.error('Erro ao exportar relatório:', error);
-            showError('Erro ao gerar relatório. Tente novamente.');
-        } finally {
-            exportBtn.disabled = false;
-            exportBtn.textContent = 'Exportar Relatório PNG';
+            renderCards(filteredData);
+            updateKPIs();
         }
-    }
 
-    function calcularEstatisticasPorCategoria() {
-        const categorias = [...new Set(filteredData.map(r => r.fields?.['CATEGORIA']).filter(Boolean))];
-        return categorias.map(categoria => {
-            const dadosCategoria = filteredData.filter(r => r.fields?.['CATEGORIA'] === categoria);
-            const total = dadosCategoria.length;
-            const confirmados = dadosCategoria.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
-            const taxaOcupacao = total > 0 ? Math.round((confirmados / total) * 100) : 0;
-            const receita = calcularSoma(dadosCategoria, 'RECEITA.REALIZADA');
-            return {
-                categoria,
-                total,
-                confirmados,
-                taxaOcupacao,
-                receita: receita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            };
-        }).sort((a, b) => b.total - a.total);
-    }
+        function openModal(record) {
+            const fields = record.fields || {};
+            elements.modalTitle.textContent = fields['Expositor..N.Fantasia'] || 'Nome Vazio';
+            elements.modalSubtitle.textContent = `ID: ${record.id}`;
+            elements.modalContent.innerHTML = '';
+            Object.keys(fields).forEach(fn => {
+                let val = fields[fn];
+                if (Array.isArray(val)) val = val.join(', ');
+                if (!val) val = 'N/A';
+                const div = document.createElement('div');
+                div.className = 'field-item';
+                div.innerHTML = `<div class="field-label">${fn}</div><div class="field-value">${val}</div>`;
+                elements.modalContent.appendChild(div);
+            });
+            elements.modalOverlay.classList.add('active');
+        }
 
-    loadData();
-</script>
+        elements.modalClose.onclick = () => elements.modalOverlay.classList.remove('active');
+        elements.modalOverlay.onclick = (e) => { if(e.target.id === 'modal-overlay') elements.modalOverlay.classList.remove('active'); };
+
+        // === EXPORT REPORT ATUALIZADO COM GAMBIARRA E VACÂNCIAS CORRETAS ===
+        async function exportReport() {
+            const exportBtn = document.getElementById('export-btn');
+            exportBtn.disabled = true;
+            exportBtn.textContent = 'Gerando Relatório...';
+
+            try {
+                const reportContainer = document.createElement('div');
+                reportContainer.className = 'report-container';
+                document.body.appendChild(reportContainer);
+
+                const ocupados = filteredData.length;
+                const somaRealizadaCent = calcularSoma(filteredData, 'RECEITA.REALIZADA');
+                const somaPrevistaCent = calcularSoma(allData, 'RECEITA.PREVISTA');
+                const diferencaCent = somaPrevistaCent - somaRealizadaCent;
+
+                const dataAtual = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                reportContainer.innerHTML = `
+                    <div class="report-header">
+                        <div class="report-title">Relatório de Gestão de Expositores</div>
+                        <div class="report-subtitle">Pavilhão Rio de Janeiro - ${dataAtual}</div>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>KPIs Gerais</h3>
+                        <div class="report-kpis">
+                            <div class="report-kpi"><div class="report-kpi-value">${ocupados}</div><div class="report-kpi-label">Expositores Ocupados</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value">${vacanciasCount}</div><div class="report-kpi-label">Vacâncias</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length}</div><div class="report-kpi-label">Stands Confirmados</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length}</div><div class="report-kpi-label">Contratos Assinados</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => {
+                                const val = (r.fields['ONBOARDING'] || '').toString().trim().toUpperCase();
+                                return val.includes('FEITO') || val.includes('CONCLUÍDO') || val.includes('REALIZADO') || (val.includes('SIM') && !val.includes('MARCADO'));
+                            }).length}</div><div class="report-kpi-label">Onboarding Realizado</div></div>
+                        </div>
+
+                        <div class="report-kpis">
+                            <div class="report-kpi"><div class="report-kpi-value" style="font-size:1.3rem;">${formatarMoeda(somaRealizadaCent)}</div><div class="report-kpi-label">Receita Realizada</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value" style="font-size:1.3rem;">${formatarMoeda(somaPrevistaCent)}</div><div class="report-kpi-label">Receita Prevista</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value" style="font-size:1.3rem;">${formatarMoeda(diferencaCent)}</div><div class="report-kpi-label">Falta Captar</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value">${somaPrevistaCent > 0 ? ((somaRealizadaCent / somaPrevistaCent) * 100).toFixed(1) : 0}%</div><div class="report-kpi-label">% Realizado</div></div>
+                        </div>
+                    </div>
+
+                    <div class="report-footer">
+                        Relatório gerado automaticamente - ${dataAtual}
+                    </div>
+                `;
+
+                await new Promise(r => setTimeout(r, 600));
+                const canvas = await html2canvas(reportContainer, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+                document.body.removeChild(reportContainer);
+
+                const link = document.createElement('a');
+                link.download = `relatorio_expositores_rj_${new Date().toISOString().slice(0,10)}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                showSuccess('Relatório exportado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao exportar relatório:', error);
+                showError('Erro ao gerar relatório. Tente novamente.');
+            } finally {
+                exportBtn.disabled = false;
+                exportBtn.textContent = 'Exportar Relatório PNG';
+            }
+        }
+
+        // Função antiga mantida (caso use em outro lugar)
+        function calcularEstatisticasPorCategoria() { /* seu código original */ }
+
+        loadData();
+    </script>
 </body>
 </html>

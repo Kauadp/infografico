@@ -822,7 +822,7 @@
         // === GAMBIARRA ×100: valores no Airtable estão em centavos ===
         function formatarMoeda(valorCentavos) {
             if (!valorCentavos) return "R$ 0,00";
-            const valorReal = valorCentavos * 100;
+            const valorReal = valorCentavos * 1000;
             return valorReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 

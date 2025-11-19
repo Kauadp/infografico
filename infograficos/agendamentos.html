@@ -792,23 +792,34 @@
             const r = allData.find(x => x.id === id);
             const f = r.fields;
             document.getElementById('modal-title').textContent = f.Empresa;
+
             const fields = [
-                { label: 'Responsável', value: f.Responsavel, key: 'Responsavel' },
+                { label: 'Responsável', value: f.Responsavel || '—', key: 'Responsavel' },
                 { label: 'Data Reunião', value: new Date(f.DataReuniao).toLocaleDateString('pt-BR'), key: 'DataReuniao' },
                 { label: 'Status Negociação', value: f.statusNegociacao || 'Pendente', key: 'statusNegociacao', editable: true },
                 { label: 'Status Avanço', value: f.StatusAvanco || 'Pendente', key: 'StatusAvanco', editable: true },
                 { label: 'Ticket Médio', value: f.TicketMedio ? `R$ ${Number(f.TicketMedio).toFixed(2)}` : 'N/A', key: 'TicketMedio', editable: true },
-                { label: 'Nº Lojas', value: f.NumeroLojas || 'N/A', key: 'NumeroLojas', editable: true },
-                { label: 'Nº Funcionários', value: f.NumeroFuncionarios || 'N/A', key: 'NumeroFuncionarios', editable: true },
+                { label: 'Nº Lojas', value: f.NumeroLojas ?? 'N/A', key: 'NumeroLojas', editable: true },
+                { label: 'Nº Funcionários', value: f.NumeroFuncionarios ?? 'N/A', key: 'NumeroFuncionarios', editable: true },
                 { label: 'Segmento', value: f.Segmento || 'N/A', key: 'Segmento', editable: true },
                 { label: 'Local', value: f.LocalEvento || 'N/A', key: 'LocalEvento', editable: true }
             ];
-            document.getElementById('modal-content').innerHTML = fields.map(field => `
-                <div class="field-group">
-                    <label class="field-label">${field.label}</label>
-                    <div class="field-value" ${field.editable ? `onclick="editField('${field.key}', '${field.value.replace(/'/g, "\\'")}')"` : ''}>${field.value}</div>
-                </div>
-            `).join('');
+
+            document.getElementById('modal-content').innerHTML = fields.map(field => {
+                // Converte tudo pra string pra evitar o erro .replace is not a function
+                const valorParaMostrar = field.value;
+                const valorParaPassar = typeof field.value === 'string' ? field.value : String(field.value || '');
+
+                return `
+                    <div class="field-group">
+                        <label class="field-label">${field.label}</label>
+                        <div class="field-value" ${field.editable ? `onclick="editField('${field.key}', '${valorParaPassar.replace(/'/g, "\\'")}')"` : ''}>
+                            ${valorParaMostrar}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
             document.getElementById('modal-overlay').classList.add('active');
         }
 

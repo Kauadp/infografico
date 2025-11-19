@@ -827,7 +827,7 @@
         // GAMBIARRA ×100: valores em centavos → reais
         function formatarMoeda(valorCentavos) {
             if (!valorCentavos) return "R$ 0,00";
-            const valorReal = valorCentavos * 1;
+            const valorReal = valorCentavos / 100;
             return valorReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 

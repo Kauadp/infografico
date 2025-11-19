@@ -937,7 +937,7 @@
         function updateKPIs() {
             const ocupados = filteredData.length; // ← Agora correto (exclui vacâncias)
             const confirmados = filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
-            const contratos = filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'ASSINADO').length;
+            const contratos = filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length;
 
             const onboardingRealizado = filteredData.filter(r => {
                 const val = (r.fields['ONBOARDING'] || '').toString().trim().toUpperCase();
@@ -1067,7 +1067,7 @@
                         <div class="report-kpis">
                             <div class="report-kpi"><div class="report-kpi-value">${ocupados}</div><div class="report-kpi-label">Expositores Ocupados</div></div>
                             <div class="report-kpi"><div class="report-kpi-value">${vacanciasCount}</div><div class="report-kpi-label">Vacâncias</div></div>
-                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'ASSINADO').length}</div><div class="report-kpi-label">Contratos Assinados</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length}</div><div class="report-kpi-label">Contratos Assinados</div></div>
                             <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => {
                                 const val = (r.fields['ONBOARDING'] || '').toString().trim().toUpperCase();
                                 return val.includes('FEITO') || val.includes('CONCLUÍDO') || val.includes('REALIZADO') || (val.includes('SIM') && !val.includes('MARCADO'));

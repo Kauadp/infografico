@@ -719,10 +719,6 @@
                 <div class="kpi-label">Vacâncias</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-value" id="stands-confirmados">0</div>
-                <div class="kpi-label">Stands Confirmados</div>
-            </div>
-            <div class="kpi-card">
                 <div class="kpi-value" id="contratos-assinados">0</div>
                 <div class="kpi-label">Contratos Assinados</div>
             </div>
@@ -1071,7 +1067,6 @@
                         <div class="report-kpis">
                             <div class="report-kpi"><div class="report-kpi-value">${ocupados}</div><div class="report-kpi-label">Expositores Ocupados</div></div>
                             <div class="report-kpi"><div class="report-kpi-value">${vacanciasCount}</div><div class="report-kpi-label">Vacâncias</div></div>
-                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length}</div><div class="report-kpi-label">Stands Confirmados</div></div>
                             <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length}</div><div class="report-kpi-label">Contratos Assinados</div></div>
                             <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => {
                                 const val = (r.fields['ONBOARDING'] || '').toString().trim().toUpperCase();

@@ -772,7 +772,7 @@
         let allData = [];
         let filteredData = [];
         let totalStands = 0;
-        let vacanciasCount = 0; // ← Nova variável global
+        let vacanciasCount = 0;
 
         const elements = {
             filtersSection: document.getElementById('filters-section'),
@@ -813,27 +813,26 @@
         }
         function showError(message) { hideMessages(); showMessage(elements.error, message); }
         function showSuccess(message) { hideMessages(); showMessage(elements.success, message); }
-        function showInfo(message) { hideMessages(); showMessage(elements.info, message); }
 
-        // === GAMBIARRA ×100: valores no Airtable estão em centavos ===
+        // GAMBIARRA ×100: valores em centavos → reais
         function formatarMoeda(valorCentavos) {
             if (!valorCentavos) return "R$ 0,00";
-            const valorReal = valorCentavos * 1000;
+            const valorReal = valorCentavos * 100;
             return valorReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
         function parseBRL(valor) {
             if (!valor) return 0;
             let str = valor.toString().trim().replace(/R\$|\s/g, '');
-            const cleaned = str.replace(/\./g, '').replace(',', '.');
-            return parseFloat(cleaned) || 0;
+            str = str.replace(/\./g, '').replace(/,/g, '');
+            return parseFloat(str) || 0;
         }
 
         function calcularSoma(dataArray, campo) {
             return dataArray.reduce((acc, r) => acc + parseBRL(r.fields[campo]), 0);
         }
 
-        // === CONTAR VACÂNCIAS PELO NOME DO EXPOSITOR (ROBUSTO) ===
+        // CONTAR VACÂNCIAS PELO NOME (ROBUSTO)
         function contarVacancias() {
             return allData.filter(r => {
                 const nome = (r.fields['Expositor..N.Fantasia'] || '')
@@ -865,9 +864,9 @@
                 }
 
                 totalStands = allData.length;
-                vacanciasCount = contarVacancias(); // ← Contagem correta
+                vacanciasCount = contarVacancias();
 
-                // Filtra apenas expositores reais (exclui vacâncias)
+                // Filtra apenas expositores reais
                 filteredData = allData.filter(r => {
                     const nome = (r.fields['Expositor..N.Fantasia'] || '')
                         .toString()
@@ -907,9 +906,8 @@
                 const contratoStatus = (fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase();
                 const statusConfirmado = (fields['STATUS'] || '').toUpperCase();
 
-                let status = 'vazio';
-                let statusText = 'N/A';
-                if (contratoStatus === 'SIM') { status = 'assinado'; statusText = 'Assinado'; }
+                let status = 'vazio', statusText = 'N/A';
+                if (contratoStatus.includes('ASSINADO')) { status = 'assinado'; statusText = 'Assinado'; }
                 else if (statusConfirmado === 'SIM') { status = 'vendido'; statusText = 'Confirmado'; }
                 else { status = 'pendente'; statusText = 'Pendente'; }
 
@@ -935,9 +933,14 @@
         }
 
         function updateKPIs() {
-            const ocupados = filteredData.length; // ← Agora correto (exclui vacâncias)
+            const ocupados = filteredData.length;
             const confirmados = filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
-            const contratos = filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length;
+
+            // CORREÇÃO: Contar contratos com "ASSINADO" (não "SIM")
+            const contratos = filteredData.filter(r => {
+                const val = (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toString().toUpperCase();
+                return val.includes('ASSINADO');
+            }).length;
 
             const onboardingRealizado = filteredData.filter(r => {
                 const val = (r.fields['ONBOARDING'] || '').toString().trim().toUpperCase();
@@ -951,7 +954,7 @@
             }).length;
 
             const somaRealizadaCent = calcularSoma(filteredData, 'RECEITA.REALIZADA');
-            const somaPrevistaCent = calcularSoma(allData, 'RECEITA.PREVISTA'); // inclui vacâncias
+            const somaPrevistaCent = calcularSoma(allData, 'RECEITA.PREVISTA');
             const diferencaCent = somaPrevistaCent - somaRealizadaCent;
 
             elements.totalExpositores.textContent = ocupados;
@@ -986,23 +989,22 @@
         function applyFilters() {
             filteredData = allData.filter(r => {
                 const f = r.fields || {};
+                const nome = (f['Expositor..N.Fantasia'] || '').toString().trim()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+                if (nome.includes('VACANCIA')) return false;
+
                 const cat = elements.categoriaFilter.value;
                 const exp = elements.expositorFilter.value;
                 const con = elements.contratoFilter.value;
                 const sta = elements.statusFilter.value;
-
-                // Exclui vacâncias automaticamente
-                const nome = (f['Expositor..N.Fantasia'] || '').toString().trim()
-                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
-                if (nome.includes('VACANCIA')) return false;
 
                 if (cat && f['CATEGORIA'] !== cat) return false;
                 if (exp && f['Expositor..N.Fantasia'] !== exp) return false;
 
                 if (con) {
                     const contratoStatus = (f['financeiro.CONTRATO.ASSINADO.'] || '').toString().trim().toUpperCase();
-                    if (con === 'SIM' && contratoStatus !== 'SIM') return false;
-                    if (con === 'NAO' && contratoStatus === 'SIM') return false;
+                    if (con === 'SIM' && !contratoStatus.includes('ASSINADO')) return false;
+                    if (con === 'NAO' && contratoStatus.includes('ASSINADO')) return false;
                 }
 
                 if (sta) {
@@ -1038,7 +1040,6 @@
         elements.modalClose.onclick = () => elements.modalOverlay.classList.remove('active');
         elements.modalOverlay.onclick = (e) => { if(e.target.id === 'modal-overlay') elements.modalOverlay.classList.remove('active'); };
 
-        // === EXPORT REPORT ATUALIZADO COM GAMBIARRA E VACÂNCIAS CORRETAS ===
         async function exportReport() {
             const exportBtn = document.getElementById('export-btn');
             exportBtn.disabled = true;
@@ -1054,7 +1055,25 @@
                 const somaPrevistaCent = calcularSoma(allData, 'RECEITA.PREVISTA');
                 const diferencaCent = somaPrevistaCent - somaRealizadaCent;
 
-                const dataAtual = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const onboardingRealizado = filteredData.filter(r => {
+                    const val = (r.fields['ONBOARDING'] || '').toString().trim().toUpperCase();
+                    return (
+                        val.includes('FEITO') ||
+                        val.includes('CONCLUÍDO') ||
+                        val.includes('CONCLUIDO') ||
+                        val.includes('REALIZADO') ||
+                        (val.includes('SIM') && !val.includes('MARCADO'))
+                    );
+                }).length;
+
+                const contratosAssinadosCount = filteredData.filter(r => {
+                    const val = (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toString().toUpperCase();
+                    return val.includes('ASSINADO');
+                }).length;
+
+                const dataAtual = new Date().toLocaleDateString('pt-BR', {
+                    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
 
                 reportContainer.innerHTML = `
                     <div class="report-header">
@@ -1067,11 +1086,9 @@
                         <div class="report-kpis">
                             <div class="report-kpi"><div class="report-kpi-value">${ocupados}</div><div class="report-kpi-label">Expositores Ocupados</div></div>
                             <div class="report-kpi"><div class="report-kpi-value">${vacanciasCount}</div><div class="report-kpi-label">Vacâncias</div></div>
-                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => (r.fields['financeiro.CONTRATO.ASSINADO.'] || '').toUpperCase() === 'SIM').length}</div><div class="report-kpi-label">Contratos Assinados</div></div>
-                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => {
-                                const val = (r.fields['ONBOARDING'] || '').toString().trim().toUpperCase();
-                                return val.includes('FEITO') || val.includes('CONCLUÍDO') || val.includes('REALIZADO') || (val.includes('SIM') && !val.includes('MARCADO'));
-                            }).length}</div><div class="report-kpi-label">Onboarding Realizado</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value">${filteredData.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length}</div><div class="report-kpi-label">Stands Confirmados</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value">${contratosAssinadosCount}</div><div class="report-kpi-label">Contratos Assinados</div></div>
+                            <div class="report-kpi"><div class="report-kpi-value">${onboardingRealizado}</div><div class="report-kpi-label">Onboarding Realizado</div></div>
                         </div>
 
                         <div class="report-kpis">
@@ -1106,8 +1123,23 @@
             }
         }
 
-        // Função antiga mantida (caso use em outro lugar)
-        function calcularEstatisticasPorCategoria() { /* seu código original */ }
+        function calcularEstatisticasPorCategoria() {
+            const categorias = [...new Set(filteredData.map(r => r.fields?.['CATEGORIA']).filter(Boolean))];
+            return categorias.map(categoria => {
+                const dadosCategoria = filteredData.filter(r => r.fields?.['CATEGORIA'] === categoria);
+                const total = dadosCategoria.length;
+                const confirmados = dadosCategoria.filter(r => (r.fields['STATUS'] || '').toUpperCase() === 'SIM').length;
+                const taxaOcupacao = total > 0 ? Math.round((confirmados / total) * 100) : 0;
+                const receita = calcularSoma(dadosCategoria, 'RECEITA.REALIZADA');
+                return {
+                    categoria,
+                    total,
+                    confirmados,
+                    taxaOcupacao,
+                    receita: formatarMoeda(receita)
+                };
+            }).sort((a, b) => b.total - a.total);
+        }
 
         loadData();
     </script>

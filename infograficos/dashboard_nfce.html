@@ -763,38 +763,41 @@
             'HIGH COMPANY LTDA': 'HIGH',
             'PASQUINI E PASQUINI CONFECCOES LTDA.': 'ACOSTAMENTO',
             'VCI - VANGUARD CONFECCOES IMPORTADAS S/A': 'ARAMIS',
-            'ZZAB Comercio de Calcados Ltda. VANS': 'VANS',
+            'ZZAB Comercio de Calcados Ltda.': 'VANS',
             'ZZAB Comercio de Calcados Ltda. AREZZO': 'AREZZO',
-            '-': 'HIGH'
+            '-': 'OFF PREMIUM'
         };
 
         // Metas por loja
         const metas = {
-            'VANS': 400000,
-            'AREZZO': 600000,
-            'ARAMIS': 200000,
-            'ACOSTAMENTO': 100000,
-            'HIGH': 200000,
+            'VANS': 200000,
+            'AREZZO': 300000,
+            'ARAMIS': 250000,
+            'ACOSTAMENTO': 125000,
+            'HIGH': 125000,
+            'OFF PREMIUM': 500000,
             'Default': 100000
         };
 
         // Custo Operação por loja
         const custoOperacao = {
-            'VANS': 28571.42,
-            'AREZZO': 28571.42,
-            'ARAMIS': 14285.71,
-            'ACOSTAMENTO': 14285.71,
-            'HIGH': 14285.71,
-            'Default': 0
+            'VANS': 130000/6,
+            'AREZZO': 130000/6,
+            'ARAMIS': 130000/6,
+            'ACOSTAMENTO': 130000/6,
+            'HIGH': 130000/6,
+            'OFF PREMIUM': 130000/6,
+            'Default': 130000/6
         };
 
         // Custo Montagem por loja
         const custoMontagem = {
-            'VANS': 21071.42,
-            'AREZZO': 21071.42,
-            'ARAMIS': 10535.71,
-            'ACOSTAMENTO': 10535.71,
-            'HIGH': 10535.71,
+            'VANS': 0,
+            'AREZZO': 0,
+            'ARAMIS': 0,
+            'ACOSTAMENTO': 0,
+            'HIGH': 0,
+            'OFF PREMIUM': 0,
             'Default': 0
         };
 
@@ -868,13 +871,13 @@
                     skipEmptyLines: true,
                     complete: function(results) {
                         try {
-                            allData = results.data.filter(row => row['Situação'] === 'Autorizada');
+                            allData = results.data;
                             filteredData = [...allData];
                             processData();
                             setupFilters();
                             renderDashboard();
                             updateLastUpdateTime();
-                            showMessage('success', `✅ Dashboard atualizado! ${allData.length} notas autorizadas analisadas.`);
+                            showMessage('success', `✅ Dashboard atualizado! ${allData.length} notas analisadas.`);
                             document.getElementById('export-btn').disabled = false;
                         } catch (error) {
                             console.error('Erro ao processar CSV:', error);
@@ -1468,7 +1471,7 @@
                 });
 
                 // Variável configurável para a data alvo das metas
-                const targetDate = '25/10'; // Ajustado para hoje (24/10/2025)
+                const targetDate = '05/12'; // Ajustado para hoje (24/10/2025)
 
                 const topLojas = Object.entries(processedData.vendasPorLoja)
                     .sort((a, b) => b[1].total - a[1].total)
@@ -1513,15 +1516,15 @@
                 console.log('vendasPorDiaLoja:', vendasPorDiaLoja); // Depuração
 
                 // Definir dias específicos (21/10 a 26/10)
-                const diasSelecionados = ['21/10', '22/10', '23/10', '24/10', '25/10', '26/10'];
+                const diasSelecionados = ['03/12', '04/12', '05/12', '06/12', '07/12'];
 
                 // Exemplo de mapeamento de metas por loja para o targetDate (ajuste conforme necessário)
                 const metasPorLoja = {
-                    'VANS': 100000,    // Meta de R$ 1000 para VANS no dia targetDate
-                    'AREZZO': 100000,  // Meta de R$ 1500 para AREZZO no dia targetDate
-                    'HIGH': 40000,
-                    'ARAMIS': 60000,
-                    'ACOSTAMENTO': 40000,
+                    'VANS': 0,    // Meta de R$ 1000 para VANS no dia targetDate
+                    'AREZZO': 0,  // Meta de R$ 1500 para AREZZO no dia targetDate
+                    'HIGH': 0,
+                    'ARAMIS': 0,
+                    'ACOSTAMENTO': 0,
                     'Sem Loja': 0  // Meta padrão para outras lojas, incluindo novos fornecedores
                     // Adicione mais lojas conforme necessário
                 };
@@ -1654,7 +1657,7 @@
                     </div>
 
                     <div class="report-section">
-                        <h3>🎯 Metas por Loja Dia 25/10</h3>
+                        <h3>🎯 Metas por Loja Dia 04/12</h3>
                         <table class="report-table" role="grid" aria-label="Metas por loja">
                             <thead>
                                 <tr>
